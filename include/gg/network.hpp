@@ -1,0 +1,46 @@
+#ifndef GG_NETWORK_HPP_INCLUDED
+#define GG_NETWORK_HPP_INCLUDED
+
+#include <cstdint>
+#include <functional>
+#include "gg/buffer.hpp"
+#include "gg/var.hpp"
+
+namespace gg
+{
+	namespace net
+	{
+		class Serializable
+		{
+		public:
+			virtual bool init(std::shared_ptr<Buffer>) = 0;
+			virtual bool save(std::shared_ptr<Buffer>) const = 0;
+		};
+
+		typedef std::function<bool(Var&, std::shared_ptr<Buffer>)> InitFunction;
+		typedef std::function<bool(const Var&, std::shared_ptr<Buffer>)> SaveFunction;
+
+		uint16_t __addSerializerFunctions(InitFunction, SaveFunction);
+
+		template<class T>
+		uint16_t addClass()
+		{
+			InitFunction init_func =
+				[](Var& varstd::shared_ptr<Buffer> buf) -> Var
+				{
+					var.construct<T>();
+					return var.get<T>().init(buf);
+				};
+
+			SaveFunction save_func =
+				[](const Var& var, std::shared_ptr<Buffer> buf)
+				{
+					return var.get<T>.save(buf);
+				};
+
+			return __addSerializerFunctions(init_func, save_func);
+		}
+	};
+};
+
+#endif // GG_NETWORK_HPP_INCLUDED
