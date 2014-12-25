@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <typeinfo>
 #include "gg/buffer.hpp"
 #include "gg/var.hpp"
 
@@ -20,25 +21,49 @@ namespace gg
 		typedef std::function<bool(Var&, std::shared_ptr<Buffer>)> InitFunction;
 		typedef std::function<bool(const Var&, std::shared_ptr<Buffer>)> SaveFunction;
 
-		uint16_t __addSerializerFunctions(InitFunction, SaveFunction);
+		uint16_t addSerializerFunctions(std::type_info&, InitFunction, SaveFunction);
+		uint16_t getInternalTypeID(std::type_info&);
 
 		template<class T>
 		uint16_t addClass()
 		{
 			InitFunction init_func =
-				[](Var& varstd::shared_ptr<Buffer> buf) -> Var
+				[](Var& var, std::shared_ptr<Buffer> buf) -> bool
 				{
 					var.construct<T>();
 					return var.get<T>().init(buf);
 				};
 
 			SaveFunction save_func =
-				[](const Var& var, std::shared_ptr<Buffer> buf)
+				[](const Var& var, std::shared_ptr<Buffer> buf) -> bool
 				{
 					return var.get<T>.save(buf);
 				};
 
-			return __addSerializerFunctions(init_func, save_func);
+			return addSerializerFunctions(typeid(T), init_func, save_func);
+		}
+
+		template<class T>
+		uint16_t addPOD() // plain-old-data
+		{
+			InitFunction init_func =
+				[](Var& var, std::shared_ptr<Buffer> buf) -> bool
+				{
+					var.construct<T>();
+					if (buf->read(static_cast<char*>(var.getPtr()), sizeof(T)) < sizeof(T))
+						return false;
+					else
+						return true;
+				};
+
+			SaveFunction save_func =
+				[](const Var& var, std::shared_ptr<Buffer> buf) -> bool
+				{
+					buf->write(static_cast<const char*>(&var.get<T>()), sizeof(T));
+					return true;
+				};
+
+			return addSerializerFunctions(typeid(T), init_func, save_func);
 		}
 	};
 };
