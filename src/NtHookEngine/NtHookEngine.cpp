@@ -1,6 +1,10 @@
-#include "stdafx.h"
+//#include "stdafx.h"
+#include <windows.h>
 #include <stdlib.h>
 #include "distorm.h"
+
+#pragma comment(lib, "lib/distorm_x86.lib")
+#pragma comment(lib, "lib/distorm_x64.lib")
 
 // 10000 hooks should be enough
 #define MAX_HOOKS 10000
@@ -38,7 +42,7 @@ UINT CurrentBridgeBufferSize = 0; // This number is incremented as
 #endif
 
 
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
+/*BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
 {
 	switch (dwReason)
 	{
@@ -55,7 +59,19 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
 	}
 
 	return TRUE;
-}
+}*/
+
+class Initializer
+{
+public:
+	Initializer()
+	{
+		pBridgeBuffer = (BYTE *)VirtualAlloc(NULL, MAX_HOOKS * (JUMP_WORST * 3),
+			MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+	}
+};
+
+static Initializer init;
 
 HOOK_INFO *GetHookInfoFromFunction(ULONG_PTR OriginalFunction)
 {

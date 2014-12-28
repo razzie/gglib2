@@ -45,12 +45,18 @@
     <TargetExt>.$(Configuration).exe</TargetExt>
     <IntDir>obj\$(Configuration)\</IntDir>
     <RunCodeAnalysis>false</RunCodeAnalysis>
+    <ExecutablePath>$(DXSDK_DIR)Utilities\bin\x86;$(ExecutablePath)</ExecutablePath>
+    <IncludePath>$(DXSDK_DIR)Include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(DXSDK_DIR)Lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>bin\</OutDir>
     <TargetExt>.$(Configuration).exe</TargetExt>
     <IntDir>obj\$(Configuration)\</IntDir>
+    <ExecutablePath>$(DXSDK_DIR)Utilities\bin\x86;$(ExecutablePath)</ExecutablePath>
+    <IncludePath>$(DXSDK_DIR)Include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(DXSDK_DIR)Lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -93,6 +99,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="src\Doboz\Compressor.cpp" />
+    <ClCompile Include="src\Doboz\Decompressor.cpp" />
+    <ClCompile Include="src\Doboz\Dictionary.cpp" />
+    <ClCompile Include="src\NtHookEngine\NtHookEngine.cpp" />
     <ClCompile Include="src\stream_format.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -101,6 +111,11 @@
     <ClInclude Include="include\gg\function.hpp" />
     <ClInclude Include="include\gg\network.hpp" />
     <ClInclude Include="include\gg\streamutil.hpp" />
+    <ClInclude Include="src\Doboz\Common.h" />
+    <ClInclude Include="src\Doboz\Compressor.h" />
+    <ClInclude Include="src\Doboz\Decompressor.h" />
+    <ClInclude Include="src\Doboz\Dictionary.h" />
+    <ClInclude Include="src\NtHookEngine\distorm.h" />
     <ClInclude Include="src\stringutil.hpp" />
     <ClInclude Include="include\gg\timer.hpp" />
     <ClInclude Include="include\gg\var.hpp" />

@@ -21,8 +21,8 @@ namespace gg
 		typedef std::function<bool(Var&, std::shared_ptr<Buffer>)> InitFunction;
 		typedef std::function<bool(const Var&, std::shared_ptr<Buffer>)> SaveFunction;
 
-		uint16_t addSerializerFunctions(std::type_info&, InitFunction, SaveFunction);
-		uint16_t getInternalTypeID(std::type_info&);
+		uint16_t addSerializerFunctions(const std::type_info&, InitFunction, SaveFunction);
+		uint16_t getInternalTypeID(const std::type_info&);
 
 		template<class T>
 		uint16_t addClass()
@@ -37,7 +37,7 @@ namespace gg
 			SaveFunction save_func =
 				[](const Var& var, std::shared_ptr<Buffer> buf) -> bool
 				{
-					return var.get<T>.save(buf);
+					return var.get<T>().save(buf);
 				};
 
 			return addSerializerFunctions(typeid(T), init_func, save_func);
