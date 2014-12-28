@@ -11,7 +11,7 @@ namespace gg
 {
 	namespace net
 	{
-		class Serializable
+		class ISerializable
 		{
 		public:
 			virtual bool init(std::shared_ptr<Buffer>) = 0;

@@ -9,16 +9,16 @@ namespace gg
 {
 	namespace fs
 	{
-		class Directory;
-		class File;
+		class IDirectory;
+		class IFile;
 
 		bool addDirectory(const std::string& dir_name);
 		bool addVirtualDirectory(const std::string& archive_name);
-		bool createVirtualDirectory(const std::string& dir_name, const std::string& archive_name);
-		std::shared_ptr<Directory> openDirectory(const std::string& dir_name);
-		std::shared_ptr<File> openFile(const std::string& file_name);
+		//bool createVirtualDirectory(const std::string& dir_name, const std::string& archive_name);
+		std::shared_ptr<IDirectory> openDirectory(const std::string& dir_name);
+		std::shared_ptr<IFile> openFile(const std::string& file_name);
 
-		class Directory
+		class IDirectory
 		{
 		public:
 			struct FileOrDirectory
@@ -30,35 +30,32 @@ namespace gg
 				};
 
 				Type type;
-				std::shared_ptr<File> file;
-				std::shared_ptr<Directory> directory;
+				std::shared_ptr<IFile> file;
+				std::shared_ptr<IDirectory> directory;
 			};
 
 			typedef std::vector<FileOrDirectory>::iterator Iterator;
 
-			virtual ~Directory() {}
+			virtual ~IDirectory() {}
 			virtual const std::string& getName() const = 0;
 			virtual Iterator begin() = 0;
 			virtual Iterator end() = 0;
 		};
 
-		class File
+		class IFile
 		{
 		public:
-			virtual ~File() {}
+			virtual ~IFile() {}
 			virtual const std::string& getName() const = 0;
-			// virtual char* getData() = 0;
 			virtual const char* getData() const = 0;
 			virtual size_t getSize() const = 0;
-			// virtual void setSize(size_t) = 0;
-			// virtual void save() = 0;
 			virtual void unload() = 0;
 		};
 
 		class FileStream : public std::istream, public std::streambuf
 		{
 		private:
-			std::shared_ptr<File> m_file;
+			std::shared_ptr<IFile> m_file;
 			size_t m_pos;
 
 		protected:
@@ -86,7 +83,9 @@ namespace gg
 			{
 			}
 
-			std::shared_ptr<File> getFile() const
+			FileStream(const FileStream&) = delete;
+
+			std::shared_ptr<IFile> getFile() const
 			{
 				return m_file;
 			}

@@ -5,6 +5,7 @@
 
 #pragma comment(lib, "lib/distorm_x86.lib")
 #pragma comment(lib, "lib/distorm_x64.lib")
+#pragma warning (disable : 4099)
 
 // 10000 hooks should be enough
 #define MAX_HOOKS 10000
