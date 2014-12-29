@@ -63,21 +63,21 @@ namespace gg
     std::basic_string<TO> convertString(std::basic_string<FROM> s,
                                         std::locale loc = std::locale())
     {
-        std::vector<TO> result(s.size() + 1);
+		std::basic_string<TO> result;
+		result.reserve(s.size() + 1);
+
         FROM const* from_next;
         TO* to_next;
         mbstate_t state = {0};
-        std::codecvt_base::result conv_result
-            = std::use_facet<std::codecvt<TO, FROM, std::mbstate_t> >(loc)
-				.in(state,&s[0], &s[s.size()], from_next,
-					&result[0], &result[result.size()], to_next);
+		auto& facet = std::use_facet<std::codecvt<TO, FROM, std::mbstate_t> >(loc);
+        std::codecvt_base::result conv_result = facet.in(state,
+			&s[0], &s[0] + s.size(), from_next,
+			&result[0], &result[0] + result.size(), to_next);
 
-        assert(from_next == &s[s.size()]);
-        assert(to_next != &result[result.size()]);
 		assert(conv_result == std::codecvt_base::ok);
         *to_next = '\0';
 
-        return &result[0];
+        return result;
     }
 
     template<class T>

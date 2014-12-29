@@ -170,7 +170,7 @@ namespace gg
 		const void* getPtr() const
 		{
 			if (m_storage != nullptr)
-				return static_cast<void*>(m_storage->getPtr());
+				return static_cast<const void*>(m_storage->getPtr());
 			else
 				return nullptr;
 		}
