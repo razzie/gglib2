@@ -7,22 +7,23 @@
 */
 
 #include <cstdint>
+#include <set>
 #include "Doboz/Decompressor.h"
 #include "filesystem_impl.hpp"
 
-std::mutex s_archives_mutex;
-std::map<std::string, gg::fs::IArchive*> s_archives;
+std::mutex s_vdirs_mutex;
+std::map<std::string, gg::fs::VirtualDirectory*> s_vdirs;
 
 static std::string getPathRoot(const std::string& path)
 {
-	auto it = path.find('/');
-	return path.substr(0, it);
+	auto pos = path.find('/');
+	return path.substr(0, pos);
 }
 
 static std::string getPathEnd(const std::string& path)
 {
-	auto it = path.rfind('/');
-	return path.substr(it);
+	auto pos = path.rfind('/');
+	return path.substr(pos + 1);
 }
 
 /*static void replaceSlashes(std::string& file_name)
@@ -34,14 +35,14 @@ static std::string getPathEnd(const std::string& path)
 }*/
 
 
-bool gg::fs::addDirectory(const std::string& dir_name)
+bool gg::fs::addVirtualDirectory(const std::string& vdir_path)
 {
-	IArchive* ar = new DirectoryArchive(dir_name);
+	VirtualDirectory* vdir = new VirtualDirectory(vdir_path);
 
-	if (ar->init())
+	if (vdir->init())
 	{
-		std::lock_guard<std::mutex> guard(s_archives_mutex);
-		s_archives.emplace(getPathRoot(dir_name), ar);
+		std::lock_guard<std::mutex> guard(s_vdirs_mutex);
+		s_vdirs.emplace(getPathEnd(vdir_path), vdir);
 		return true;
 	}
 	else
@@ -50,28 +51,12 @@ bool gg::fs::addDirectory(const std::string& dir_name)
 	}
 }
 
-bool gg::fs::addVirtualDirectory(const std::string& archive_name)
+std::shared_ptr<gg::fs::IDirectory> gg::fs::openDirectory(const std::string& dir_name)
 {
-	IArchive* ar = new VirtualArchive(archive_name);
+	std::string vdir_name = getPathRoot(dir_name);
 
-	if (ar->init())
-	{
-		std::lock_guard<std::mutex> guard(s_archives_mutex);
-		s_archives.emplace(getPathEnd(archive_name), ar);
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-std::shared_ptr<gg::fs::IDirectory> openDirectory(const std::string& dir_name)
-{
-	std::string ar_name = getPathRoot(dir_name);
-
-	auto it = s_archives.find(ar_name);
-	if (it != s_archives.end())
+	auto it = s_vdirs.find(vdir_name);
+	if (it != s_vdirs.end())
 	{
 		return it->second->getDirectory(dir_name.substr(dir_name.find('/') + 1));
 	}
@@ -81,12 +66,12 @@ std::shared_ptr<gg::fs::IDirectory> openDirectory(const std::string& dir_name)
 	}
 }
 
-std::shared_ptr<gg::fs::IFile> openFile(const std::string& file_name)
+std::shared_ptr<gg::fs::IFile> gg::fs::openFile(const std::string& file_name)
 {
-	std::string ar_name = getPathRoot(file_name);
+	std::string vdir_name = getPathRoot(file_name);
 
-	auto it = s_archives.find(ar_name);
-	if (it != s_archives.end())
+	auto it = s_vdirs.find(vdir_name);
+	if (it != s_vdirs.end())
 	{
 		return it->second->getFile(file_name.substr(file_name.find('/') + 1));
 	}
@@ -97,80 +82,27 @@ std::shared_ptr<gg::fs::IFile> openFile(const std::string& file_name)
 }
 
 
-gg::fs::DirectoryArchive::DirectoryArchive(const std::string& dir_name) :
-	m_name(getPathEnd(dir_name)), m_full_path(dir_name)
+gg::fs::VirtualDirectory::VirtualDirectory(const std::string& vdir_name) :
+	m_file(vdir_name, std::ios::in | std::ios::binary),
+	m_name(getPathEnd(vdir_name))
 {
 }
 
-bool gg::fs::DirectoryArchive::init()
-{
-	return false;
-}
-
-const std::string& gg::fs::DirectoryArchive::getName() const
-{
-	return m_name;
-}
-
-std::shared_ptr<gg::fs::IDirectory> gg::fs::DirectoryArchive::getDirectory(const std::string& dir_name)
-{
-	return std::shared_ptr<IDirectory>(new Directory(this, m_name + '/' + dir_name));
-}
-
-std::shared_ptr<gg::fs::IFile> gg::fs::DirectoryArchive::getFile(const std::string& file_name)
-{
-	std::lock_guard<std::mutex> guard(m_mutex);
-
-	auto it = m_files.find(file_name);
-	if (it != m_files.end())
-	{
-		if (it->second.expired())
-		{
-			std::shared_ptr<IFile> ptr(new File(this, m_name + '/' + file_name));
-			it->second = ptr;
-			return ptr;
-		}
-		else
-		{
-			return it->second.lock();
-		}
-	}
-	else
-	{
-		std::shared_ptr<IFile> ptr(new File(this, m_name + '/' + file_name));
-		m_files.emplace(file_name, ptr);
-		return ptr;
-	}
-}
-
-bool gg::fs::DirectoryArchive::loadDirectoryData(const std::string& dir_name, std::vector<IDirectory::FileOrDirectory>* files)
-{
-	return false;
-}
-
-bool gg::fs::DirectoryArchive::loadFileData(const std::string& file_name, const char** data, size_t* size)
-{
-	return false;
-}
-
-
-gg::fs::VirtualArchive::VirtualArchive(const std::string& archive_name) :
-	m_file(archive_name, std::ios::in | std::ios::binary),
-	m_name(getPathEnd(archive_name))
-{
-}
-
-gg::fs::VirtualArchive::~VirtualArchive()
+gg::fs::VirtualDirectory::~VirtualDirectory()
 {
 	m_file.close();
 }
 
-bool gg::fs::VirtualArchive::init()
+bool gg::fs::VirtualDirectory::init()
 {
 	if (!m_file.is_open())
 		return false;
 
-	while (!m_file.eof())
+	m_file.seekg(0, std::ios::end);
+	const std::streampos end_pos = m_file.tellg();
+	m_file.seekg(0, std::ios::beg);
+
+	while (m_file)
 	{
 		uint16_t name_size;
 		FileData fd = {};
@@ -188,22 +120,25 @@ bool gg::fs::VirtualArchive::init()
 
 		// store file data
 		m_files.emplace(fd.file_name, fd);
+
+		if (m_file.tellg() == end_pos)
+			break;
 	}
 
 	return true;
 }
 
-const std::string& gg::fs::VirtualArchive::getName() const
+const std::string& gg::fs::VirtualDirectory::getName() const
 {
 	return m_name;
 }
 
-std::shared_ptr<gg::fs::IDirectory> gg::fs::VirtualArchive::getDirectory(const std::string& dir_name)
+std::shared_ptr<gg::fs::IDirectory> gg::fs::VirtualDirectory::getDirectory(const std::string& dir_name)
 {
 	return std::shared_ptr<IDirectory>(new Directory(this, m_name + '/' + dir_name));
 }
 
-std::shared_ptr<gg::fs::IFile> gg::fs::VirtualArchive::getFile(const std::string& file_name)
+std::shared_ptr<gg::fs::IFile> gg::fs::VirtualDirectory::getFile(const std::string& file_name)
 {
 	std::lock_guard<std::mutex> guard(m_mutex);
 
@@ -227,28 +162,47 @@ std::shared_ptr<gg::fs::IFile> gg::fs::VirtualArchive::getFile(const std::string
 	return {};
 }
 
-bool gg::fs::VirtualArchive::loadDirectoryData(const std::string& dir_name, std::vector<IDirectory::FileOrDirectory>* files)
+bool gg::fs::VirtualDirectory::loadDirectoryData(const std::string& dir_name, std::vector<IDirectory::FileOrDirectory>* files)
 {
 	std::lock_guard<std::mutex> guard(m_mutex);
+
+	std::set<std::string> directories;
+	const size_t name_begin_pos = dir_name.size();
 
 	for (auto& it : m_files)
 	{
 		FileData& fd = it.second;
 
-		if (fd.file_name.compare(0, dir_name.size(), dir_name) == 0)
+		if (fd.file_name.compare(0, name_begin_pos, dir_name) == 0)
 		{
-			IDirectory::FileOrDirectory file = {};
-			file.type = IDirectory::FileOrDirectory::Type::FILE;
-			file.file = getFile(fd.file_name);
+			size_t slash_pos = fd.file_name.find('/', name_begin_pos);
 
-			files->push_back(file);
+			if (slash_pos == std::string::npos) // it's a file
+			{
+				IDirectory::FileOrDirectory file = {};
+				file.name = m_name + '/' + fd.file_name;
+				file.size = fd.original_size;
+				file.type = IDirectory::FileOrDirectory::Type::FILE;
+
+				files->push_back(file);
+			}
+			else
+			{
+				directories.insert(m_name + '/' +
+					fd.file_name.substr(name_begin_pos, slash_pos) + '/');
+			}
 		}
+	}
+
+	for (const std::string& dir : directories)
+	{
+		files->push_back({ dir, 0, IDirectory::FileOrDirectory::Type::DIRECTORY });
 	}
 
 	return true;
 }
 
-bool gg::fs::VirtualArchive::loadFileData(const std::string& file_name, const char** data, size_t* size)
+bool gg::fs::VirtualDirectory::loadFileData(const std::string& file_name, const char** data, size_t* size)
 {
 	std::lock_guard<std::mutex> guard(m_mutex);
 

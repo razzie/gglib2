@@ -38,8 +38,7 @@ namespace gg
 		class IDirectory;
 		class IFile;
 
-		bool addDirectory(const std::string& dir_name);
-		bool addVirtualDirectory(const std::string& archive_name);
+		bool addVirtualDirectory(const std::string& vdir_path);
 		std::shared_ptr<IDirectory> openDirectory(const std::string& dir_name);
 		std::shared_ptr<IFile> openFile(const std::string& file_name);
 
@@ -54,9 +53,9 @@ namespace gg
 					DIRECTORY
 				};
 
+				std::string name;
+				uint32_t size;
 				Type type;
-				std::shared_ptr<IFile> file;
-				std::shared_ptr<IDirectory> directory;
 			};
 
 			typedef std::vector<FileOrDirectory>::iterator Iterator;
@@ -77,7 +76,7 @@ namespace gg
 			virtual const std::string& getName() const = 0;
 			virtual const char* getData() const = 0;
 			virtual size_t getSize() const = 0;
-			virtual void unload() = 0;
+			virtual void unload() = 0; // can cause crash if other thread is reading file data!
 		};
 
 		class FileStream : public std::istream, public std::streambuf
