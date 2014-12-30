@@ -14,26 +14,30 @@ namespace gg
 		{
 		public:
 			virtual ~IArchive() {}
-			virtual bool init() const = 0;
+			virtual bool init() = 0;
 			virtual const std::string& getName() const = 0;
-			virtual bool loadDirectoryData(std::vector<IDirectory::FileOrDirectory>*) const = 0;
-			virtual bool loadFileData(const std::string& file_name, const char**, size_t*) const = 0;
+			virtual std::shared_ptr<IDirectory> getDirectory(const std::string& dir_name) = 0;
+			virtual std::shared_ptr<IFile> getFile(const std::string& file_name) = 0;
+			virtual bool loadDirectoryData(const std::string& dir_name, std::vector<IDirectory::FileOrDirectory>*) = 0;
+			virtual bool loadFileData(const std::string& file_name, const char**, size_t*) = 0;
 		};
 
 		class DirectoryArchive : public IArchive
 		{
 		private:
-			std::mutex m_mutex;
+			mutable std::mutex m_mutex;
 			std::string m_name;
-			std::string m_dir_name;
+			std::string m_full_path;
+			std::map<std::string, std::weak_ptr<IFile>> m_files;
 
 		public:
 			DirectoryArchive(const std::string& dir_name);
-			DirectoryArchive(const DirectoryArchive&) = delete;
-			virtual bool init() const;
+			virtual bool init();
 			virtual const std::string& getName() const;
-			virtual bool loadDirectoryData(std::vector<IDirectory::FileOrDirectory>*) const;
-			virtual bool loadFileData(const std::string& file_name, const char**, size_t*) const;
+			virtual std::shared_ptr<IDirectory> getDirectory(const std::string& dir_name);
+			virtual std::shared_ptr<IFile> getFile(const std::string& file_name);
+			virtual bool loadDirectoryData(const std::string& dir_name, std::vector<IDirectory::FileOrDirectory>*);
+			virtual bool loadFileData(const std::string& file_name, const char**, size_t*);
 		};
 
 		class VirtualArchive : public IArchive
@@ -45,22 +49,23 @@ namespace gg
 				size_t start_pos;
 				size_t original_size;
 				size_t compressed_size;
+				std::weak_ptr<IFile> ptr;
 			};
 
 			mutable std::mutex m_mutex;
-			std::ifstream m_file;
+			mutable std::ifstream m_file;
 			std::string m_name;
-			std::vector<FileData> m_filedata;
-			std::map<std::string, std::vector<FileData>::iterator> m_filemap;
+			std::map<std::string, FileData> m_files;
 
 		public:
 			VirtualArchive(const std::string& archive_name);
-			VirtualArchive(const VirtualArchive&) = delete;
 			virtual ~VirtualArchive();
-			virtual bool init() const;
+			virtual bool init();
 			virtual const std::string& getName() const;
-			virtual bool loadDirectoryData(std::vector<IDirectory::FileOrDirectory>*) const;
-			virtual bool loadFileData(const std::string& file_name, const char**, size_t*) const;
+			virtual std::shared_ptr<IDirectory> getDirectory(const std::string& dir_name);
+			virtual std::shared_ptr<IFile> getFile(const std::string& file_name);
+			virtual bool loadDirectoryData(const std::string& dir_name, std::vector<IDirectory::FileOrDirectory>*);
+			virtual bool loadFileData(const std::string& file_name, const char**, size_t*);
 		};
 
 		class Directory : public IDirectory
@@ -71,13 +76,11 @@ namespace gg
 			IArchive* m_archive;
 
 		public:
-			Directory(IArchive* archive, const std::string& name) :
+			Directory(IArchive* archive, std::string& name) :
 				m_name(name), m_archive(archive)
 			{
-				m_archive->loadDirectoryData(&m_files);
+				m_archive->loadDirectoryData(m_name.substr(m_name.find('/') + 1), &m_files);
 			}
-
-			Directory(const Directory&) = delete;
 
 			virtual const std::string& getName() const
 			{
@@ -90,6 +93,16 @@ namespace gg
 			}
 
 			virtual Iterator end()
+			{
+				return m_files.end();
+			}
+
+			virtual ConstIterator begin() const
+			{
+				return m_files.begin();
+			}
+
+			virtual ConstIterator end() const
 			{
 				return m_files.end();
 			}
@@ -109,8 +122,6 @@ namespace gg
 			{
 			}
 
-			File(const File&) = delete;
-
 			virtual ~File()
 			{
 				unload();
@@ -124,7 +135,7 @@ namespace gg
 			virtual const char* getData() const
 			{
 				if (m_data == nullptr)
-					m_archive->loadFileData(m_name, &m_data, &m_size);
+					m_archive->loadFileData(m_name.substr(m_name.find('/') + 1), &m_data, &m_size);
 
 				return m_data;
 			}
@@ -132,7 +143,7 @@ namespace gg
 			virtual size_t getSize() const
 			{
 				if (m_data == nullptr)
-					m_archive->loadFileData(m_name, &m_data, &m_size);
+					m_archive->loadFileData(m_name.substr(m_name.find('/') + 1), &m_data, &m_size);
 
 				return m_size;
 			}

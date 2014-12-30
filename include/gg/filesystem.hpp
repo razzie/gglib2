@@ -5,6 +5,24 @@
 #include <string>
 #include <vector>
 
+/**
+ * HOW TO USE:
+ * -----------
+ *
+ * Let's say we have a 'textures.pak' named virtual directory in 'media' folder.
+ * It contains 3 files: 'ground.png', 'water.png' and 'sky.png'.
+ *
+ * 1st step:
+ * Add the virtual directory by calling: gg::fs::addVirtualDirectory("media/textures.pak");
+ *
+ * 2nd step:
+ * We wan't to access 'sky.png' for example. As it is a part of 'textures.pak' virtual directory,
+ * we should open the file by using the 'textures.pak/sky.png' name.
+ *
+ * Important:
+ * Do NOT use backslash '\' characters in a file path. Always use slash '/' instead.
+ */
+
 namespace gg
 {
 	namespace fs
@@ -14,7 +32,6 @@ namespace gg
 
 		bool addDirectory(const std::string& dir_name);
 		bool addVirtualDirectory(const std::string& archive_name);
-		//bool createVirtualDirectory(const std::string& dir_name, const std::string& archive_name);
 		std::shared_ptr<IDirectory> openDirectory(const std::string& dir_name);
 		std::shared_ptr<IFile> openFile(const std::string& file_name);
 
@@ -35,11 +52,14 @@ namespace gg
 			};
 
 			typedef std::vector<FileOrDirectory>::iterator Iterator;
+			typedef std::vector<FileOrDirectory>::const_iterator ConstIterator;
 
 			virtual ~IDirectory() {}
 			virtual const std::string& getName() const = 0;
 			virtual Iterator begin() = 0;
 			virtual Iterator end() = 0;
+			virtual ConstIterator begin() const = 0;
+			virtual ConstIterator end() const = 0;
 		};
 
 		class IFile
@@ -82,8 +102,6 @@ namespace gg
 				m_pos(0)
 			{
 			}
-
-			FileStream(const FileStream&) = delete;
 
 			std::shared_ptr<IFile> getFile() const
 			{

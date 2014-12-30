@@ -123,10 +123,20 @@ bool packDirectory(std::wstring dir_name, std::wstring archive_name)
 		uint32_t compressed_size;
 		doboz::Compressor().compress(&buffer[0], size, &buffer[size], buffer.size() - size, compressed_size);
 
-		// write data to archive
+		// get relative name of file
 		std::wstring wname = f.substr(dir_name.size() + 1);
-		std::string name(wname.begin(), wname.end());
+		std::string name;
+		for (wchar_t& wc : wname)
+		{
+			if (wc == L'\\') wc = L'/';
+			if ((unsigned)wc <= 255)
+				name += (char)wc;
+			else
+				name += '?';
+		}
 		const uint16_t name_size = name.size();
+
+		// write data to archive
 		ar.write(reinterpret_cast<const char*>(&name_size), sizeof(uint16_t)); // 16bit length of file name
 		ar.write(name.c_str(), name.size()); // file name (not zero terminated)
 		ar.write(reinterpret_cast<const char*>(&size), sizeof(uint32_t)); // 32bit original size
