@@ -42,13 +42,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>bin\</OutDir>
-    <IntDir>obj\$(Configuration)\</IntDir>
+    <IntDir>obj\$(ProjectName)\$(Configuration)\</IntDir>
     <TargetName>$(ProjectName).$(Configuration)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>bin\</OutDir>
-    <IntDir>obj\$(Configuration)\</IntDir>
+    <IntDir>obj\$(ProjectName)\$(Configuration)\</IntDir>
     <TargetName>$(ProjectName).$(Configuration)</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

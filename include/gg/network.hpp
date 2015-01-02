@@ -11,39 +11,63 @@
 
 #include <cstdint>
 #include <functional>
+#include <memory>
+#include <string>
 #include <typeinfo>
-#include "gg/buffer.hpp"
 #include "gg/var.hpp"
 
 namespace gg
 {
 	namespace net
 	{
+		struct Address
+		{
+			std::string hostname;
+			uint16_t port;
+		};
+
+		class IBuffer
+		{
+		public:
+			virtual ~IBuffer() {}
+			virtual size_t available() const;
+			virtual void skip(size_t len);
+			virtual void clear();
+			virtual void write(char c);
+			virtual void write(const char* ptr, size_t len);
+			virtual size_t peek(char* ptr, size_t len, size_t start_pos = 0);
+			virtual size_t read(char* ptr, size_t len);
+		};
+
 		class ISerializable
 		{
 		public:
-			virtual bool init(std::shared_ptr<Buffer>) = 0;
-			virtual bool save(std::shared_ptr<Buffer>) const = 0;
+			virtual ~ISerializable() {}
+			virtual bool init(std::shared_ptr<IBuffer>) = 0;
+			virtual bool save(std::shared_ptr<IBuffer>) const = 0;
 		};
 
-		typedef std::function<bool(Var&, std::shared_ptr<Buffer>)> InitFunction;
-		typedef std::function<bool(const Var&, std::shared_ptr<Buffer>)> SaveFunction;
+		typedef std::function<bool(Var&, std::shared_ptr<IBuffer>)> InitFunction;
+		typedef std::function<bool(const Var&, std::shared_ptr<IBuffer>)> SaveFunction;
 
-		uint16_t addSerializerFunctions(const std::type_info&, InitFunction, SaveFunction);
-		uint16_t getInternalTypeID(const std::type_info&);
+		typedef uint16_t TypeIndex; // 0 is invalid
+
+		TypeIndex addSerializerFunctions(const std::type_info&, InitFunction, SaveFunction);
+		TypeIndex getTypeIndex(const std::type_info&);
+		const std::type_info& getTypeInfo(TypeIndex);
 
 		template<class T>
 		uint16_t addClass()
 		{
 			InitFunction init_func =
-				[](Var& var, std::shared_ptr<Buffer> buf) -> bool
+				[](Var& var, std::shared_ptr<IBuffer> buf) -> bool
 				{
 					var.construct<T>();
 					return var.get<T>().init(buf);
 				};
 
 			SaveFunction save_func =
-				[](const Var& var, std::shared_ptr<Buffer> buf) -> bool
+				[](const Var& var, std::shared_ptr<IBuffer> buf) -> bool
 				{
 					return var.get<T>().save(buf);
 				};
@@ -55,7 +79,7 @@ namespace gg
 		uint16_t addPOD() // plain-old-data
 		{
 			InitFunction init_func =
-				[](Var& var, std::shared_ptr<Buffer> buf) -> bool
+				[](Var& var, std::shared_ptr<IBuffer> buf) -> bool
 				{
 					var.construct<T>();
 					if (buf->read(static_cast<char*>(var.getPtr()), sizeof(T)) < sizeof(T))
@@ -65,7 +89,7 @@ namespace gg
 				};
 
 			SaveFunction save_func =
-				[](const Var& var, std::shared_ptr<Buffer> buf) -> bool
+				[](const Var& var, std::shared_ptr<IBuffer> buf) -> bool
 				{
 					buf->write(static_cast<const char*>(&var.get<T>()), sizeof(T));
 					return true;

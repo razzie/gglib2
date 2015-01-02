@@ -38,9 +38,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\gg\buffer.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\gg\function.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -78,6 +75,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\filesystem_impl.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\buffer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\gg\logger.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\gg\message.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

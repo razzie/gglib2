@@ -154,6 +154,12 @@ namespace gg
 			return m_func(va);
 		}
 
+		template<class... Args>
+		Var operator()(Args... args) const
+		{
+			return m_func(std::forward<Args>(args)...);
+		}
+
 		operator bool() const
 		{
 			return static_cast<bool>(m_func);

@@ -109,7 +109,9 @@
     <ClCompile Include="src\streamutil_impl.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\gg\buffer.hpp" />
+    <ClInclude Include="include\gg\logger.hpp" />
+    <ClInclude Include="include\gg\message.hpp" />
+    <ClInclude Include="src\buffer.hpp" />
     <ClInclude Include="include\gg\filesystem.hpp" />
     <ClInclude Include="include\gg\function.hpp" />
     <ClInclude Include="include\gg\network.hpp" />
