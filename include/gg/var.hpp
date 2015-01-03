@@ -245,7 +245,7 @@ namespace gg
 
 	typedef std::vector<Var> VarArray;
 
-	std::ostream& operator<<(std::ostream& s, const Var& v)
+	inline std::ostream& operator<<(std::ostream& s, const Var& v)
 	{
 		Var::StorageBase* storage = v.m_storage;
 
@@ -255,7 +255,7 @@ namespace gg
 		return s;
 	}
 
-	std::ostream& operator<<(std::ostream& s, const VarArray& va)
+	inline std::ostream& operator<<(std::ostream& s, const VarArray& va)
 	{
 		auto it = va.begin();
 

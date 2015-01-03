@@ -1,10 +1,10 @@
 /**
-* Copyright (c) 2014-2015 Gábor Görzsöny (www.gorzsony.com)
-*
-* This source is a private work and can be used only with the
-* written permission of the author. Do not redistribute it!
-* All rights reserved.
-*/
+ * Copyright (c) 2014-2015 Gábor Görzsöny (www.gorzsony.com)
+ *
+ * This source is a private work and can be used only with the
+ * written permission of the author. Do not redistribute it!
+ * All rights reserved.
+ */
 
 #ifndef GG_MESSAGE_HPP_INCLUDED
 #define GG_MESSAGE_HPP_INCLUDED
@@ -14,7 +14,6 @@
 #include <typeinfo>
 #include <vector>
 #include "gg/var.hpp"
-#include "gg/network.hpp"
 
 namespace gg
 {
@@ -26,13 +25,32 @@ namespace gg
 
 		class Message
 		{
+		private:
+			template<class Arg0, class... Args>
+			static bool getTypes(std::vector<const std::type_info*>& types)
+			{
+				types.push_back(&typeid(Arg0));
+				return getTypes<Args...>(types);
+			}
+
+			static void registerMessageType(MessageType msg_type, std::vector<const std::type_info*>&& types);
+			static bool isValid(MessageType msg_type, const VarArray& args);
+			static bool sendMessage(MessageType msg_type, MessageHandlerID handler_id, VarArray&& args);
+			static bool sendMessageToGroup(MessageType msg_type, MessageHandlerGroupID group_id, VarArray&& args);
+
 		protected:
 			MessageType m_msg_type;
 			MessageHandlerID m_sender; // 0 means not specified
 			VarArray m_args;
 
 		public:
-			static const size_t MAX_ARG_NUM = 16; // a message can have maximum 16 args
+			template<class... Args>
+			static void registerType(MessageType msg_type)
+			{
+				std::vector<const std::type_info*> types;
+				getTypes<Args...>(types);
+				registerMessageType(msg_type, std::move(types));
+			}
 
 			Message(MessageType msg_type, MessageHandlerID sender = 0) :
 				m_msg_type(msg_type),
@@ -41,11 +59,11 @@ namespace gg
 			}
 
 			template<class... Args>
-			Message(MessageType msg_type, MessageHandlerID sender, Args... args) :
+			Message(MessageType msg_type, MessageHandlerID sender = 0, Args...) :
 				m_msg_type(msg_type),
-				m_sender(sender)
+				m_sender(sender),
+				m_args(std::forward<Args>(args)...)
 			{
-				m_args.insert({ std::forward<Args>(args)... });
 			}
 
 			Message(Message&& msg) :
@@ -55,31 +73,44 @@ namespace gg
 			{
 			}
 
-			virtual ~Message()
-			{
-			}
-
 			template<class... Args>
-			bool addArgs(Args... args)
+			void insert(Args... args)
 			{
-				m_args.insert({ args... });
-				return true;
+				m_args.insert({ std::forward<Args>(args)... });
 			}
 			
-			template<class T>
-			T& getArg(size_t arg_num)
+			Var& operator[](size_t arg_num)
 			{
-				return m_args[arg_num].get<T>();
+				return m_args[arg_num];
 			}
 
-			template<class T>
-			const T& getArg(size_t arg_num) const
+			const Var& operator[](size_t arg_num) const
 			{
-				return m_args[arg_num].get<T>();
+				return m_args[arg_num];
 			}
 
-			bool send(MessageHandlerID);
-			bool sendToGroup(MessageHandlerGroupID);
+			MessageHandlerID getSender() const
+			{
+				return m_sender;
+			}
+
+			// sends the message to a message handler (and possibly invalidates it)
+			bool send(MessageHandlerID handler_id)
+			{
+				if (!isValid(m_msg_type, m_args))
+					return false;
+
+				return sendMessage(m_msg_type, handler_id, std::move(m_args));
+			}
+
+			// sends the message to a message handler group (and possibly invalidates it)
+			bool sendToGroup(MessageHandlerGroupID group_id)
+			{
+				if (!isValid(m_msg_type, m_args))
+					return false;
+
+				return sendMessageToGroup(m_msg_type, group_id, std::move(m_args));
+			}
 		};
 
 		template<class... Args>
@@ -97,49 +128,17 @@ namespace gg
 		class IMessageHandler
 		{
 		private:
-			struct MessageTypeData
-			{
-				MessageType msg_type;
-				size_t arg_count;
-				net::TypeIndex arg_types[Message::MAX_ARG_NUM];
-			};
-
-			MessageHandlerID m_id;
-			MessageHandlerGroupID m_group_id;
-			std::vector<MessageTypeData> m_msg_types;
-
-			template<class... Args>
-			void addMessageType(MessageType msg_type)
-			{
-				struct
-				{
-					size_t arg_count = 0;
-					net::TypeIndex arg_types[Message::MAX_ARG_NUM];
-
-					int operator()(const std::type_info& t)
-					{
-						arg_types[arg_count] = net::getTypeIndex(t);
-						++arg_count;
-						return 0;
-					}
-				} addType;
-
-				struct
-				{
-					void operator()(...) {}
-				} expand;
-
-				expand(addType(typeid(Args))...);
-
-				m_msg_types.push_back({ msg_type, addType.arg_count, addType.arg_types });
-			}
-
 			static std::shared_ptr<Message> getNextMessage(const IMessageHandler*);
 			static void removeMessageHandler(const IMessageHandler*);
 			static MessageHandlerID registerMessageHandler(
 				const IMessageHandler*,
 				MessageHandlerGroupID group_id = 0,
 				MessageHandlerID custom_id = 0);
+
+		protected:
+			MessageHandlerID m_id;
+			MessageHandlerGroupID m_group_id;
+			std::vector<MessageType> m_msg_types;
 
 		public:
 			IMessageHandler(MessageHandlerGroupID group_id = 0, MessageHandlerID custom_id = 0) :
@@ -163,10 +162,20 @@ namespace gg
 				return m_group_id;
 			}
 
-			bool checkMessage(const Message& msg) const
+			void registerMessageType(MessageType msg_type)
 			{
-				// should compare argument types here
-				return true;
+				for (MessageType t : m_msg_types)
+					if (t == msg_type) return;
+
+				m_msg_types.push_back(msg_type);
+			}
+
+			bool isMessageTypeSupported(MessageType msg_type) const
+			{
+				for (MessageType t : m_msg_types)
+					if (t == msg_type) return true;
+
+				return false;
 			}
 
 			std::shared_ptr<Message> getNextMessage() const

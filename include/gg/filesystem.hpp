@@ -6,13 +6,6 @@
  * All rights reserved.
  */
 
-#ifndef GG_FILESYSTEM_HPP_INCLUDED
-#define GG_FILESYSTEM_HPP_INCLUDED
-
-#include <memory>
-#include <string>
-#include <vector>
-
 /**
  * HOW TO USE:
  * -----------
@@ -30,6 +23,13 @@
  * Important:
  * Do NOT use backslash '\' characters in a file path. Always use slash '/' instead.
  */
+
+#ifndef GG_FILESYSTEM_HPP_INCLUDED
+#define GG_FILESYSTEM_HPP_INCLUDED
+
+#include <memory>
+#include <string>
+#include <vector>
 
 namespace gg
 {

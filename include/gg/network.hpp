@@ -6,6 +6,16 @@
  * All rights reserved.
  */
 
+/**
+ * HOW TO USE:
+ * -----------
+ *
+ * You can use gg::net::addClass<Foo>() or gg::net::addPOD<int>() to register
+ * serializable types (where Foo inherits 'init' and 'save' methods from
+ * ISerializable). The only purpose of this is to be able to send messages
+ * (see 'gg/message.hpp') over network.
+ */
+
 #ifndef GG_NETWORK_HPP_INCLUDED
 #define GG_NETWORK_HPP_INCLUDED
 
@@ -20,11 +30,11 @@ namespace gg
 {
 	namespace net
 	{
-		struct Address
+		/*struct Address
 		{
 			std::string hostname;
 			uint16_t port;
-		};
+		};*/
 
 		class IBuffer
 		{
