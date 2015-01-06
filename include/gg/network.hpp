@@ -10,9 +10,9 @@
  * HOW TO USE:
  * -----------
  *
- * You can use gg::net::addClass<Foo>() or gg::net::addPOD<int>() to register
+ * You can use 'gg::net::addClass<Foo>()' or 'gg::net::addPOD<int>()' to register
  * serializable types (where Foo inherits 'init' and 'save' methods from
- * ISerializable). The only purpose of this is to be able to send messages
+ * 'ISerializable'). The only purpose of this is to be able to send messages
  * (see 'gg/message.hpp') over network.
  */
 

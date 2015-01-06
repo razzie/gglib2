@@ -66,7 +66,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GGLIB_DEBUG;WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>include;src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -111,6 +111,7 @@
     <ClCompile Include="src\streamutil_impl.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\gg\fastmutex.hpp" />
     <ClInclude Include="include\gg\logger.hpp" />
     <ClInclude Include="include\gg\message.hpp" />
     <ClInclude Include="src\buffer.hpp" />

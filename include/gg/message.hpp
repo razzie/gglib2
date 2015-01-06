@@ -6,13 +6,32 @@
  * All rights reserved.
  */
 
+/**
+ * HOW TO USE:
+ * -----------
+ *
+ * Classes that inherit from 'gg::msg::IMessageReceiver' are able to receive messages
+ * sent from other modules of the program. Upon instantiating such a class, a unique
+ * message handler ID is assigned to it. This ID can be used to send messages directly
+ * to the new instance. You can do so by calling:
+ * 'gg::msg::sendMessage(type, {args...}, {destination IDs}, optional sender ID)'
+ *
+ * Use 'gg::msg::IMessageHandler::getNextMessage()' function to receive messages.
+ * Message arguments can be accessed by 'message->getArg(0)'.
+ *
+ * Messages have a message type (a number) and variable number of arguments. They
+ * also have an optional sender, which is the ID of a message handler.
+ */
+
 #ifndef GG_MESSAGE_HPP_INCLUDED
 #define GG_MESSAGE_HPP_INCLUDED
 
 #include <cstdint>
 #include <memory>
+#include <queue>
 #include <typeinfo>
 #include <vector>
+#include "gg/fastmutex.hpp"
 #include "gg/var.hpp"
 
 namespace gg
@@ -21,153 +40,112 @@ namespace gg
 	{
 		typedef uint16_t MessageType; // 0 is invalid
 		typedef uint16_t MessageHandlerID; // 0 is invalid
-		typedef uint16_t MessageHandlerGroupID; // 0 is invalid
+		typedef uint16_t MessageHandlerGroupID;
 
-		class Message
+		class Message final
 		{
 		private:
-			template<class Arg0, class... Args>
-			static bool getTypes(std::vector<const std::type_info*>& types)
-			{
-				types.push_back(&typeid(Arg0));
-				return getTypes<Args...>(types);
-			}
-
-			static void registerMessageType(MessageType msg_type, std::vector<const std::type_info*>&& types);
-			static bool isValid(MessageType msg_type, const VarArray& args);
-			static bool sendMessage(MessageType msg_type, MessageHandlerID handler_id, VarArray&& args);
-			static bool sendMessageToGroup(MessageType msg_type, MessageHandlerGroupID group_id, VarArray&& args);
-
-		protected:
 			MessageType m_msg_type;
-			MessageHandlerID m_sender; // 0 means not specified
 			VarArray m_args;
+			MessageHandlerID m_sender; // 0 means not specified
 
 		public:
-			template<class... Args>
-			static void registerType(MessageType msg_type)
-			{
-				std::vector<const std::type_info*> types;
-				getTypes<Args...>(types);
-				registerMessageType(msg_type, std::move(types));
-			}
-
-			Message(MessageType msg_type, MessageHandlerID sender = 0) :
-				m_msg_type(msg_type),
-				m_sender(sender)
+			Message(MessageType msg_type, VarArray&& args, MessageHandlerID sender = 0) :
+				m_msg_type(msg_type), m_args(args), m_sender(sender)
 			{
 			}
 
-			template<class... Args>
-			Message(MessageType msg_type, MessageHandlerID sender = 0, Args...) :
-				m_msg_type(msg_type),
-				m_sender(sender),
-				m_args(std::forward<Args>(args)...)
+			MessageType getType() const
 			{
+				return m_msg_type;
 			}
 
-			Message(Message&& msg) :
-				m_msg_type(msg.m_msg_type),
-				m_sender(msg.m_sender),
-				m_args(std::move(msg.m_args))
-			{
-			}
-
-			template<class... Args>
-			void insert(Args... args)
-			{
-				m_args.insert({ std::forward<Args>(args)... });
-			}
-			
-			Var& operator[](size_t arg_num)
+			const Var& getArg(size_t arg_num) const
 			{
 				return m_args[arg_num];
 			}
 
-			const Var& operator[](size_t arg_num) const
+			const VarArray& getArgs() const
 			{
-				return m_args[arg_num];
+				return m_args;
 			}
 
 			MessageHandlerID getSender() const
 			{
 				return m_sender;
 			}
-
-			// sends the message to a message handler (and possibly invalidates it)
-			bool send(MessageHandlerID handler_id)
-			{
-				if (!isValid(m_msg_type, m_args))
-					return false;
-
-				return sendMessage(m_msg_type, handler_id, std::move(m_args));
-			}
-
-			// sends the message to a message handler group (and possibly invalidates it)
-			bool sendToGroup(MessageHandlerGroupID group_id)
-			{
-				if (!isValid(m_msg_type, m_args))
-					return false;
-
-				return sendMessageToGroup(m_msg_type, group_id, std::move(m_args));
-			}
 		};
 
-		template<class... Args>
-		bool sendMessage(MessageType msg_type, MessageHandlerID handler_id, Args... args)
+		bool addMessageType(MessageType, std::vector<const std::type_info*>&&);
+		unsigned sendMessage(std::shared_ptr<Message>, const std::vector<MessageHandlerID>&);
+		unsigned sendMessageToGroups(std::shared_ptr<Message>, const std::vector<MessageHandlerGroupID>&);
+
+		inline unsigned sendMessage(MessageType msg_type, VarArray&& args, const std::vector<MessageHandlerID>& handler_ids, MessageHandlerID sender = 0)
 		{
-			return Message(msg_type, 0, std::forward<Args>(args)...).send(handler_id);
+			std::shared_ptr<Message> msg(new Message(msg_type, std::move(args), sender));
+			return sendMessage(msg, handler_ids);
+		}
+
+		inline unsigned sendMessageToGroups(MessageType msg_type, VarArray&& args, const std::vector<MessageHandlerGroupID>& group_ids, MessageHandlerID sender = 0)
+		{
+			std::shared_ptr<Message> msg(new Message(msg_type, std::move(args), sender));
+			return sendMessageToGroups(msg, group_ids);
 		}
 
 		template<class... Args>
-		bool sendMessageToGroup(MessageType msg_type, MessageHandlerGroupID group_id, Args... args)
+		bool addMessageType(MessageType msg_type)
 		{
-			return Message(msg_type, 0, std::forward<Args>(args)...).sendToGroup(group_id);
+			// message types between 1-100 are internally reserved
+			if (msg_type <= 100)
+				return false;
+
+			return addMessageType(msg_type, { typeid(Args)... });
 		}
+
+		class MessageHandlerAccessor;
 
 		class IMessageHandler
 		{
 		private:
-			static std::shared_ptr<Message> getNextMessage(const IMessageHandler*);
-			static void removeMessageHandler(const IMessageHandler*);
-			static MessageHandlerID registerMessageHandler(
-				const IMessageHandler*,
-				MessageHandlerGroupID group_id = 0,
-				MessageHandlerID custom_id = 0);
+			friend class MessageHandlerAccessor;
 
-		protected:
 			MessageHandlerID m_id;
-			MessageHandlerGroupID m_group_id;
+			FastMutex m_msg_queue_mutex;
+			std::queue<std::shared_ptr<Message>> m_msg_queue;
 			std::vector<MessageType> m_msg_types;
 
-		public:
-			IMessageHandler(MessageHandlerGroupID group_id = 0, MessageHandlerID custom_id = 0) :
-				m_id(registerMessageHandler(this, group_id, custom_id)),
-				m_group_id(group_id)
-			{
-			}
+			static void registerInstance(IMessageHandler*);
+			static void unregisterInstance(MessageHandlerID);
+			static void addToGroup(MessageHandlerID, MessageHandlerGroupID);
 
-			virtual ~IMessageHandler()
-			{
-				removeMessageHandler(this);
-			}
-
-			MessageHandlerID getID() const
-			{
-				return m_id;
-			}
-
-			MessageHandlerGroupID getGroupID() const
-			{
-				return m_group_id;
-			}
-
-			void registerMessageType(MessageType msg_type)
+		protected:
+			void addMessageType(MessageType msg_type)
 			{
 				for (MessageType t : m_msg_types)
 					if (t == msg_type) return;
 
 				m_msg_types.push_back(msg_type);
+			}
+
+			void addToGroup(MessageHandlerGroupID group_id) const
+			{
+				addToGroup(m_id, group_id);
+			}
+
+		public:
+			IMessageHandler()
+			{
+				registerInstance(this); // sets the value of m_id
+			}
+
+			virtual ~IMessageHandler()
+			{
+				unregisterInstance(m_id);
+			}
+
+			MessageHandlerID getID() const
+			{
+				return m_id;
 			}
 
 			bool isMessageTypeSupported(MessageType msg_type) const
@@ -178,21 +156,20 @@ namespace gg
 				return false;
 			}
 
-			std::shared_ptr<Message> getNextMessage() const
+			std::shared_ptr<Message> getNextMessage()
 			{
-				return getNextMessage(this);
-			}
+				std::lock_guard<FastMutex> guard(m_msg_queue_mutex);
 
-			template<class... Args>
-			bool sendMessage(MessageType msg_type, MessageHandlerID handler_id, Args... args) const
-			{
-				return Message(msg_type, m_id, std::forward<Args>(args)...).send(handler_id);
-			}
-
-			template<class... Args>
-			bool sendMessageToGroup(MessageType msg_type, MessageHandlerGroupID group_id, Args... args) const
-			{
-				return Message(msg_type, m_id, std::forward<Args>(args)...).sendToGroup(group_id);
+				if (!m_msg_queue.empty())
+				{
+					auto msg = m_msg_queue.front();
+					m_msg_queue.pop();
+					return msg;
+				}
+				else
+				{
+					return {};
+				}
 			}
 		};
 	};

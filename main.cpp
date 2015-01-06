@@ -1,4 +1,5 @@
 #include <iostream>
+#include "gg/fastmutex.hpp"
 #include "gg/streamutil.hpp"
 #include "gg/var.hpp"
 #include "gg/function.hpp"

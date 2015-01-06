@@ -14,7 +14,7 @@
  * It contains 3 files: 'ground.png', 'water.png' and 'sky.png'.
  *
  * 1st step:
- * Add the virtual directory by calling: gg::fs::addVirtualDirectory("media/textures.pak");
+ * Add the virtual directory by calling 'gg::fs::addVirtualDirectory("media/textures.pak")'.
  *
  * 2nd step:
  * We wan't to access 'sky.png' for example. As it is a part of 'textures.pak' virtual directory,
