@@ -12,25 +12,25 @@
 #include "message_impl.hpp"
 
 static gg::FastMutex s_msg_types_mutex;
-static std::map<gg::msg::MessageType, std::vector<const std::type_info*>> s_msg_types;
+static std::map<gg::MessageType, std::vector<const std::type_info*>> s_msg_types;
 
-static std::atomic<gg::msg::MessageHandlerID> s_msg_handler_id = { 1 };
+static std::atomic<gg::MessageHandlerID> s_msg_handler_id = { 1 };
 static const size_t MSG_HANDLERS_SEPARATION_NUM = 4;
 static gg::FastMutex s_msg_handlers_mutex[MSG_HANDLERS_SEPARATION_NUM];
-static std::map<gg::msg::MessageHandlerID, gg::msg::IMessageHandler*> s_msg_handlers[MSG_HANDLERS_SEPARATION_NUM];
+static std::map<gg::MessageHandlerID, gg::IMessageHandler*> s_msg_handlers[MSG_HANDLERS_SEPARATION_NUM];
 
 static const size_t MSG_GROUPS_SEPARATION_NUM = 4;
 static gg::FastMutex s_groups_mutex[MSG_GROUPS_SEPARATION_NUM];
-static std::map<gg::msg::MessageHandlerGroupID, std::vector<gg::msg::MessageHandlerID>> s_groups[MSG_GROUPS_SEPARATION_NUM];
+static std::map<gg::MessageHandlerGroupID, std::vector<gg::MessageHandlerID>> s_groups[MSG_GROUPS_SEPARATION_NUM];
 
 
-bool gg::msg::addMessageType(gg::msg::MessageType msg_type, std::vector<const std::type_info*>&& types)
+bool gg::addMessageType(gg::MessageType msg_type, std::vector<const std::type_info*>&& types)
 {
 	std::lock_guard<gg::FastMutex> guard(s_msg_types_mutex);
 	return s_msg_types.emplace(msg_type, std::move(types)).second;
 }
 
-static bool isMessageValid(gg::msg::MessageType msg_type, const gg::VarArray& args)
+static bool isMessageValid(gg::MessageType msg_type, const gg::VarArray& args)
 {
 #ifdef GGLIB_DEBUG
 	decltype(s_msg_types.begin()) it;
@@ -59,7 +59,7 @@ static bool isMessageValid(gg::msg::MessageType msg_type, const gg::VarArray& ar
 #endif
 }
 
-unsigned gg::msg::sendMessage(std::shared_ptr<gg::msg::Message> msg, const std::vector<gg::msg::MessageHandlerID>& handler_ids)
+unsigned gg::sendMessage(std::shared_ptr<gg::Message> msg, const std::vector<gg::MessageHandlerID>& handler_ids)
 {
 	if (!isMessageValid(msg->getType(), msg->getArgs()))
 		return 0;
@@ -76,7 +76,7 @@ unsigned gg::msg::sendMessage(std::shared_ptr<gg::msg::Message> msg, const std::
 		{
 			if (it->second->isMessageTypeSupported(msg->getType()))
 			{
-				gg::msg::MessageHandlerAccessor(it->second).pushMessage(msg);
+				gg::MessageHandlerAccessor(it->second).pushMessage(msg);
 			}
 		}
 	}
@@ -84,13 +84,13 @@ unsigned gg::msg::sendMessage(std::shared_ptr<gg::msg::Message> msg, const std::
 	return receiver_cnt;
 }
 
-unsigned gg::msg::sendMessageToGroups(std::shared_ptr<gg::msg::Message> msg, const std::vector<gg::msg::MessageHandlerGroupID>& group_ids)
+unsigned gg::sendMessageToGroups(std::shared_ptr<gg::Message> msg, const std::vector<gg::MessageHandlerGroupID>& group_ids)
 {
 	return 0;
 }
 
 
-void gg::msg::IMessageHandler::registerInstance(gg::msg::IMessageHandler* handler)
+void gg::IMessageHandler::registerInstance(gg::IMessageHandler* handler)
 {
 	MessageHandlerID handler_id = s_msg_handler_id.fetch_add(1);
 	MessageHandlerAccessor(handler).setID(handler_id);
@@ -99,7 +99,7 @@ void gg::msg::IMessageHandler::registerInstance(gg::msg::IMessageHandler* handle
 	s_msg_handlers[handler_id % MSG_HANDLERS_SEPARATION_NUM].emplace(handler_id, handler);
 }
 
-void gg::msg::IMessageHandler::unregisterInstance(gg::msg::MessageHandlerID handler_id)
+void gg::IMessageHandler::unregisterInstance(gg::MessageHandlerID handler_id)
 {
 	if (handler_id == 0) return;
 
@@ -107,7 +107,7 @@ void gg::msg::IMessageHandler::unregisterInstance(gg::msg::MessageHandlerID hand
 	s_msg_handlers[handler_id % MSG_HANDLERS_SEPARATION_NUM].erase(handler_id);
 }
 
-void gg::msg::IMessageHandler::addToGroup(gg::msg::MessageHandlerID handler_id, gg::msg::MessageHandlerGroupID group_id)
+void gg::IMessageHandler::addToGroup(gg::MessageHandlerID handler_id, gg::MessageHandlerGroupID group_id)
 {
 	if (handler_id == 0 || group_id == 0) return;
 	std::lock_guard<gg::FastMutex> guard(s_groups_mutex[group_id % MSG_GROUPS_SEPARATION_NUM]);

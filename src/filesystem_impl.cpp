@@ -12,7 +12,7 @@
 #include "filesystem_impl.hpp"
 
 std::mutex s_vdirs_mutex;
-std::map<std::string, gg::fs::VirtualDirectory*> s_vdirs;
+std::map<std::string, gg::VirtualDirectory*> s_vdirs;
 
 static std::string getPathRoot(const std::string& path)
 {
@@ -35,7 +35,7 @@ static std::string getPathEnd(const std::string& path)
 }*/
 
 
-bool gg::fs::addVirtualDirectory(const std::string& vdir_path)
+bool gg::addVirtualDirectory(const std::string& vdir_path)
 {
 	VirtualDirectory* vdir = new VirtualDirectory(vdir_path);
 
@@ -51,7 +51,7 @@ bool gg::fs::addVirtualDirectory(const std::string& vdir_path)
 	}
 }
 
-std::shared_ptr<gg::fs::IDirectory> gg::fs::openDirectory(const std::string& dir_name)
+std::shared_ptr<gg::IDirectory> gg::openDirectory(const std::string& dir_name)
 {
 	std::string vdir_name = getPathRoot(dir_name);
 
@@ -66,7 +66,7 @@ std::shared_ptr<gg::fs::IDirectory> gg::fs::openDirectory(const std::string& dir
 	}
 }
 
-std::shared_ptr<gg::fs::IFile> gg::fs::openFile(const std::string& file_name)
+std::shared_ptr<gg::IFile> gg::openFile(const std::string& file_name)
 {
 	std::string vdir_name = getPathRoot(file_name);
 
@@ -82,18 +82,18 @@ std::shared_ptr<gg::fs::IFile> gg::fs::openFile(const std::string& file_name)
 }
 
 
-gg::fs::VirtualDirectory::VirtualDirectory(const std::string& vdir_name) :
+gg::VirtualDirectory::VirtualDirectory(const std::string& vdir_name) :
 	m_file(vdir_name, std::ios::in | std::ios::binary),
 	m_name(getPathEnd(vdir_name))
 {
 }
 
-gg::fs::VirtualDirectory::~VirtualDirectory()
+gg::VirtualDirectory::~VirtualDirectory()
 {
 	m_file.close();
 }
 
-bool gg::fs::VirtualDirectory::init()
+bool gg::VirtualDirectory::init()
 {
 	if (!m_file.is_open())
 		return false;
@@ -128,17 +128,17 @@ bool gg::fs::VirtualDirectory::init()
 	return true;
 }
 
-const std::string& gg::fs::VirtualDirectory::getName() const
+const std::string& gg::VirtualDirectory::getName() const
 {
 	return m_name;
 }
 
-std::shared_ptr<gg::fs::IDirectory> gg::fs::VirtualDirectory::getDirectory(const std::string& dir_name)
+std::shared_ptr<gg::IDirectory> gg::VirtualDirectory::getDirectory(const std::string& dir_name)
 {
 	return std::shared_ptr<IDirectory>(new Directory(this, m_name + '/' + dir_name));
 }
 
-std::shared_ptr<gg::fs::IFile> gg::fs::VirtualDirectory::getFile(const std::string& file_name)
+std::shared_ptr<gg::IFile> gg::VirtualDirectory::getFile(const std::string& file_name)
 {
 	std::lock_guard<std::mutex> guard(m_mutex);
 
@@ -162,7 +162,7 @@ std::shared_ptr<gg::fs::IFile> gg::fs::VirtualDirectory::getFile(const std::stri
 	return {};
 }
 
-bool gg::fs::VirtualDirectory::loadDirectoryData(const std::string& dir_name, std::vector<IDirectory::FileOrDirectory>* files)
+bool gg::VirtualDirectory::loadDirectoryData(const std::string& dir_name, std::vector<IDirectory::FileOrDirectory>* files)
 {
 	std::lock_guard<std::mutex> guard(m_mutex);
 
@@ -202,7 +202,7 @@ bool gg::fs::VirtualDirectory::loadDirectoryData(const std::string& dir_name, st
 	return true;
 }
 
-bool gg::fs::VirtualDirectory::loadFileData(const std::string& file_name, const char** data, size_t* size)
+bool gg::VirtualDirectory::loadFileData(const std::string& file_name, const char** data, size_t* size)
 {
 	std::lock_guard<std::mutex> guard(m_mutex);
 

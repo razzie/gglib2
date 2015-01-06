@@ -33,98 +33,95 @@
 
 namespace gg
 {
-	namespace fs
+	class IDirectory;
+	class IFile;
+
+	bool addVirtualDirectory(const std::string& vdir_path);
+	std::shared_ptr<IDirectory> openDirectory(const std::string& dir_name);
+	std::shared_ptr<IFile> openFile(const std::string& file_name);
+
+	class IDirectory
 	{
-		class IDirectory;
-		class IFile;
-
-		bool addVirtualDirectory(const std::string& vdir_path);
-		std::shared_ptr<IDirectory> openDirectory(const std::string& dir_name);
-		std::shared_ptr<IFile> openFile(const std::string& file_name);
-
-		class IDirectory
+	public:
+		struct FileOrDirectory
 		{
-		public:
-			struct FileOrDirectory
+			enum Type
 			{
-				enum Type
-				{
-					FILE,
-					DIRECTORY
-				};
-
-				std::string name;
-				uint32_t size;
-				Type type;
+				FILE,
+				DIRECTORY
 			};
 
-			typedef std::vector<FileOrDirectory>::iterator Iterator;
-			typedef std::vector<FileOrDirectory>::const_iterator ConstIterator;
-
-			virtual ~IDirectory() {}
-			virtual const std::string& getName() const = 0;
-			virtual Iterator begin() = 0;
-			virtual Iterator end() = 0;
-			virtual ConstIterator begin() const = 0;
-			virtual ConstIterator end() const = 0;
+			std::string name;
+			uint32_t size;
+			Type type;
 		};
 
-		class IFile
+		typedef std::vector<FileOrDirectory>::iterator Iterator;
+		typedef std::vector<FileOrDirectory>::const_iterator ConstIterator;
+
+		virtual ~IDirectory() {}
+		virtual const std::string& getName() const = 0;
+		virtual Iterator begin() = 0;
+		virtual Iterator end() = 0;
+		virtual ConstIterator begin() const = 0;
+		virtual ConstIterator end() const = 0;
+	};
+
+	class IFile
+	{
+	public:
+		virtual ~IFile() {}
+		virtual const std::string& getName() const = 0;
+		virtual const char* getData() const = 0;
+		virtual size_t getSize() const = 0;
+		virtual void unload() = 0; // can cause crash if other thread is reading file data!
+	};
+
+	class FileStream : public std::istream, public std::streambuf
+	{
+	private:
+		std::shared_ptr<IFile> m_file;
+		size_t m_pos;
+
+	protected:
+		// underflow & uflow are inherited from std::streambuf
+
+		virtual int underflow() // get character without advancing position
 		{
-		public:
-			virtual ~IFile() {}
-			virtual const std::string& getName() const = 0;
-			virtual const char* getData() const = 0;
-			virtual size_t getSize() const = 0;
-			virtual void unload() = 0; // can cause crash if other thread is reading file data!
-		};
+			if (m_pos >= m_file->getSize())
+				return std::char_traits<char>::eof();
+			else
+				return static_cast<int>(m_file->getData()[m_pos]);
+		}
 
-		class FileStream : public std::istream, public std::streambuf
+		virtual int uflow() // get character and advance position
 		{
-		private:
-			std::shared_ptr<IFile> m_file;
-			size_t m_pos;
+			int c = underflow();
+			++m_pos;
+			return c;
+		}
 
-		protected:
-			// underflow & uflow are inherited from std::streambuf
+	public:
+		FileStream(const std::string& file_name) :
+			std::istream(this), m_file(openFile(file_name)),
+			m_pos(0)
+		{
+		}
 
-			virtual int underflow() // get character without advancing position
-			{
-				if (m_pos >= m_file->getSize())
-					return std::char_traits<char>::eof();
-				else
-					return static_cast<int>(m_file->getData()[m_pos]);
-			}
+		std::shared_ptr<IFile> getFile() const
+		{
+			return m_file;
+		}
 
-			virtual int uflow() // get character and advance position
-			{
-				int c = underflow();
-				++m_pos;
-				return c;
-			}
+		operator bool() const
+		{
+			return static_cast<bool>(m_file);
+		}
 
-		public:
-			FileStream(const std::string& file_name) :
-				std::istream(this), m_file(openFile(file_name)),
-				m_pos(0)
-			{
-			}
-
-			std::shared_ptr<IFile> getFile() const
-			{
-				return m_file;
-			}
-
-			operator bool() const
-			{
-				return static_cast<bool>(m_file);
-			}
-
-			void reset()
-			{
-				m_pos = 0;
-			}
-		};
+		void reset()
+		{
+			m_pos = 0;
+		}
 	};
 };
 

@@ -8,27 +8,27 @@
 
 #include "network_impl.hpp"
 
-gg::net::TypeIndex gg::net::addSerializerFunctions(const std::type_info& type, gg::net::InitFunction init_func, gg::net::SaveFunction save_func)
+gg::TypeIndex gg::addSerializerFunctions(const std::type_info& type, gg::InitFunction init_func, gg::SaveFunction save_func)
 {
 	return 0;
 }
 
-gg::net::TypeIndex gg::net::getTypeIndex(const std::type_info& type)
+gg::TypeIndex gg::getTypeIndex(const std::type_info& type)
 {
 	return 0;
 }
 
-const std::type_info& gg::net::getTypeInfo(gg::net::TypeIndex type)
+const std::type_info& gg::getTypeInfo(gg::TypeIndex type)
 {
 	return typeid(void);
 }
 
-bool gg::net::serialize(const gg::Var& var, std::shared_ptr<gg::net::IBuffer> buffer)
+bool gg::serialize(const gg::Var& var, std::shared_ptr<gg::IBuffer> buffer)
 {
 	return false;
 }
 
-bool gg::net::deserialize(gg::Var& var, std::shared_ptr<gg::net::IBuffer> buffer)
+bool gg::deserialize(gg::Var& var, std::shared_ptr<gg::IBuffer> buffer)
 {
 	return false;
 }

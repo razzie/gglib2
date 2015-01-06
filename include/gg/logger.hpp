@@ -13,12 +13,13 @@
 
 namespace gg
 {
-	namespace log
+	class ILogger : public virtual std::ostream
 	{
-		extern std::ostream& console; // gglib console
-		extern std::ostream& file;
-		extern std::ostream& out; // standard output
+	public:
+		virtual ~ILogger() {}
 	};
+
+	extern ILogger& log;
 };
 
 #endif // GG_LOGGER_HPP_INCLUDED

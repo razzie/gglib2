@@ -13,11 +13,8 @@
 
 namespace gg
 {
-	namespace net
-	{
-		bool serialize(const Var&, std::shared_ptr<IBuffer>);
-		bool deserialize(Var&, std::shared_ptr<IBuffer>);
-	}
+	bool serialize(const Var&, std::shared_ptr<IBuffer>);
+	bool deserialize(Var&, std::shared_ptr<IBuffer>);
 }
 
 #endif // GG_NETWORK_IMPL_HPP_INCLUDED
