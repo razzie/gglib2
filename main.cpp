@@ -8,7 +8,7 @@
 #include "gg/network.hpp"
 #include "gg/filesystem.hpp"
 #include "gg/logger.hpp"
-#include "gg/message.hpp"
+#include "gg/event.hpp"
 
 int main()
 {

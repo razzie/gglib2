@@ -105,7 +105,7 @@
     <ClCompile Include="src\Doboz\Decompressor.cpp" />
     <ClCompile Include="src\Doboz\Dictionary.cpp" />
     <ClCompile Include="src\filesystem_impl.cpp" />
-    <ClCompile Include="src\message_impl.cpp" />
+    <ClCompile Include="src\event_impl.cpp" />
     <ClCompile Include="src\network_impl.cpp" />
     <ClCompile Include="src\NtHookEngine\NtHookEngine.cpp" />
     <ClCompile Include="src\streamutil_impl.cpp" />
@@ -113,7 +113,7 @@
   <ItemGroup>
     <ClInclude Include="include\gg\fastmutex.hpp" />
     <ClInclude Include="include\gg\logger.hpp" />
-    <ClInclude Include="include\gg\message.hpp" />
+    <ClInclude Include="include\gg\event.hpp" />
     <ClInclude Include="src\buffer.hpp" />
     <ClInclude Include="include\gg\filesystem.hpp" />
     <ClInclude Include="include\gg\function.hpp" />
@@ -124,7 +124,7 @@
     <ClInclude Include="src\Doboz\Decompressor.h" />
     <ClInclude Include="src\Doboz\Dictionary.h" />
     <ClInclude Include="src\filesystem_impl.hpp" />
-    <ClInclude Include="src\message_impl.hpp" />
+    <ClInclude Include="src\event_impl.hpp" />
     <ClInclude Include="src\network_impl.hpp" />
     <ClInclude Include="src\NtHookEngine\distorm.h" />
     <ClInclude Include="src\stringutil.hpp" />
