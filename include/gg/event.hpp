@@ -17,12 +17,13 @@
  * 'gg::msg::sendEvent(type, {args...}, {destination IDs}, optional sender ID)'
  *
  * Use 'gg::msg::IEventReceiver::getNextEvent()' function to receive queued events.
- * Event arguments can be accessed by 'message->getArg(0)'.
+ * Event arguments can be accessed by 'message->getArg(arg_num)'. Argument numbers
+ * are 0 based.
  *
  * Events have an event type (a number) and variable number of arguments. They
  * also have an optional sender, which is the ID of an event receiver.
  *
- * An event type should before sending any event of its kind:
+ * An event type should be registered before sending any event of its kind:
  * 'gg::addEventType<int, float, std::string>(123)'
  */
 
