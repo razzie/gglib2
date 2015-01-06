@@ -19,10 +19,6 @@ static const size_t MSG_HANDLERS_SEPARATION_NUM = 4;
 static gg::FastMutex s_evt_receivers_mutex[MSG_HANDLERS_SEPARATION_NUM];
 static std::map<gg::EventReceiverID, gg::IEventReceiver*> s_evt_receivers[MSG_HANDLERS_SEPARATION_NUM];
 
-static const size_t MSG_GROUPS_SEPARATION_NUM = 4;
-static gg::FastMutex s_groups_mutex[MSG_GROUPS_SEPARATION_NUM];
-static std::map<gg::EventReceiverGroupID, std::vector<gg::EventReceiverID>> s_groups[MSG_GROUPS_SEPARATION_NUM];
-
 
 bool gg::addEventType(gg::EventType evt_type, std::vector<const std::type_info*>&& types)
 {
@@ -32,7 +28,7 @@ bool gg::addEventType(gg::EventType evt_type, std::vector<const std::type_info*>
 
 static bool isEventValid(gg::EventType evt_type, const gg::VarArray& args)
 {
-#ifdef GGLIB_DEBUG
+//#ifdef GGLIB_DEBUG
 	decltype(s_evt_types.begin()) it;
 
 	{ // using exception-safe lock_guard in block
@@ -54,9 +50,9 @@ static bool isEventValid(gg::EventType evt_type, const gg::VarArray& args)
 
 		return true;
 	}
-#else
-	return true;
-#endif
+//#else
+//	return true;
+//#endif
 }
 
 unsigned gg::sendEvent(std::shared_ptr<gg::Event> evt, const std::vector<gg::EventReceiverID>& receiver_ids)
@@ -84,11 +80,6 @@ unsigned gg::sendEvent(std::shared_ptr<gg::Event> evt, const std::vector<gg::Eve
 	return receiver_cnt;
 }
 
-unsigned gg::sendEventToGroups(std::shared_ptr<gg::Event> evt, const std::vector<gg::EventReceiverGroupID>& group_ids)
-{
-	return 0;
-}
-
 
 void gg::IEventReceiver::registerInstance(gg::IEventReceiver* receiver)
 {
@@ -105,11 +96,4 @@ void gg::IEventReceiver::unregisterInstance(gg::EventReceiverID receiver_id)
 
 	std::lock_guard<gg::FastMutex> guard(s_evt_receivers_mutex[receiver_id % MSG_HANDLERS_SEPARATION_NUM]);
 	s_evt_receivers[receiver_id % MSG_HANDLERS_SEPARATION_NUM].erase(receiver_id);
-}
-
-void gg::IEventReceiver::addToGroup(gg::EventReceiverID receiver_id, gg::EventReceiverGroupID group_id)
-{
-	if (receiver_id == 0 || group_id == 0) return;
-	std::lock_guard<gg::FastMutex> guard(s_groups_mutex[group_id % MSG_GROUPS_SEPARATION_NUM]);
-	(s_groups[group_id % MSG_GROUPS_SEPARATION_NUM])[group_id].push_back(receiver_id);
 }

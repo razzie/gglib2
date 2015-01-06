@@ -21,6 +21,9 @@
  *
  * Events have an event type (a number) and variable number of arguments. They
  * also have an optional sender, which is the ID of an event receiver.
+ *
+ * An event type should before sending any event of its kind:
+ * 'gg::addEventType<int, float, std::string>(123)'
  */
 
 #ifndef GG_MESSAGE_HPP_INCLUDED
@@ -38,7 +41,8 @@ namespace gg
 {
 	typedef uint16_t EventType; // 0 is invalid
 	typedef uint16_t EventReceiverID; // 0 is invalid
-	typedef uint16_t EventReceiverGroupID;
+
+	const EventType HIGHEST_RESERVED_EVENT_TYPE = 100; // event types between 1-100 are reserved
 
 	class Event final
 	{
@@ -76,7 +80,6 @@ namespace gg
 
 	bool addEventType(EventType, std::vector<const std::type_info*>&&);
 	unsigned sendEvent(std::shared_ptr<Event>, const std::vector<EventReceiverID>&);
-	unsigned sendEventToGroups(std::shared_ptr<Event>, const std::vector<EventReceiverGroupID>&);
 
 	inline unsigned sendEvent(EventType type, VarArray&& args, const std::vector<EventReceiverID>& receiver_ids, EventReceiverID sender = 0)
 	{
@@ -84,17 +87,10 @@ namespace gg
 		return sendEvent(msg, receiver_ids);
 	}
 
-	inline unsigned sendEventToGroups(EventType type, VarArray&& args, const std::vector<EventReceiverGroupID>& group_ids, EventReceiverID sender = 0)
-	{
-		std::shared_ptr<Event> msg(new Event(type, std::move(args), sender));
-		return sendEventToGroups(msg, group_ids);
-	}
-
 	template<class... Args>
 	bool addEventType(EventType type)
 	{
-		// message types between 1-100 are internally reserved
-		if (type <= 100)
+		if (type <= HIGHEST_RESERVED_EVENT_TYPE)
 			return false;
 
 		return addEventType(type, { typeid(Args)... });
@@ -110,24 +106,18 @@ namespace gg
 		EventReceiverID m_id;
 		FastMutex m_evt_queue_mutex;
 		std::queue<std::shared_ptr<Event>> m_evt_queue;
-		std::vector<EventType> m_types;
+		std::vector<EventType> m_evt_types;
 
 		static void registerInstance(IEventReceiver*);
 		static void unregisterInstance(EventReceiverID);
-		static void addToGroup(EventReceiverID, EventReceiverGroupID);
 
 	protected:
 		void addEventType(EventType type)
 		{
-			for (EventType t : m_types)
+			for (EventType t : m_evt_types)
 				if (t == type) return;
 
-			m_types.push_back(type);
-		}
-
-		void addToGroup(EventReceiverGroupID group_id) const
-		{
-			addToGroup(m_id, group_id);
+			m_evt_types.push_back(type);
 		}
 
 	public:
@@ -148,7 +138,7 @@ namespace gg
 
 		bool isEventTypeSupported(EventType type) const
 		{
-			for (EventType t : m_types)
+			for (EventType t : m_evt_types)
 				if (t == type) return true;
 
 			return false;
