@@ -10,15 +10,15 @@
  * HOW TO USE:
  * -----------
  *
- * Let's say we have a 'textures.pak' named virtual directory in 'media' folder.
+ * In this example we have a 'textures.pak' named virtual directory in 'media' folder.
  * It contains 3 files: 'ground.png', 'water.png' and 'sky.png'.
  *
  * 1st step:
- * Add the virtual directory by calling 'gg::fs::addVirtualDirectory("media/textures.pak")'.
+ * Add the virtual directory by calling 'gg::addVirtualDirectory("media/textures.pak")'.
  *
  * 2nd step:
- * We wan't to access 'sky.png' for example. As it is a part of 'textures.pak' virtual directory,
- * we should open the file by using the 'textures.pak/sky.png' name.
+ * Let's assume the program needs to open 'sky.png', which is a part of 'textures.pak'
+ * virtual directory. It can be done by calling: 'auto file = gg::openFile("textures.pack/sky.png")'
  *
  * Important:
  * Do NOT use backslash '\' characters in a file path. Always use slash '/' instead.

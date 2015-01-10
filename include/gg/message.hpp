@@ -17,8 +17,8 @@
  * 'gg::sendMessage(type, args..., {destination IDs}, optional sender ID = 0)'
  *
  * Use 'gg::IMessageReceiver::getNextMessage()' function to receive queued messages.
- * Message arguments can be accessed by 'message->getParam<std::string>(arg_num)'.
- * Argument numbers are 0 based.
+ * Message arguments can be accessed by 'message->getParam<std::string>(param_num)'.
+ * Parameter numbers are 0 based.
  *
  * Messages have an message type (a number) and variable number of arguments. They
  * also have an optional sender, which is the ID of an message receiver.
