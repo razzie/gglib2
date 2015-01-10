@@ -43,6 +43,17 @@ namespace gg
 			construct<N + 1, offset + sizeof(T0), Ts...>(ts...);
 		}
 
+		template<unsigned N, size_t offset>
+		void default_construct() {}
+
+		template<unsigned N, size_t offset, class T0, class... Ts>
+		void default_construct()
+		{
+			m_ptrs[N] = reinterpret_cast<char*>(new (m_buffer + offset) T0());
+			m_types[N] = &typeid(T0);
+			default_construct<N + 1, offset + sizeof(T0), Ts...>();
+		}
+
 		template<size_t offset>
 		void destruct() {}
 
@@ -59,9 +70,14 @@ namespace gg
 		const std::type_info* m_types[size];
 
 	public:
+		Storage()
+		{
+			default_construct<0, 0, Types...>();
+		}
+
 		Storage(Types... values)
 		{
-			construct<0, 0, Types...>(values...);
+			construct<0, 0, Types...>( std::forward<Types>(values)... );
 		}
 
 		virtual ~Storage()
