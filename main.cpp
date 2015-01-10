@@ -9,7 +9,7 @@
 #include "gg/network.hpp"
 #include "gg/filesystem.hpp"
 #include "gg/logger.hpp"
-#include "gg/event.hpp"
+#include "gg/message.hpp"
 
 
 int main()

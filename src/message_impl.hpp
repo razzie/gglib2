@@ -9,35 +9,35 @@
 #ifndef GG_MESSAGE_IMPL_HPP_INCLUDED
 #define GG_MESSAGE_IMPL_HPP_INCLUDED
 
-#include "gg/event.hpp"
+#include "gg/message.hpp"
 
 namespace gg
 {
-	class EventReceiverAccessor
+	class MessageReceiverAccessor
 	{
 	private:
-		IEventReceiver* m_handler;
+		IMessageReceiver* m_handler;
 
 	public:
-		EventReceiverAccessor(IEventReceiver* handler) :
+		MessageReceiverAccessor(IMessageReceiver* handler) :
 			m_handler(handler)
 		{
 		}
 
-		EventReceiverAccessor(const EventReceiverAccessor& o) :
+		MessageReceiverAccessor(const MessageReceiverAccessor& o) :
 			m_handler(o.m_handler)
 		{
 		}
 
-		void setID(EventReceiverID id)
+		void setID(MessageReceiverID id)
 		{
 			m_handler->m_id = id;
 		}
 
-		void pushEvent(std::shared_ptr<Event> evt)
+		void pushMessage(std::shared_ptr<IMessage> msg)
 		{
-			std::lock_guard<gg::FastMutex> guard(m_handler->m_evt_queue_mutex);
-			m_handler->m_evt_queue.push(evt);
+			std::lock_guard<gg::FastMutex> guard(m_handler->m_msg_queue_mutex);
+			m_handler->m_msg_queue.push(msg);
 		}
 	};
 };
