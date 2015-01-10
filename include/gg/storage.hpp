@@ -10,7 +10,6 @@
 #define GG_STORAGE_HPP_INCLUDED
 
 #include <typeinfo>
-//#include <stdexcept>
 
 namespace gg
 {
@@ -75,6 +74,20 @@ namespace gg
 			return size;
 		}
 
+		template<unsigned N, class T>
+		T& get()
+		{
+			if (N >= size || typeid(T) != *m_types[N]) throw std::bad_cast();
+			return *reinterpret_cast<T*>(m_ptrs(N));
+		}
+
+		template<unsigned N, class T>
+		const T& get() const
+		{
+			if (N >= size || typeid(T) != *m_types[N]) throw std::bad_cast();
+			return *reinterpret_cast<const T*>(m_ptrs(N));
+		}
+
 		char* getPtr(unsigned n)
 		{
 			if (n >= size) return nullptr;
@@ -87,18 +100,10 @@ namespace gg
 			return m_ptrs[n];
 		}
 
-		template<unsigned N, class T>
-		T& get()
+		const std::type_info& getType(unsigned n) const
 		{
-			if (N >= size || typeid(T) != *m_types[N]) throw std::bad_cast();
-			return *reinterpret_cast<T*>(getPtr(N));
-		}
-
-		template<unsigned N, class T>
-		const T& get() const
-		{
-			if (N >= size || typeid(T) != *m_types[N]) throw std::bad_cast();
-			return *reinterpret_cast<const T*>(getPtr(N));
+			if (n >= size) return typeid(void);
+			return m_types[n];
 		}
 	};
 };
