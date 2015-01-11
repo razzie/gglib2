@@ -15,9 +15,6 @@ namespace gg
 {
 	class MessageReceiverAccessor
 	{
-	private:
-		IMessageReceiver* m_handler;
-
 	public:
 		MessageReceiverAccessor(IMessageReceiver* handler) :
 			m_handler(handler)
@@ -39,6 +36,9 @@ namespace gg
 			std::lock_guard<gg::FastMutex> guard(m_handler->m_msg_queue_mutex);
 			m_handler->m_msg_queue.push(msg);
 		}
+
+	private:
+		IMessageReceiver* m_handler;
 	};
 };
 

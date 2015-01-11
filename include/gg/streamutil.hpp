@@ -178,6 +178,17 @@ namespace gg
 		template<class T>
 		class InsertHelper
 		{
+		public:
+			InsertHelper(const T& value) :
+				m_value(value)
+			{
+			}
+
+			friend std::ostream& operator<<(std::ostream& o, const InsertHelper& h)
+			{
+				return Insert<T, __HasInsertOp::Check<T>::value>::apply(o, h.m_value);
+			}
+
 		private:
 			const T& m_value;
 
@@ -200,17 +211,6 @@ namespace gg
 					return o;
 				}
 			};
-
-		public:
-			InsertHelper(const T& value) :
-				m_value(value)
-			{
-			}
-
-			friend std::ostream& operator<<(std::ostream& o, const InsertHelper& h)
-			{
-				return Insert<T, __HasInsertOp::Check<T>::value>::apply(o, h.m_value);
-			}
 		};
 	}
 
@@ -242,6 +242,17 @@ namespace gg
 		template<class T>
 		class ExtractHelper
 		{
+		public:
+			ExtractHelper(T& value) :
+				m_value(value)
+			{
+			}
+
+			friend std::istream& operator>>(std::istream& o, ExtractHelper& h)
+			{
+				return Extract<T, __HasExtractOp::Check<T>::value>::apply(o, h.m_value);
+			}
+
 		private:
 			T& m_value;
 
@@ -264,17 +275,6 @@ namespace gg
 					return i;
 				}
 			};
-
-		public:
-			ExtractHelper(T& value) :
-				m_value(value)
-			{
-			}
-
-			friend std::istream& operator>>(std::istream& o, ExtractHelper& h)
-			{
-				return Extract<T, __HasExtractOp::Check<T>::value>::apply(o, h.m_value);
-			}
 		};
 	}
 

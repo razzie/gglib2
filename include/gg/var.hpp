@@ -21,59 +21,6 @@ namespace gg
 {
 	class Var
 	{
-	private:
-		class StorageBase
-		{
-		public:
-			virtual ~StorageBase() {}
-			virtual StorageBase* clone() const = 0;
-			virtual void* getPtr() = 0;
-			virtual const void* getPtr() const = 0;
-			virtual const std::type_info& getType() const = 0;
-			virtual void toStream(std::ostream&) const = 0;
-		};
-
-		template<class T>
-		class Storage : public StorageBase
-		{
-			T m_value;
-			const std::type_info* m_type;
-
-		public:
-			template<class... Args>
-			Storage(Args... args) :
-				m_value(std::forward<Args>(args)...), m_type(&typeid(T))
-			{
-			}
-
-			StorageBase* clone() const
-			{
-				return new Storage<T>(m_value);
-			}
-
-			void* getPtr()
-			{
-				return static_cast<void*>(&m_value);
-			}
-
-			const void* getPtr() const
-			{
-				return static_cast<const void*>(&m_value);
-			}
-
-			const std::type_info& getType() const
-			{
-				return *m_type;
-			}
-
-			void toStream(std::ostream& o) const
-			{
-				o << insert(m_value);
-			}
-		};
-
-		StorageBase* m_storage = nullptr;
-
 	public:
 		Var()
 		{
@@ -240,6 +187,60 @@ namespace gg
 		}
 
 		friend std::ostream& operator<<(std::ostream&, const Var&);
+
+	private:
+		class StorageBase
+		{
+		public:
+			virtual ~StorageBase() {}
+			virtual StorageBase* clone() const = 0;
+			virtual void* getPtr() = 0;
+			virtual const void* getPtr() const = 0;
+			virtual const std::type_info& getType() const = 0;
+			virtual void toStream(std::ostream&) const = 0;
+		};
+
+		template<class T>
+		class Storage : public StorageBase
+		{
+		public:
+			template<class... Args>
+			Storage(Args... args) :
+				m_value(std::forward<Args>(args)...), m_type(&typeid(T))
+			{
+			}
+
+			StorageBase* clone() const
+			{
+				return new Storage<T>(m_value);
+			}
+
+			void* getPtr()
+			{
+				return static_cast<void*>(&m_value);
+			}
+
+			const void* getPtr() const
+			{
+				return static_cast<const void*>(&m_value);
+			}
+
+			const std::type_info& getType() const
+			{
+				return *m_type;
+			}
+
+			void toStream(std::ostream& o) const
+			{
+				o << insert(m_value);
+			}
+
+		private:
+			T m_value;
+			const std::type_info* m_type;
+		};
+
+		StorageBase* m_storage = nullptr;
 	};
 
 

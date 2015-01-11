@@ -45,10 +45,6 @@ namespace gg
 
 	class IMessage
 	{
-	private:
-		MessageType m_type;
-		MessageReceiverID m_sender;
-
 	public:
 		IMessage(MessageType type) :
 			m_type(type), m_sender(0)
@@ -89,6 +85,10 @@ namespace gg
 		{
 			return m_sender;
 		}
+
+	private:
+		MessageType m_type;
+		MessageReceiverID m_sender;
 	};
 
 	template<class... Params>
@@ -142,26 +142,6 @@ namespace gg
 
 	class IMessageReceiver
 	{
-	private:
-		friend class MessageReceiverAccessor;
-
-		MessageReceiverID m_id;
-		FastMutex m_msg_queue_mutex;
-		std::queue<std::shared_ptr<IMessage>> m_msg_queue;
-		std::vector<MessageType> m_msg_types;
-
-		static void registerInstance(IMessageReceiver*);
-		static void unregisterInstance(MessageReceiverID);
-
-	protected:
-		void addMessageType(MessageType type)
-		{
-			for (MessageType t : m_msg_types)
-				if (t == type) return;
-
-			m_msg_types.push_back(type);
-		}
-
 	public:
 		IMessageReceiver()
 		{
@@ -201,6 +181,26 @@ namespace gg
 				return {};
 			}
 		}
+
+	protected:
+		void addMessageType(MessageType type)
+		{
+			for (MessageType t : m_msg_types)
+				if (t == type) return;
+
+			m_msg_types.push_back(type);
+		}
+
+	private:
+		friend class MessageReceiverAccessor;
+
+		MessageReceiverID m_id;
+		FastMutex m_msg_queue_mutex;
+		std::queue<std::shared_ptr<IMessage>> m_msg_queue;
+		std::vector<MessageType> m_msg_types;
+
+		static void registerInstance(IMessageReceiver*);
+		static void unregisterInstance(MessageReceiverID);
 	};
 };
 

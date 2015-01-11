@@ -18,6 +18,62 @@ namespace gg
 {
 	class Function
 	{
+	public:
+		Function()
+		{
+		}
+
+		template<class F>
+		Function(F func) :
+			m_func(convert(func))
+		{
+		}
+
+		Function(const Function& func) :
+			m_func(func.m_func)
+		{
+		}
+
+		Function(Function&& func) :
+			m_func(std::move(func.m_func))
+		{
+		}
+
+		template<class F>
+		Function& operator=(F func)
+		{
+			m_func = convert(func);
+			return *this;
+		}
+
+		Function& operator=(const Function& func)
+		{
+			m_func = func.m_func;
+			return *this;
+		}
+
+		Function& operator=(Function&& func)
+		{
+			m_func = std::move(func.m_func);
+			return *this;
+		}
+
+		Var operator()(const VarArray& va) const
+		{
+			return m_func(va);
+		}
+
+		template<class... Args>
+		Var operator()(Args... args) const
+		{
+			return m_func({ std::forward<Args>(args)... });
+		}
+
+		operator bool() const
+		{
+			return static_cast<bool>(m_func);
+		}
+	
 	private:
 		template<class T>
 		struct removeClass { };
@@ -108,62 +164,6 @@ namespace gg
 
 
 		std::function<Var(VarArray)> m_func;
-
-	public:
-		Function()
-		{
-		}
-
-		template<class F>
-		Function(F func) :
-			m_func(convert(func))
-		{
-		}
-
-		Function(const Function& func) :
-			m_func(func.m_func)
-		{
-		}
-
-		Function(Function&& func) :
-			m_func(std::move(func.m_func))
-		{
-		}
-
-		template<class F>
-		Function& operator=(F func)
-		{
-			m_func = convert(func);
-			return *this;
-		}
-
-		Function& operator=(const Function& func)
-		{
-			m_func = func.m_func;
-			return *this;
-		}
-
-		Function& operator=(Function&& func)
-		{
-			m_func = std::move(func.m_func);
-			return *this;
-		}
-
-		Var operator()(const VarArray& va) const
-		{
-			return m_func(va);
-		}
-
-		template<class... Args>
-		Var operator()(Args... args) const
-		{
-			return m_func({ std::forward<Args>(args)... });
-		}
-
-		operator bool() const
-		{
-			return static_cast<bool>(m_func);
-		}
 	};
 };
 

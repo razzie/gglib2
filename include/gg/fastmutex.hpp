@@ -17,9 +17,6 @@ namespace gg
 {
 	class FastMutex
 	{
-	private:
-		std::atomic_flag m_lock;
-
 	public:
 		FastMutex()
 		{
@@ -40,6 +37,9 @@ namespace gg
 		{
 			m_lock.clear();
 		}
+
+	private:
+		std::atomic_flag m_lock;
 	};
 };
 

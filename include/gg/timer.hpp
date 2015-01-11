@@ -16,10 +16,6 @@ namespace gg
 {
 	class Timer
 	{
-	private:
-		std::chrono::steady_clock::time_point m_start_time;
-		uint64_t m_last_elapsed;
-
 	public:
 		Timer()
 		{
@@ -59,6 +55,10 @@ namespace gg
 			m_start_time = std::chrono::steady_clock::now();
 			m_last_elapsed = 0;
 		}
+
+	private:
+		std::chrono::steady_clock::time_point m_start_time;
+		uint64_t m_last_elapsed;
 	};
 };
 

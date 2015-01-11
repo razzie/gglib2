@@ -79,28 +79,6 @@ namespace gg
 
 	class FileStream : public std::istream, public std::streambuf
 	{
-	private:
-		std::shared_ptr<IFile> m_file;
-		size_t m_pos;
-
-	protected:
-		// underflow & uflow are inherited from std::streambuf
-
-		virtual int underflow() // get character without advancing position
-		{
-			if (m_pos >= m_file->getSize())
-				return std::char_traits<char>::eof();
-			else
-				return static_cast<int>(m_file->getData()[m_pos]);
-		}
-
-		virtual int uflow() // get character and advance position
-		{
-			int c = underflow();
-			++m_pos;
-			return c;
-		}
-
 	public:
 		FileStream(const std::string& file_name) :
 			std::istream(this), m_file(openFile(file_name)),
@@ -122,6 +100,28 @@ namespace gg
 		{
 			m_pos = 0;
 		}
+
+	protected:
+		// underflow & uflow are inherited from std::streambuf
+
+		virtual int underflow() // get character without advancing position
+		{
+			if (m_pos >= m_file->getSize())
+				return std::char_traits<char>::eof();
+			else
+				return static_cast<int>(m_file->getData()[m_pos]);
+		}
+
+		virtual int uflow() // get character and advance position
+		{
+			int c = underflow();
+			++m_pos;
+			return c;
+		}
+
+	private:
+		std::shared_ptr<IFile> m_file;
+		size_t m_pos;
 	};
 };
 

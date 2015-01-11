@@ -18,6 +18,16 @@ namespace gg
 {
 	class VirtualDirectory
 	{
+	public:
+		VirtualDirectory(const std::string& vdir_path);
+		virtual ~VirtualDirectory();
+		virtual bool init();
+		virtual const std::string& getName() const;
+		virtual std::shared_ptr<IDirectory> getDirectory(const std::string& dir_name);
+		virtual std::shared_ptr<IFile> getFile(const std::string& file_name);
+		virtual bool loadDirectoryData(const std::string& dir_name, std::vector<IDirectory::FileOrDirectory>*);
+		virtual bool loadFileData(const std::string& file_name, const char**, size_t*);
+
 	private:
 		struct FileData
 		{
@@ -32,25 +42,10 @@ namespace gg
 		mutable std::ifstream m_file;
 		std::string m_name;
 		std::map<std::string, FileData> m_files;
-
-	public:
-		VirtualDirectory(const std::string& vdir_path);
-		virtual ~VirtualDirectory();
-		virtual bool init();
-		virtual const std::string& getName() const;
-		virtual std::shared_ptr<IDirectory> getDirectory(const std::string& dir_name);
-		virtual std::shared_ptr<IFile> getFile(const std::string& file_name);
-		virtual bool loadDirectoryData(const std::string& dir_name, std::vector<IDirectory::FileOrDirectory>*);
-		virtual bool loadFileData(const std::string& file_name, const char**, size_t*);
 	};
 
 	class Directory : public IDirectory
 	{
-	private:
-		std::string m_name;
-		std::vector<FileOrDirectory> m_files;
-		VirtualDirectory* m_vdir;
-
 	public:
 		Directory(VirtualDirectory* vdir, std::string& name) :
 			m_name(name), m_vdir(vdir)
@@ -82,17 +77,15 @@ namespace gg
 		{
 			return m_files.end();
 		}
+
+	private:
+		std::string m_name;
+		std::vector<FileOrDirectory> m_files;
+		VirtualDirectory* m_vdir;
 	};
 
 	class File : public IFile
 	{
-	private:
-		mutable std::mutex m_mutex;
-		std::string m_name;
-		mutable const char* m_data;
-		mutable size_t m_size;
-		VirtualDirectory* m_vdir;
-
 	public:
 		File(VirtualDirectory* vdir, const std::string& name) :
 			m_name(name), m_data(nullptr), m_size(0), m_vdir(vdir)
@@ -140,6 +133,13 @@ namespace gg
 				m_size = 0;
 			}
 		}
+
+	private:
+		mutable std::mutex m_mutex;
+		std::string m_name;
+		mutable const char* m_data;
+		mutable size_t m_size;
+		VirtualDirectory* m_vdir;
 	};
 };
 
