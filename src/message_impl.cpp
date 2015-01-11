@@ -21,6 +21,11 @@ static gg::FastMutex s_msg_receivers_mutex[MSG_HANDLERS_SEPARATION_NUM];
 static std::map<gg::MessageReceiverID, gg::IMessageReceiver*> s_msg_receivers[MSG_HANDLERS_SEPARATION_NUM];
 
 
+void initMessages()
+{
+}
+
+
 bool gg::addMessageType(gg::MessageType msg_type, std::vector<const std::type_info*>&& types)
 {
 	std::lock_guard<gg::FastMutex> guard(s_msg_types_mutex);

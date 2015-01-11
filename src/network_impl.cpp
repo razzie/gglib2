@@ -8,6 +8,12 @@
 
 #include "network_impl.hpp"
 
+
+void initNetwork()
+{
+}
+
+
 gg::TypeIndex gg::addSerializerFunctions(const std::type_info& type, gg::InitFunction init_func, gg::SaveFunction save_func)
 {
 	return 0;

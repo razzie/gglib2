@@ -62,17 +62,11 @@ UINT CurrentBridgeBufferSize = 0; // This number is incremented as
 	return TRUE;
 }*/
 
-class Initializer
+void initNtHookEngine()
 {
-public:
-	Initializer()
-	{
-		pBridgeBuffer = (BYTE *)VirtualAlloc(NULL, MAX_HOOKS * (JUMP_WORST * 3),
-			MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-	}
-};
-
-static Initializer init;
+	pBridgeBuffer = (BYTE *)VirtualAlloc(NULL, MAX_HOOKS * (JUMP_WORST * 3),
+		MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+}
 
 HOOK_INFO *GetHookInfoFromFunction(ULONG_PTR OriginalFunction)
 {

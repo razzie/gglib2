@@ -157,7 +157,7 @@ namespace gg
 		template<class... Args>
 		Var operator()(Args... args) const
 		{
-			return m_func(std::forward<Args>(args)...);
+			return m_func({ std::forward<Args>(args)... });
 		}
 
 		operator bool() const
