@@ -63,10 +63,10 @@ namespace gg
 			return m_func(va);
 		}
 
-		template<class... Args>
-		Var operator()(Args... args) const
+		template<class... Params>
+		Var operator()(Params... params) const
 		{
-			return m_func({ std::forward<Args>(args)... });
+			return m_func({ std::forward<Params>(params)... });
 		}
 
 		operator bool() const
@@ -78,16 +78,16 @@ namespace gg
 		template<class T>
 		struct removeClass { };
 
-		template<class C, class R, class... Args>
-		struct removeClass<R(C::*)(Args...)>
+		template<class C, class R, class... Params>
+		struct removeClass<R(C::*)(Params...)>
 		{
-			using type = typename std::remove_pointer<R(*)(Args...)>::type;
+			using type = typename std::remove_pointer<R(*)(Params...)>::type;
 		};
 
-		template<class C, class R, class... Args>
-		struct removeClass<R(C::*)(Args...) const>
+		template<class C, class R, class... Params>
+		struct removeClass<R(C::*)(Params...) const>
 		{
-			using type = typename std::remove_pointer<R(*)(Args...)>::type;
+			using type = typename std::remove_pointer<R(*)(Params...)>::type;
 		};
 
 		template<class T>
@@ -97,10 +97,10 @@ namespace gg
 				decltype(&std::remove_reference<T>::type::operator())>::type;
 		};
 
-		template<class R, class... Args>
-		struct getSignatureImpl<R(*)(Args...)>
+		template<class R, class... Params>
+		struct getSignatureImpl<R(*)(Params...)>
 		{
-			using type = typename std::remove_pointer<R(*)(Args...)>::type;
+			using type = typename std::remove_pointer<R(*)(Params...)>::type;
 		};
 
 		template<class T>
@@ -108,50 +108,50 @@ namespace gg
 
 
 		template<class R>
-		static R call(std::function<R()> func, const gg::VarArray& va, unsigned skipArgs = 0)
+		static R call(std::function<R()> func, const gg::VarArray& va, unsigned skipParams = 0)
 		{
-			if (va.size() > skipArgs)
-				throw std::runtime_error("too long argument list");
+			if (va.size() > skipParams)
+				throw std::runtime_error("too long paramument list");
 
 			return func();
 		}
 
-		template<class R, class Arg>
-		static R call(std::function<R(Arg)> func, const gg::VarArray& va, unsigned skipArgs = 0)
+		template<class R, class Param>
+		static R call(std::function<R(Param)> func, const gg::VarArray& va, unsigned skipParams = 0)
 		{
-			if (va.size() > skipArgs + 1)
-				throw std::runtime_error("too long argument list");
+			if (va.size() > skipParams + 1)
+				throw std::runtime_error("too long paramument list");
 
-			Arg arg;
-			va[skipArgs].convert<Arg>(&arg);
+			Param param;
+			va[skipParams].convert<Param>(&param);
 
-			return func(arg);
+			return func(param);
 		}
 
-		template<class R, class Arg0, class... Args>
-		static R call(std::function<R(Arg0, Args...)> func, const gg::VarArray& va, unsigned skipArgs = 0)
+		template<class R, class Param0, class... Params>
+		static R call(std::function<R(Param0, Params...)> func, const gg::VarArray& va, unsigned skipParams = 0)
 		{
-			if (va.size() <= skipArgs + 1)
-				throw std::runtime_error("too short argument list");
+			if (va.size() <= skipParams + 1)
+				throw std::runtime_error("too short paramument list");
 
-			Arg0 arg0;
-			va[skipArgs].convert<Arg0>(&arg0);
+			Param0 param0;
+			va[skipParams].convert<Param0>(&param0);
 
-			std::function<R(Args...)> lambda =
-				[&](Args... args) -> R { return func(arg0, args...); };
+			std::function<R(Params...)> lambda =
+				[&](Params... params) -> R { return func(param0, params...); };
 
-			return call(lambda, va, skipArgs + 1);
+			return call(lambda, va, skipParams + 1);
 		}
 
 
-		template<class R, class... Args>
-		static std::function<Var(VarArray)> convert(std::function<R(Args...)> func)
+		template<class R, class... Params>
+		static std::function<Var(VarArray)> convert(std::function<R(Params...)> func)
 		{
 			return ([=](const VarArray& va) -> Var { return call(func, va); });
 		}
 
-		template<class... Args>
-		static std::function<Var(VarArray)> convert(std::function<void(Args...)> func)
+		template<class... Params>
+		static std::function<Var(VarArray)> convert(std::function<void(Params...)> func)
 		{
 			return ([=](const VarArray& va) -> Var { call(func, va); return{}; });
 		}
