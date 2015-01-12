@@ -13,7 +13,6 @@
 #include <iosfwd>
 #include <typeinfo>
 #include <sstream>
-#include <stdexcept>
 #include <vector>
 #include "gg/streamutil.hpp"
 
@@ -133,11 +132,8 @@ namespace gg
 		template<class T>
 		T& get()
 		{
-			if (m_storage == nullptr)
-				throw std::runtime_error("get() called on empty Var");
-
-			if (m_storage->get_type() != typeid(T))
-				throw std::runtime_error("Var type mismatch");
+			if (m_storage == nullptr || m_storage->get_type() != typeid(T))
+				throw std::bad_cast();
 
 			return *static_cast<T*>(m_storage->get_ptr());
 		}
@@ -145,11 +141,8 @@ namespace gg
 		template<class T>
 		const T& get()
 		{
-			if (m_storage == nullptr)
-				throw std::runtime_error("get() called on empty Var");
-
-			if (m_storage->get_type() != typeid(T))
-				throw std::runtime_error("Var type mismatch");
+			if (m_storage == nullptr || m_storage->get_type() != typeid(T))
+				throw std::bad_cast();
 
 			return *static_cast<const T*>(m_storage->get_ptr());
 		}

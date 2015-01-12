@@ -33,6 +33,7 @@
 #include <cstdint>
 #include <memory>
 #include <queue>
+#include <stdexcept>
 #include <typeinfo>
 #include <vector>
 #include "gg/fastmutex.hpp"
@@ -65,14 +66,16 @@ namespace gg
 		template<class T>
 		T& getParam(unsigned n)
 		{
-			if (n >= getParamCount() || typeid(T) != getParamType(n)) throw std::bad_cast();
+			if (n >= getParamCount()) throw std::out_of_range({});
+			if (typeid(T) != getParamType(n)) throw std::bad_cast();
 			return *reinterpret_cast<T*>(getParamPtr(n));
 		}
 
 		template<class T>
 		const T& getParam(unsigned n) const
 		{
-			if (n >= getParamCount() || typeid(T) != getParamType(n)) throw std::bad_cast();
+			if (n >= getParamCount()) throw std::out_of_range({});
+			if (typeid(T) != getParamType(n)) throw std::bad_cast();
 			return *reinterpret_cast<const T*>(getParamPtr(n));
 		}
 

@@ -9,6 +9,7 @@
 #ifndef GG_STORAGE_HPP_INCLUDED
 #define GG_STORAGE_HPP_INCLUDED
 
+#include <stdexcept>
 #include <typeinfo>
 
 namespace gg
@@ -40,14 +41,16 @@ namespace gg
 		template<class T>
 		T& get(unsigned n)
 		{
-			if (n >= size || typeid(T) != *m_types[n]) throw std::bad_cast();
+			if (n >= size) throw std::out_of_range({});
+			if (typeid(T) != *m_types[n]) throw std::bad_cast();
 			return *reinterpret_cast<T*>(m_ptrs[n]);
 		}
 
 		template<class T>
 		const T& get(unsigned n) const
 		{
-			if (n >= size || typeid(T) != *m_types[n]) throw std::bad_cast();
+			if (n >= size) throw std::out_of_range({});
+			if (typeid(T) != *m_types[n]) throw std::bad_cast();
 			return *reinterpret_cast<const T*>(m_ptrs[n]);
 		}
 
