@@ -19,10 +19,6 @@ namespace gg
 {
 	class Buffer : public IBuffer
 	{
-	private:
-		mutable std::mutex m_mutex;
-		std::deque<char> m_data;
-
 	public:
 		Buffer()
 		{
@@ -128,6 +124,10 @@ namespace gg
 
 			return o;
 		}
+
+	private:
+		mutable std::mutex m_mutex;
+		std::deque<char> m_data;
 	};
 };
 
