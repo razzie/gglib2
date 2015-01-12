@@ -132,7 +132,7 @@ namespace gg
     bool isNumeric(std::basic_string<T> s,
                    std::locale loc = std::locale())
     {
-        return (is_float(s, loc) || is_integer(s, loc));
+        return (gg::isFloat(s, loc) || gg::isInteger(s, loc));
     }
 
     template<class T>

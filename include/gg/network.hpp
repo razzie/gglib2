@@ -83,7 +83,7 @@ namespace gg
 			[](Var& var, std::shared_ptr<IBuffer> buf) -> bool
 			{
 				var.construct<T>();
-				if (buf->read(static_cast<char*>(var.getPtr()), sizeof(T)) < sizeof(T))
+				if (buf->read(reinterpret_cast<char*>(var.getPtr()), sizeof(T)) < sizeof(T))
 					return false;
 				else
 					return true;
@@ -92,7 +92,7 @@ namespace gg
 		SaveFunction save_func =
 			[](const Var& var, std::shared_ptr<IBuffer> buf) -> bool
 			{
-				buf->write(static_cast<const char*>(&var.get<T>()), sizeof(T));
+				buf->write(reinterpret_cast<const char*>(&var.get<T>()), sizeof(T));
 				return true;
 			};
 

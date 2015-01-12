@@ -45,6 +45,9 @@
     <ClCompile Include="src\init.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\expression.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\gg\function.hpp">
@@ -105,6 +108,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\gg\message.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\expression.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

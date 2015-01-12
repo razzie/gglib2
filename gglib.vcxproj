@@ -104,6 +104,7 @@
     <ClCompile Include="src\Doboz\Compressor.cpp" />
     <ClCompile Include="src\Doboz\Decompressor.cpp" />
     <ClCompile Include="src\Doboz\Dictionary.cpp" />
+    <ClCompile Include="src\expression.cpp" />
     <ClCompile Include="src\filesystem_impl.cpp" />
     <ClCompile Include="src\init.cpp" />
     <ClCompile Include="src\message_impl.cpp" />
@@ -125,6 +126,7 @@
     <ClInclude Include="src\Doboz\Compressor.h" />
     <ClInclude Include="src\Doboz\Decompressor.h" />
     <ClInclude Include="src\Doboz\Dictionary.h" />
+    <ClInclude Include="src\expression.hpp" />
     <ClInclude Include="src\filesystem_impl.hpp" />
     <ClInclude Include="src\message_impl.hpp" />
     <ClInclude Include="src\network_impl.hpp" />
