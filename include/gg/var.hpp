@@ -182,11 +182,11 @@ namespace gg
 		friend std::ostream& operator<<(std::ostream&, const Var&);
 
 	private:
-		class StorageBase
+		class IStorage
 		{
 		public:
-			virtual ~StorageBase() {}
-			virtual StorageBase* clone() const = 0;
+			virtual ~IStorage() {}
+			virtual IStorage* clone() const = 0;
 			virtual void* getPtr() = 0;
 			virtual const void* getPtr() const = 0;
 			virtual const std::type_info& getType() const = 0;
@@ -194,7 +194,7 @@ namespace gg
 		};
 
 		template<class T>
-		class Storage : public StorageBase
+		class Storage : public IStorage
 		{
 		public:
 			template<class... Args>
@@ -203,7 +203,7 @@ namespace gg
 			{
 			}
 
-			StorageBase* clone() const
+			IStorage* clone() const
 			{
 				return new Storage<T>(m_value);
 			}
@@ -233,7 +233,7 @@ namespace gg
 			const std::type_info* m_type;
 		};
 
-		StorageBase* m_storage = nullptr;
+		IStorage* m_storage = nullptr;
 	};
 
 
@@ -241,7 +241,7 @@ namespace gg
 
 	inline std::ostream& operator<<(std::ostream& s, const Var& v)
 	{
-		Var::StorageBase* storage = v.m_storage;
+		Var::IStorage* storage = v.m_storage;
 
 		if (storage != nullptr)
 			storage->toStream(s);
