@@ -154,28 +154,28 @@ namespace gg
 		}
 
 		template<class T>
-		bool convert(T* p) const
+		bool convert(T& p) const
 		{
 			if (m_storage == nullptr)
 				return false;
 
 			if (m_storage->getType() == typeid(T))
 			{
-				*p = *static_cast<const T*>(m_storage->getPtr());
+				p = *static_cast<const T*>(m_storage->getPtr());
 				return true;
 			}
 			else if (m_storage->getType() == typeid(std::string))
 			{
 				std::stringstream ss;
 				m_storage->toStream(ss);
-				*p = ss.str();
+				p = ss.str();
 				return true;
 			}
 			else
 			{
 				std::stringstream ss;
 				m_storage->toStream(ss);
-				return static_cast<bool>(ss >> extract(*p));
+				return static_cast<bool>(ss >> extract(p));
 			}
 		}
 

@@ -111,7 +111,7 @@ namespace gg
 		static R call(std::function<R()> func, const gg::VarArray& va, unsigned skipParams = 0)
 		{
 			if (va.size() > skipParams)
-				throw std::runtime_error("too long paramument list");
+				throw std::runtime_error("too many parameters");
 
 			return func();
 		}
@@ -120,10 +120,10 @@ namespace gg
 		static R call(std::function<R(Param)> func, const gg::VarArray& va, unsigned skipParams = 0)
 		{
 			if (va.size() > skipParams + 1)
-				throw std::runtime_error("too long paramument list");
+				throw std::runtime_error("too many parameters");
 
 			Param param;
-			va[skipParams].convert<Param>(&param);
+			va[skipParams].convert<Param>(param);
 
 			return func(param);
 		}
@@ -132,10 +132,10 @@ namespace gg
 		static R call(std::function<R(Param0, Params...)> func, const gg::VarArray& va, unsigned skipParams = 0)
 		{
 			if (va.size() <= skipParams + 1)
-				throw std::runtime_error("too short paramument list");
+				throw std::runtime_error("not enough parameters");
 
 			Param0 param0;
-			va[skipParams].convert<Param0>(&param0);
+			va[skipParams].convert<Param0>(param0);
 
 			std::function<R(Params...)> lambda =
 				[&](Params... params) -> R { return func(param0, params...); };

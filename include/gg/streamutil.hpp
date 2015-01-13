@@ -129,30 +129,31 @@ namespace gg
 	}
 
 
-	template<class Arg>
-	std::tuple<Arg> parse(std::istream& i, char* d = nullptr)
+	template<class Param>
+	std::tuple<Param> parse(std::istream& i, char* d = nullptr)
 	{
-		Arg a;
+		Param p;
 		if (d) i << delimiter(*d);
-		if (!istream_extract(i, a)) throw std::runtime_error("can't extract arg");
-		return std::tuple<Arg> { a };
+		if (!static_cast<bool>(i >> extract(p)))
+			throw std::logic_error("parse error: " + typeid(Param).name());
+		return std::tuple<Param> { p };
 	}
 
-	template<class Arg1, class Arg2, class... Args>
-	std::tuple<Arg1, Arg2, Args...> parse(std::istream& i, char* d = nullptr)
+	template<class Param1, class Param2, class... Params>
+	std::tuple<Param1, Param2, Params...> parse(std::istream& i, char* d = nullptr)
 	{
 		if (d) i << delimiter(*d);
-		auto a = parse<Arg1>(i);
-		auto b = parse<Arg2, Args...>(i);
+		auto a = parse<Param1>(i);
+		auto b = parse<Param2, Params...>(i);
 		return std::tuple_cat(a, b);
 	}
 
-	template<class... Args>
-	std::tuple<Args...> parse(std::string str, char* d = nullptr)
+	template<class... Params>
+	std::tuple<Params...> parse(std::string str, char* d = nullptr)
 	{
 		std::stringstream ss(str);
 		if (d) ss << delimiter(*d);
-		return parse<Args...>(ss);
+		return parse<Params...>(ss);
 	}
 
 
