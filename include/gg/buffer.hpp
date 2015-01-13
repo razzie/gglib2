@@ -13,11 +13,10 @@
 #include <iomanip>
 #include <memory>
 #include <mutex>
-#include "gg/network.hpp"
 
 namespace gg
 {
-	class Buffer : public IBuffer
+	class Buffer
 	{
 	public:
 		Buffer()

@@ -17,7 +17,7 @@
  * 'gg::sendMessage(type, args..., {destination IDs}, optional sender ID = 0)'
  *
  * Use 'gg::IMessageReceiver::getNextMessage()' function to receive queued messages.
- * Message arguments can be accessed by 'message->getParam<std::string>(param_num)'.
+ * Message arguments can be accessed by 'message->get<std::string>(param_num)'.
  * Parameter numbers are 0 based.
  *
  * Messages have an message type (a number) and variable number of arguments. They
@@ -44,7 +44,7 @@ namespace gg
 	typedef uint16_t MessageType; // 0 is invalid
 	typedef uint16_t MessageReceiverID; // 0 is invalid
 
-	class IMessage
+	class IMessage : public IStorage
 	{
 	public:
 		IMessage(MessageType type) :
@@ -52,31 +52,11 @@ namespace gg
 		{
 		}
 
-		MessageType getType() const
+		virtual ~IMessage() {}
+
+		MessageType getMessageType() const
 		{
 			return m_type;
-		}
-
-		virtual ~IMessage() {}
-		virtual char* getParamPtr(unsigned) = 0;
-		virtual const char* getParamPtr(unsigned) const = 0;
-		virtual const std::type_info& getParamType(unsigned) const = 0;
-		virtual unsigned getParamCount() const = 0;
-
-		template<class T>
-		T& getParam(unsigned n)
-		{
-			if (n >= getParamCount()) throw std::out_of_range({});
-			if (typeid(T) != getParamType(n)) throw std::bad_cast();
-			return *reinterpret_cast<T*>(getParamPtr(n));
-		}
-
-		template<class T>
-		const T& getParam(unsigned n) const
-		{
-			if (n >= getParamCount()) throw std::out_of_range({});
-			if (typeid(T) != getParamType(n)) throw std::bad_cast();
-			return *reinterpret_cast<const T*>(getParamPtr(n));
 		}
 
 		void setSender(MessageReceiverID sender)
@@ -89,40 +69,50 @@ namespace gg
 			return m_sender;
 		}
 
+		// inherited from IStorage
+		virtual unsigned size() const = 0; // number of elements
+		virtual char* getPtr(unsigned) = 0;
+		virtual const char* getPtr(unsigned) const = 0;
+		virtual const std::type_info& getType(unsigned) const = 0;
+
 	private:
 		MessageType m_type;
 		MessageReceiverID m_sender;
 	};
 
 	template<class... Params>
-	class Message : public IMessage, public Storage<Params...>
+	class Message : public IMessage
 	{
 	public:
 		Message(MessageType type, Params... params) :
 			IMessage(type),
-			Storage(std::forward<Params>(params)...)
+			m_storage(std::forward<Params>(params)...)
 		{
 		}
 
-		virtual char* getParamPtr(unsigned n)
+		// inherited from IMessage (through IStorage)
+		virtual unsigned size() const
 		{
-			return Storage::getPtr(n);
+			return m_storage.size();
 		}
 
-		virtual const char* getParamPtr(unsigned n) const
+		virtual char* getPtr(unsigned n)
 		{
-			return Storage::getPtr(n);
+			return m_storage.getPtr(n);
 		}
 
-		virtual const std::type_info& getParamType(unsigned n) const
+		virtual const char* getPtr(unsigned n) const
 		{
-			return Storage::getType(n);
+			return m_storage.getPtr(n);
 		}
 
-		virtual unsigned getParamCount() const
+		virtual const std::type_info& getType(unsigned n) const
 		{
-			return Storage::count();
+			return m_storage.getType(n);
 		}
+
+	private:
+		Storage<Params...> m_storage;
 	};
 
 	bool addMessageType(MessageType, std::vector<const std::type_info*>&&);

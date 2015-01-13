@@ -6,19 +6,13 @@
  * All rights reserved.
  */
 
-void initMessages();
-void initSerializer();
-void initNtHookEngine();
+#ifndef GG_SERIALIZER_IMPL_HPP_INCLUDED
+#define GG_SERIALIZER_IMPL_HPP_INCLUDED
 
-class Initializer
+#include "gg/serializer.hpp"
+
+namespace gg
 {
-public:
-	Initializer()
-	{
-		initMessages();
-		initSerializer();
-		initNtHookEngine();
-	}
-};
+}
 
-static Initializer init;
+#endif // GG_SERIALIZER_IMPL_HPP_INCLUDED

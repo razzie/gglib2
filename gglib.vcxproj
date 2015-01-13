@@ -108,8 +108,8 @@
     <ClCompile Include="src\filesystem_impl.cpp" />
     <ClCompile Include="src\init.cpp" />
     <ClCompile Include="src\message_impl.cpp" />
-    <ClCompile Include="src\network_impl.cpp" />
     <ClCompile Include="src\NtHookEngine\NtHookEngine.cpp" />
+    <ClCompile Include="src\serializer_impl.cpp" />
     <ClCompile Include="src\streamutil_impl.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -117,10 +117,10 @@
     <ClInclude Include="include\gg\logger.hpp" />
     <ClInclude Include="include\gg\message.hpp" />
     <ClInclude Include="include\gg\storage.hpp" />
-    <ClInclude Include="src\buffer.hpp" />
+    <ClInclude Include="include\gg\buffer.hpp" />
     <ClInclude Include="include\gg\filesystem.hpp" />
     <ClInclude Include="include\gg\function.hpp" />
-    <ClInclude Include="include\gg\network.hpp" />
+    <ClInclude Include="include\gg\serializer.hpp" />
     <ClInclude Include="include\gg\streamutil.hpp" />
     <ClInclude Include="src\Doboz\Common.h" />
     <ClInclude Include="src\Doboz\Compressor.h" />
@@ -129,8 +129,8 @@
     <ClInclude Include="src\expression.hpp" />
     <ClInclude Include="src\filesystem_impl.hpp" />
     <ClInclude Include="src\message_impl.hpp" />
-    <ClInclude Include="src\network_impl.hpp" />
     <ClInclude Include="src\NtHookEngine\distorm.h" />
+    <ClInclude Include="src\serializer_impl.hpp" />
     <ClInclude Include="src\stringutil.hpp" />
     <ClInclude Include="include\gg\timer.hpp" />
     <ClInclude Include="include\gg\var.hpp" />

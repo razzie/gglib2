@@ -38,7 +38,7 @@ static bool isMessageValid(std::shared_ptr<gg::IMessage> msg)
 
 	{ // using exception-safe lock_guard in block
 		std::lock_guard<gg::FastMutex> guard(s_msg_types_mutex);
-		it = s_msg_types.find(msg->getType());
+		it = s_msg_types.find(msg->getMessageType());
 	}
 
 	if (it != s_msg_types.end())
@@ -46,15 +46,17 @@ static bool isMessageValid(std::shared_ptr<gg::IMessage> msg)
 		auto& arg_types = it->second;
 		const size_t arg_num = arg_types.size();
 
-		if (arg_num != msg->getParamCount()) return false;
+		if (arg_num != msg->size()) return false;
 
 		for (size_t i = 0; i < arg_num; ++i)
 		{
-			if (*arg_types[i] != msg->getParamType(i)) return false;
+			if (*arg_types[i] != msg->getType(i)) return false;
 		}
 
 		return true;
 	}
+
+	return false;
 }
 
 unsigned gg::sendMessage(std::shared_ptr<gg::IMessage> msg, const std::vector<gg::MessageReceiverID>& receiver_ids)
@@ -72,9 +74,10 @@ unsigned gg::sendMessage(std::shared_ptr<gg::IMessage> msg, const std::vector<gg
 		auto it = s_msg_receivers[receiver_id % MSG_HANDLERS_SEPARATION_NUM].find(receiver_id);
 		if (it != s_msg_receivers[receiver_id % MSG_HANDLERS_SEPARATION_NUM].end())
 		{
-			if (it->second->isMessageTypeSupported(msg->getType()))
+			if (it->second->isMessageTypeSupported(msg->getMessageType()))
 			{
 				gg::MessageReceiverAccessor(it->second).pushMessage(msg);
+				++receiver_cnt;
 			}
 		}
 	}

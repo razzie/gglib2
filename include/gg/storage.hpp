@@ -14,8 +14,32 @@
 
 namespace gg
 {
+	class IStorage
+	{
+	public:
+		virtual ~IStorage() {}
+		virtual unsigned size() const = 0; // number of elements
+		virtual char* getPtr(unsigned) = 0;
+		virtual const char* getPtr(unsigned) const = 0;
+		virtual const std::type_info& getType(unsigned) const = 0;
+
+		template<class T>
+		T& get(unsigned n)
+		{
+			if (typeid(T) != getType(n)) throw std::bad_cast();
+			return *reinterpret_cast<T*>(getPtr(n));
+		}
+
+		template<class T>
+		const T& get(unsigned n) const
+		{
+			if (typeid(T) != getType(n)) throw std::bad_cast();
+			return *reinterpret_cast<const T*>(getPtr(n));
+		}
+	};
+
 	template<class... Types>
-	class Storage
+	class Storage : public IStorage
 	{
 	public:
 		Storage()
@@ -33,42 +57,26 @@ namespace gg
 			destruct<0, Types...>();
 		}
 
-		unsigned count() const
+		virtual unsigned size() const
 		{
-			return size;
+			return sm_size;
 		}
 
-		template<class T>
-		T& get(unsigned n)
+		virtual char* getPtr(unsigned n)
 		{
-			if (n >= size) throw std::out_of_range({});
-			if (typeid(T) != *m_types[n]) throw std::bad_cast();
-			return *reinterpret_cast<T*>(m_ptrs[n]);
-		}
-
-		template<class T>
-		const T& get(unsigned n) const
-		{
-			if (n >= size) throw std::out_of_range({});
-			if (typeid(T) != *m_types[n]) throw std::bad_cast();
-			return *reinterpret_cast<const T*>(m_ptrs[n]);
-		}
-
-		char* getPtr(unsigned n)
-		{
-			if (n >= size) return nullptr;
+			if (n >= sm_size) throw std::out_of_range({});
 			return m_ptrs[n];
 		}
 
-		const char* getPtr(unsigned n) const
+		virtual const char* getPtr(unsigned n) const
 		{
-			if (n >= size) return nullptr;
+			if (n >= sm_size) throw std::out_of_range({});
 			return m_ptrs[n];
 		}
 
-		const std::type_info& getType(unsigned n) const
+		virtual const std::type_info& getType(unsigned n) const
 		{
-			if (n >= size) return typeid(void);
+			if (n >= sm_size) throw std::out_of_range({});
 			return *m_types[n];
 		}
 
@@ -120,10 +128,10 @@ namespace gg
 			destruct<offset + sizeof(T0), Ts...>();
 		}
 
-		static const unsigned size = sizeof...(Types);
+		static const unsigned sm_size = sizeof...(Types);
 		char  m_buffer[sum<sizeof(Types)...>::value];
-		char* m_ptrs[size];
-		const std::type_info* m_types[size];
+		char* m_ptrs[sm_size];
+		const std::type_info* m_types[sm_size];
 	};
 };
 
