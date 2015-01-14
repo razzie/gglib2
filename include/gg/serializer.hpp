@@ -21,11 +21,20 @@
 
 namespace gg
 {
+	class ISerializable
+	{
+	public:
+		virtual ~ISerializable() {}
+		virtual bool serialize(Buffer&) const = 0;
+		virtual bool deserialize(Buffer&) = 0;
+	};
+
 	typedef std::function<bool(const void*, Buffer&)> SerializerFunction;
 	typedef std::function<bool(void*, Buffer&)> DeserializerFunction;
 	bool addSerializableType(const std::type_info&, size_t, SerializerFunction, DeserializerFunction);
 
 	// overloaded serializer functions
+	bool serialize(const ISerializable&, Buffer&);
 	bool serialize(const Var&, Buffer&);
 	bool serialize(const VarArray&, Buffer&);
 	bool serialize(const IStorage&, Buffer&);
@@ -38,6 +47,7 @@ namespace gg
 	}
 
 	// overloaded deserializer functions
+	bool deserialize(ISerializable&, Buffer&);
 	bool deserialize(Var&, Buffer&); // var.construct<T>() should be called previously
 	bool deserialize(VarArray&, Buffer&); // all Var entries should be (default) constructed previously
 	bool deserialize(IStorage&, Buffer&);
@@ -48,13 +58,6 @@ namespace gg
 	{
 		return deserialize(typeid(T), reinterpret_cast<void*>(&o), buf);
 	}
-
-	class ISerializable
-	{
-	public:
-		virtual bool serialize(Buffer&) const;
-		virtual bool deserialize(Buffer&);
-	};
 
 	template<class T>
 	bool addSerializableClass(

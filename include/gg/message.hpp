@@ -31,20 +31,21 @@
 #define GG_MESSAGE_HPP_INCLUDED
 
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <queue>
 #include <stdexcept>
 #include <typeinfo>
-#include <vector>
 #include "gg/fastmutex.hpp"
 #include "gg/storage.hpp"
+#include "gg/serializer.hpp"
 
 namespace gg
 {
 	typedef uint16_t MessageType; // 0 is invalid
 	typedef uint16_t MessageReceiverID; // 0 is invalid
 
-	class IMessage : public IStorage
+	class IMessage : public IStorage, public ISerializable
 	{
 	public:
 		IMessage(MessageType type) :
@@ -75,6 +76,25 @@ namespace gg
 		virtual const char* getPtr(unsigned) const = 0;
 		virtual const std::type_info& getType(unsigned) const = 0;
 
+		// inherited from ISerializable
+		virtual bool serialize(Buffer& buf) const
+		{
+			bool result =
+				gg::serialize(m_type, buf) &&
+				gg::serialize(m_sender, buf) &&
+				gg::serialize(static_cast<const IStorage&>(*this), buf);
+			return result;
+		}
+
+		virtual bool deserialize(Buffer& buf)
+		{
+			bool result =
+				gg::deserialize(m_type, buf) &&
+				gg::deserialize(m_sender, buf) &&
+				gg::deserialize(static_cast<IStorage&>(*this), buf);
+			return result;
+		}
+
 	private:
 		MessageType m_type;
 		MessageReceiverID m_sender;
@@ -84,6 +104,12 @@ namespace gg
 	class Message : public IMessage
 	{
 	public:
+		Message(MessageType type) :
+			IMessage(type),
+			m_storage() // default constructs parameters
+		{
+		}
+
 		Message(MessageType type, Params... params) :
 			IMessage(type),
 			m_storage(std::forward<Params>(params)...)
@@ -115,22 +141,31 @@ namespace gg
 		Storage<Params...> m_storage;
 	};
 
-	bool addMessageType(MessageType, std::vector<const std::type_info*>&&);
-	unsigned sendMessage(std::shared_ptr<IMessage>, const std::vector<MessageReceiverID>&);
-	void enableRuntimeMessageChecks(bool = true); // enabled by default
-
-	template<class... Args>
-	bool addMessageType(MessageType type) // message types between 1-100 are reserved
+	template<class... Params>
+	std::shared_ptr<IMessage> createMessage(MessageType type, Params... params)
 	{
-		return addMessageType(type, { &typeid(Args)... });
+		return std::shared_ptr<IMessage>(new Message<Params...>(type, std::forward<Params>(params)...));
 	}
 
+	typedef std::function<std::shared_ptr<IMessage>(Buffer&)> MessageConstructor;
+	bool addMessageType(MessageType, MessageConstructor);
+	bool sendMessage(std::shared_ptr<IMessage>, MessageReceiverID);
+	std::shared_ptr<IMessage> deserializeMessage(Buffer&);
+
 	template<class... Params>
-	unsigned sendMessage(MessageType type, Params... params, const std::vector<MessageReceiverID>& receivers, MessageReceiverID sender = 0)
+	bool addMessageType(MessageType type) // message types between 1-100 are reserved
 	{
-		std::shared_ptr<IMessage> msg(new Message<Params...>(type, std::forward<Params>(params)...));
-		msg->setSender(sender);
-		return sendMessage(msg, receivers);
+		MessageConstructor msg_ctor =
+			[type](Buffer& buf) -> std::shared_ptr<IMessage>
+		{
+			std::shared_ptr<IMessage> msg(new Message<Params...>(type));
+			if (msg->deserialize(buf))
+				return msg;
+			else
+				return {};
+		};
+
+		return addMessageType(type, msg_ctor);
 	}
 
 	class IMessageReceiver
@@ -151,12 +186,9 @@ namespace gg
 			return m_id;
 		}
 
-		bool isMessageTypeSupported(MessageType type) const
+		virtual bool isMessageTypeSupported(MessageType) const
 		{
-			for (MessageType t : m_msg_types)
-				if (t == type) return true;
-
-			return false;
+			return true;
 		}
 
 		bool isMessageAvailable() const
@@ -180,22 +212,12 @@ namespace gg
 			}
 		}
 
-	protected:
-		void addMessageType(MessageType type)
-		{
-			for (MessageType t : m_msg_types)
-				if (t == type) return;
-
-			m_msg_types.push_back(type);
-		}
-
 	private:
 		friend class MessageReceiverAccessor;
 
 		MessageReceiverID m_id;
 		FastMutex m_msg_queue_mutex;
 		std::queue<std::shared_ptr<IMessage>> m_msg_queue;
-		std::vector<MessageType> m_msg_types;
 
 		static void registerInstance(IMessageReceiver*);
 		static void unregisterInstance(MessageReceiverID);

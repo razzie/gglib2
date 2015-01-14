@@ -105,6 +105,14 @@ bool gg::addSerializableType(const std::type_info& type, size_t size, gg::Serial
 	return globals.types.emplace(std::type_index(type), SerializableType{ &type, size, save_func, init_func }).second;
 }
 
+bool gg::serialize(const gg::ISerializable& s, gg::Buffer& buf)
+{
+	gg::Buffer tmp_buf;
+	bool result = s.serialize(tmp_buf);
+	if (result) buf.copyFrom(tmp_buf);
+	return result;
+}
+
 bool gg::serialize(const gg::Var& var, gg::Buffer& buf)
 {
 	return gg::serialize(var.getType(), var.getPtr(), buf);
@@ -155,6 +163,14 @@ bool gg::serialize(const std::type_info& type, const void* ptr, gg::Buffer& buf)
 	bool result = data->save_func(ptr, tmp_buf);
 
 	if (result) buf.copyFrom(tmp_buf);
+	return result;
+}
+
+bool gg::deserialize(gg::ISerializable& s, gg::Buffer& buf)
+{
+	gg::SafeBuffer tmp_buf(buf);
+	bool result = s.deserialize(tmp_buf);
+	if (result) tmp_buf.finalize();
 	return result;
 }
 

@@ -9,6 +9,7 @@
 #include <atomic>
 #include <map>
 #include <queue>
+#include "safebuffer.hpp"
 #include "message_impl.hpp"
 
 static const size_t MSG_HANDLERS_SEPARATION_NUM = 4;
@@ -16,8 +17,7 @@ static const size_t MSG_HANDLERS_SEPARATION_NUM = 4;
 struct GlobalsMSG
 {
 	gg::FastMutex msg_types_mutex;
-	std::map<gg::MessageType, std::vector<const std::type_info*>> msg_types;
-	bool runtime_checks = true;
+	std::map<gg::MessageType, gg::MessageConstructor> msg_types;
 
 	std::atomic<gg::MessageReceiverID> msg_receiver_id = { 1 };
 	gg::FastMutex msg_receivers_mutex[MSG_HANDLERS_SEPARATION_NUM];
@@ -27,68 +27,52 @@ struct GlobalsMSG
 static GlobalsMSG globals;
 
 
-bool gg::addMessageType(gg::MessageType msg_type, std::vector<const std::type_info*>&& types)
+bool gg::addMessageType(gg::MessageType msg_type, MessageConstructor msg_ctor)
 {
 	std::lock_guard<gg::FastMutex> guard(globals.msg_types_mutex);
-	return globals.msg_types.emplace(msg_type, std::move(types)).second;
+	return globals.msg_types.emplace(msg_type, msg_ctor).second;
 }
 
-static bool isMessageValid(std::shared_ptr<gg::IMessage> msg)
+bool gg::sendMessage(std::shared_ptr<gg::IMessage> msg, MessageReceiverID receiver_id)
 {
-	decltype(globals.msg_types.begin()) it;
+	if (receiver_id == 0) return false;
 
-	{ // using exception-safe lock_guard in block
-		std::lock_guard<gg::FastMutex> guard(globals.msg_types_mutex);
-		it = globals.msg_types.find(msg->getMessageType());
-	}
-
-	if (it != globals.msg_types.end())
+	std::lock_guard<gg::FastMutex> guard(globals.msg_receivers_mutex[receiver_id % MSG_HANDLERS_SEPARATION_NUM]);
+	auto it = globals.msg_receivers[receiver_id % MSG_HANDLERS_SEPARATION_NUM].find(receiver_id);
+	if (it != globals.msg_receivers[receiver_id % MSG_HANDLERS_SEPARATION_NUM].end())
 	{
-		auto& arg_types = it->second;
-		const size_t arg_num = arg_types.size();
-
-		if (arg_num != msg->size()) return false;
-
-		for (size_t i = 0; i < arg_num; ++i)
+		if (it->second->isMessageTypeSupported(msg->getMessageType()))
 		{
-			if (*arg_types[i] != msg->getType(i)) return false;
+			gg::MessageReceiverAccessor(it->second).pushMessage(msg);
+			return true;
 		}
-
-		return true;
 	}
 
 	return false;
 }
 
-unsigned gg::sendMessage(std::shared_ptr<gg::IMessage> msg, const std::vector<gg::MessageReceiverID>& receiver_ids)
+std::shared_ptr<gg::IMessage> gg::deserializeMessage(gg::Buffer& buf)
 {
-	if (globals.runtime_checks && !isMessageValid(msg))
-		return 0;
+	MessageType type;
+	gg::MessageConstructor msg_ctor;
+	gg::SafeBuffer tmp_buf(buf);
 
-	unsigned receiver_cnt = 0;
+	if (buf.peek(reinterpret_cast<char*>(&type), sizeof(type)) < sizeof(type))
+		return{};
 
-	for (auto receiver_id : receiver_ids)
-	{
-		if (receiver_id == 0) continue;
-
-		std::lock_guard<gg::FastMutex> guard(globals.msg_receivers_mutex[receiver_id % MSG_HANDLERS_SEPARATION_NUM]);
-		auto it = globals.msg_receivers[receiver_id % MSG_HANDLERS_SEPARATION_NUM].find(receiver_id);
-		if (it != globals.msg_receivers[receiver_id % MSG_HANDLERS_SEPARATION_NUM].end())
-		{
-			if (it->second->isMessageTypeSupported(msg->getMessageType()))
-			{
-				gg::MessageReceiverAccessor(it->second).pushMessage(msg);
-				++receiver_cnt;
-			}
-		}
+	{ // exception-safe mutex locking
+		std::lock_guard<gg::FastMutex> guard(globals.msg_types_mutex);
+		auto it = globals.msg_types.find(type);
+		if (it == globals.msg_types.end())
+			return{};
+		else
+			msg_ctor = it->second;
 	}
-	
-	return receiver_cnt;
-}
 
-void gg::enableRuntimeMessageChecks(bool enabled)
-{
-	globals.runtime_checks = enabled;
+	std::shared_ptr<gg::IMessage> msg = msg_ctor(tmp_buf);
+	if (msg) tmp_buf.finalize();
+
+	return msg;
 }
 
 
