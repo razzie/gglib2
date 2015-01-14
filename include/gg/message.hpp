@@ -159,6 +159,11 @@ namespace gg
 			return false;
 		}
 
+		bool isMessageAvailable() const
+		{
+			return !m_msg_queue.empty();
+		}
+
 		std::shared_ptr<IMessage> getNextMessage()
 		{
 			std::lock_guard<FastMutex> guard(m_msg_queue_mutex);
