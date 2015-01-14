@@ -11,8 +11,13 @@
 #include "Doboz/Decompressor.h"
 #include "filesystem_impl.hpp"
 
-std::mutex s_vdirs_mutex;
-std::map<std::string, gg::VirtualDirectory*> s_vdirs;
+struct GlobalsFS
+{
+	std::mutex vdirs_mutex;
+	std::map<std::string, gg::VirtualDirectory*> vdirs;
+};
+
+static GlobalsFS globals;
 
 static std::string getPathRoot(const std::string& path)
 {
@@ -41,8 +46,8 @@ bool gg::addVirtualDirectory(const std::string& vdir_path)
 
 	if (vdir->init())
 	{
-		std::lock_guard<std::mutex> guard(s_vdirs_mutex);
-		s_vdirs.emplace(getPathEnd(vdir_path), vdir);
+		std::lock_guard<std::mutex> guard(globals.vdirs_mutex);
+		globals.vdirs.emplace(getPathEnd(vdir_path), vdir);
 		return true;
 	}
 	else
@@ -55,8 +60,8 @@ std::shared_ptr<gg::IDirectory> gg::openDirectory(const std::string& dir_name)
 {
 	std::string vdir_name = getPathRoot(dir_name);
 
-	auto it = s_vdirs.find(vdir_name);
-	if (it != s_vdirs.end())
+	auto it = globals.vdirs.find(vdir_name);
+	if (it != globals.vdirs.end())
 	{
 		return it->second->getDirectory(dir_name.substr(dir_name.find('/') + 1));
 	}
@@ -70,8 +75,8 @@ std::shared_ptr<gg::IFile> gg::openFile(const std::string& file_name)
 {
 	std::string vdir_name = getPathRoot(file_name);
 
-	auto it = s_vdirs.find(vdir_name);
-	if (it != s_vdirs.end())
+	auto it = globals.vdirs.find(vdir_name);
+	if (it != globals.vdirs.end())
 	{
 		return it->second->getFile(file_name.substr(file_name.find('/') + 1));
 	}

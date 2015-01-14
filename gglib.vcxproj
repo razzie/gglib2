@@ -106,7 +106,6 @@
     <ClCompile Include="src\Doboz\Dictionary.cpp" />
     <ClCompile Include="src\expression.cpp" />
     <ClCompile Include="src\filesystem_impl.cpp" />
-    <ClCompile Include="src\init.cpp" />
     <ClCompile Include="src\message_impl.cpp" />
     <ClCompile Include="src\NtHookEngine\NtHookEngine.cpp" />
     <ClCompile Include="src\serializer_impl.cpp" />
@@ -128,8 +127,10 @@
     <ClInclude Include="src\Doboz\Dictionary.h" />
     <ClInclude Include="src\expression.hpp" />
     <ClInclude Include="src\filesystem_impl.hpp" />
+    <ClInclude Include="src\ieee754.hpp" />
     <ClInclude Include="src\message_impl.hpp" />
     <ClInclude Include="src\NtHookEngine\distorm.h" />
+    <ClInclude Include="src\safebuffer.hpp" />
     <ClInclude Include="src\serializer_impl.hpp" />
     <ClInclude Include="src\stringutil.hpp" />
     <ClInclude Include="include\gg\timer.hpp" />

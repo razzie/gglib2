@@ -39,9 +39,6 @@
     <ClCompile Include="src\message_impl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\init.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\expression.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -111,6 +108,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\serializer_impl.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\safebuffer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ieee754.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

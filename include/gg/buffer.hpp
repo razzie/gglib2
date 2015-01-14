@@ -11,7 +11,6 @@
 
 #include <deque>
 #include <iomanip>
-#include <memory>
 #include <mutex>
 
 namespace gg
@@ -92,20 +91,20 @@ namespace gg
 
 		}
 
-		void copyFrom(std::shared_ptr<Buffer> buf)
+		void copyFrom(const Buffer& buf)
 		{
 			std::lock_guard<std::mutex> guard1(m_mutex);
-			std::lock_guard<std::mutex> guard2(buf->m_mutex);
-			m_data.insert(m_data.end(), buf->m_data.begin(), buf->m_data.end());
+			std::lock_guard<std::mutex> guard2(buf.m_mutex);
+			m_data.insert(m_data.end(), buf.m_data.begin(), buf.m_data.end());
 		}
 
-		void moveFrom(std::shared_ptr<Buffer> buf)
+		void moveFrom(Buffer& buf)
 		{
 			std::lock_guard<std::mutex> guard1(m_mutex);
-			std::lock_guard<std::mutex> guard2(buf->m_mutex);
+			std::lock_guard<std::mutex> guard2(buf.m_mutex);
 			m_data.insert(m_data.end(),
-				std::make_move_iterator(buf->m_data.begin()),
-				std::make_move_iterator(buf->m_data.end()));
+				std::make_move_iterator(buf.m_data.begin()),
+				std::make_move_iterator(buf.m_data.end()));
 		}
 
 		friend std::ostream& operator<<(std::ostream& o, const Buffer& buf)
