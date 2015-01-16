@@ -37,7 +37,7 @@ namespace gg
 		virtual void redirect(const std::string& file_name) = 0;
 
 	protected:
-		ILogger() : std::ostream(0) {}
+		ILogger() : std::ostream(nullptr) {}
 	};
 
 	extern ILogger& log;

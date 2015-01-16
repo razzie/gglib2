@@ -11,6 +11,7 @@
 #include "gg/logger.hpp"
 #include "gg/message.hpp"
 #include "expression.hpp"
+#include "gg/console.hpp"
 
 int main()
 {
