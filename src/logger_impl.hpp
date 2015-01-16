@@ -1,0 +1,46 @@
+/**
+ * Copyright (c) 2014-2015 Gábor Görzsöny (www.gorzsony.com)
+ *
+ * This source is a private work and can be used only with the
+ * written permission of the author. Do not redistribute it!
+ * All rights reserved.
+ */
+
+#ifndef GG_LOGGER_IMPL_HPP_INCLUDED
+#define GG_LOGGER_IMPL_HPP_INCLUDED
+
+#include <map>
+#include <thread>
+#include <string>
+#include "gg/fastmutex.hpp"
+#include "gg/timer.hpp"
+#include "gg/logger.hpp"
+
+namespace gg
+{
+	class Logger : public ILogger, public std::streambuf
+	{
+	public:
+		Logger();
+		virtual ~Logger();
+		virtual void setTimestamp(Timestamp);
+		virtual void redirect(std::ostream&);
+		virtual void redirect(std::shared_ptr<std::ostream>);
+		virtual void redirect(const std::string& file_name);
+		void flush(const std::string&) const;
+
+	protected:
+		// inherited from std::streambuf
+		int overflow(int c = std::char_traits<char>::eof());
+		int sync();
+
+	private:
+		mutable FastMutex m_mutex;
+		std::map<std::thread::id, std::string> m_buffer;
+		std::shared_ptr<std::ostream> m_output;
+		Timestamp m_timestamp;
+		Timer m_timer;
+	};
+};
+
+#endif // GG_LOGGER_IMPL_HPP_INCLUDED

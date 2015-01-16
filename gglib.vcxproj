@@ -106,6 +106,7 @@
     <ClCompile Include="src\Doboz\Dictionary.cpp" />
     <ClCompile Include="src\expression.cpp" />
     <ClCompile Include="src\filesystem_impl.cpp" />
+    <ClCompile Include="src\logger_impl.cpp" />
     <ClCompile Include="src\message_impl.cpp" />
     <ClCompile Include="src\NtHookEngine\NtHookEngine.cpp" />
     <ClCompile Include="src\serializer_impl.cpp" />
@@ -128,6 +129,7 @@
     <ClInclude Include="src\expression.hpp" />
     <ClInclude Include="src\filesystem_impl.hpp" />
     <ClInclude Include="src\ieee754.hpp" />
+    <ClInclude Include="src\logger_impl.hpp" />
     <ClInclude Include="src\message_impl.hpp" />
     <ClInclude Include="src\NtHookEngine\distorm.h" />
     <ClInclude Include="src\safebuffer.hpp" />
