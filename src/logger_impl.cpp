@@ -2,12 +2,13 @@
 #include <chrono>
 #include <fstream>
 #include <sstream>
+#include <stdexcept>
 #include "logger_impl.hpp"
 
 #if defined _MSC_VER
-	#define THREAD_LOCAL __declspec(thread)
+#define THREAD_LOCAL __declspec(thread)
 #elif defined __GNUG__
-	#define THREAD_LOCAL __thread
+#define THREAD_LOCAL __thread
 #endif
 
 static gg::Logger s_logger;
@@ -41,6 +42,10 @@ void gg::Logger::redirect(std::ostream& o)
 void gg::Logger::redirect(std::shared_ptr<std::ostream> ptr)
 {
 	std::lock_guard<gg::FastMutex> guard(m_mutex);
+
+	if (ptr->rdbuf() == this)
+		throw std::runtime_error("gg::log redirected to itself");
+
 	m_output = ptr;
 }
 
