@@ -11,6 +11,7 @@
 
 #include <iostream>
 #include <string>
+#include <type_traits>
 #include "gg/var.hpp"
 #include "gg/function.hpp"
 
@@ -32,7 +33,15 @@ namespace gg
 		virtual bool bindToWindow(WindowHandle) = 0;
 
 		// add a function which can be used inside the console
-		virtual bool addFunction(const std::string& fname, gg::Function func, gg::VarArray&& defaults) = 0;
+		virtual bool addFunction(const std::string& fname, Function func, VarArray&& defaults) = 0;
+
+		template<class F>
+		bool addFunction(const std::string& fname, F func)
+		{
+			VarArray va;
+			SignatureParams<getLambdaSignature<F>>::setDefaults(va);
+			return addFunction(fname, func, std::move(va));
+		}
 
 		// completes the missing parts of 'cmdline' (if possible) and returns cursor position
 		virtual unsigned complete(std::string& cmdline, unsigned cursor_start = 0) const = 0;
@@ -42,6 +51,38 @@ namespace gg
 
 	protected:
 		IConsole() : std::ostream(nullptr) {}
+
+		template<class...>
+		class SignatureParams;
+
+		template<class R, class... Params>
+		class SignatureParams<R(Params...)>
+		{
+		public:
+			static void setDefaults(VarArray& va)
+			{
+				setDefaultsImpl<0, Params...>(va);
+			}
+
+		private:
+			template<int /* placeholder */, class P0, class... Ps>
+			static void setDefaultsImpl(gg::VarArray& va)
+			{
+				if (std::is_integral<P0>::value)
+					va.push_back(std::string("0"));
+				else if (std::is_floating_point<P0>::value)
+					va.push_back(std::string("0.0"));
+				else if (std::is_same<P0, gg::VarArray>::value)
+					va.push_back(std::string("()"));
+				else
+					va.push_back(std::string("\"\""));
+
+				setDefaultsImpl<0, Ps...>(va);
+			}
+
+			template<int>
+			static void setDefaultsImpl(gg::VarArray&) {}
+		};
 	};
 
 	extern IConsole& console;
