@@ -91,14 +91,14 @@ namespace gg
 
 		}
 
-		void copyFrom(const Buffer& buf)
+		virtual void copyFrom(const Buffer& buf)
 		{
 			std::lock_guard<std::mutex> guard1(m_mutex);
 			std::lock_guard<std::mutex> guard2(buf.m_mutex);
 			m_data.insert(m_data.end(), buf.m_data.begin(), buf.m_data.end());
 		}
 
-		void moveFrom(Buffer& buf)
+		virtual void moveFrom(Buffer& buf)
 		{
 			std::lock_guard<std::mutex> guard1(m_mutex);
 			std::lock_guard<std::mutex> guard2(buf.m_mutex);
@@ -123,7 +123,7 @@ namespace gg
 			return o;
 		}
 
-	private:
+	protected:
 		mutable std::mutex m_mutex;
 		std::deque<char> m_data;
 	};
