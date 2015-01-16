@@ -164,13 +164,6 @@ namespace gg
 				p = *static_cast<const T*>(m_storage->getPtr());
 				return true;
 			}
-			else if (m_storage->getType() == typeid(std::string))
-			{
-				std::stringstream ss;
-				m_storage->toStream(ss);
-				p = ss.str();
-				return true;
-			}
 			else
 			{
 				std::stringstream ss;

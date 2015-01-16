@@ -12,6 +12,7 @@
 #include <iosfwd>
 #include <locale>
 #include <stdexcept>
+#include <string>
 
 namespace gg
 {
@@ -263,6 +264,17 @@ namespace gg
 				static std::istream& apply(std::istream& i, U& value)
 				{
 					i >> value;
+					return i;
+				}
+			};
+
+			// special case for std::string
+			template<>
+			struct Extract<std::string, true>
+			{
+				static std::istream& apply(std::istream& i, std::string& str)
+				{
+					std::getline(i, str);
 					return i;
 				}
 			};

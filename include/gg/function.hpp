@@ -16,6 +16,45 @@
 
 namespace gg
 {
+	template<class F>
+	class LambdaSignature
+	{
+		template<class T>
+		struct removeClass { };
+
+		template<class C, class R, class... Params>
+		struct removeClass<R(C::*)(Params...)>
+		{
+			using type = typename std::remove_pointer<R(*)(Params...)>::type;
+		};
+
+		template<class C, class R, class... Params>
+		struct removeClass<R(C::*)(Params...) const>
+		{
+			using type = typename std::remove_pointer<R(*)(Params...)>::type;
+		};
+
+		template<class T>
+		struct getSignatureImpl
+		{
+			using type = typename removeClass<
+				decltype(&std::remove_reference<T>::type::operator())>::type;
+		};
+
+		template<class R, class... Params>
+		struct getSignatureImpl<R(*)(Params...)>
+		{
+			using type = typename std::remove_pointer<R(*)(Params...)>::type;
+		};
+
+	public:
+		using type = typename getSignatureImpl<F>::type;
+	};
+
+	template<class F>
+	using getLambdaSignature = typename LambdaSignature<F>::type;
+
+
 	class Function
 	{
 	public:
@@ -75,38 +114,6 @@ namespace gg
 		}
 	
 	private:
-		template<class T>
-		struct removeClass { };
-
-		template<class C, class R, class... Params>
-		struct removeClass<R(C::*)(Params...)>
-		{
-			using type = typename std::remove_pointer<R(*)(Params...)>::type;
-		};
-
-		template<class C, class R, class... Params>
-		struct removeClass<R(C::*)(Params...) const>
-		{
-			using type = typename std::remove_pointer<R(*)(Params...)>::type;
-		};
-
-		template<class T>
-		struct getSignatureImpl
-		{
-			using type = typename removeClass<
-				decltype(&std::remove_reference<T>::type::operator())>::type;
-		};
-
-		template<class R, class... Params>
-		struct getSignatureImpl<R(*)(Params...)>
-		{
-			using type = typename std::remove_pointer<R(*)(Params...)>::type;
-		};
-
-		template<class T>
-		using getSignature = typename getSignatureImpl<T>::type;
-
-
 		template<class R>
 		static R call(std::function<R()> func, const gg::VarArray& va, unsigned skipParams = 0)
 		{
@@ -159,7 +166,7 @@ namespace gg
 		template<class F>
 		static std::function<Var(VarArray)> convert(F func)
 		{
-			return convert(std::function<getSignature<F>>(func));
+			return convert(std::function<getLambdaSignature<F>>(func));
 		}
 
 
