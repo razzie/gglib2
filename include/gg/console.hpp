@@ -43,11 +43,11 @@ namespace gg
 			return addFunction(fname, func, std::move(va));
 		}
 
-		// completes the missing parts of 'cmdline' (if possible) and returns cursor position
-		virtual unsigned complete(std::string& cmdline, unsigned cursor_start = 0) const = 0;
+		// completes the missing parts of 'expression' (if possible) and returns cursor position
+		virtual unsigned complete(std::string& expression, unsigned cursor_start = 0) const = 0;
 
-		// 'rval' will contain the value of the expression in 'cmdline' or ParseError
-		virtual bool exec(const std::string& cmdline, Var* rval = nullptr) const = 0;
+		// evaluates 'expression' and returns its value (or ParseError) in 'rval'
+		virtual bool exec(const std::string& expression, Var* rval = nullptr) const = 0;
 
 	protected:
 		IConsole() : std::ostream(nullptr) {}
@@ -73,7 +73,7 @@ namespace gg
 				else if (std::is_floating_point<P0>::value)
 					va.push_back(std::string("0.0"));
 				else if (std::is_same<P0, gg::VarArray>::value)
-					va.push_back(std::string("()"));
+					va.push_back(std::string("(())"));
 				else
 					va.push_back(std::string("\"\""));
 

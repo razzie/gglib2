@@ -101,6 +101,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="src\console_impl.cpp" />
     <ClCompile Include="src\Doboz\Compressor.cpp" />
     <ClCompile Include="src\Doboz\Decompressor.cpp" />
     <ClCompile Include="src\Doboz\Dictionary.cpp" />
@@ -123,6 +124,7 @@
     <ClInclude Include="include\gg\function.hpp" />
     <ClInclude Include="include\gg\serializer.hpp" />
     <ClInclude Include="include\gg\streamutil.hpp" />
+    <ClInclude Include="src\console_impl.hpp" />
     <ClInclude Include="src\Doboz\Common.h" />
     <ClInclude Include="src\Doboz\Compressor.h" />
     <ClInclude Include="src\Doboz\Decompressor.h" />

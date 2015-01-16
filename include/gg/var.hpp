@@ -246,9 +246,9 @@ namespace gg
 	{
 		auto it = va.begin();
 
-		s << "[" << insert(*(it++));
+		s << "(" << insert(*(it++));
 		std::for_each(it, va.end(), [&](const Var& v){ s << ", " << insert(v); });
-		s << "]";
+		s << ")";
 
 		return s;
 	}

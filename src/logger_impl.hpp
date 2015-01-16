@@ -27,7 +27,7 @@ namespace gg
 		virtual void redirect(std::ostream&);
 		virtual void redirect(std::shared_ptr<std::ostream>);
 		virtual void redirect(const std::string& file_name);
-		void flush(const std::string&) const;
+		void write(const std::string&) const;
 
 	protected:
 		// inherited from std::streambuf

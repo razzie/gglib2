@@ -56,7 +56,7 @@ void gg::Logger::redirect(const std::string& file_name)
 		redirect(ptr);
 }
 
-void gg::Logger::flush(const std::string& str) const
+void gg::Logger::write(const std::string& str) const
 {
 	using namespace std::chrono;
 
@@ -106,7 +106,7 @@ int gg::Logger::sync()
 		if (thread_buffer->back() == '\n')
 			thread_buffer->back() = '\0';
 
-		flush(*thread_buffer);
+		write(*thread_buffer);
 		thread_buffer->clear();
 	}
 
