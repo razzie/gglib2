@@ -12,10 +12,11 @@
 #include <deque>
 #include <iomanip>
 #include <mutex>
+#include "gg/serializer.hpp"
 
 namespace gg
 {
-	class Buffer
+	class Buffer : public IBuffer
 	{
 	public:
 		Buffer()
@@ -58,7 +59,7 @@ namespace gg
 				m_data.push_back(ptr[i]);
 		}
 
-		virtual size_t peek(char* ptr, size_t len, size_t start_pos = 0)
+		virtual size_t peek(char* ptr, size_t len, size_t start_pos = 0) const
 		{
 			std::lock_guard<std::mutex> guard(m_mutex);
 
@@ -91,21 +92,29 @@ namespace gg
 
 		}
 
-		virtual void copyFrom(const Buffer& buf)
+		virtual void copyFrom(const IBuffer& ibuf)
 		{
-			std::lock_guard<std::mutex> guard1(m_mutex);
-			std::lock_guard<std::mutex> guard2(buf.m_mutex);
-			m_data.insert(m_data.end(), buf.m_data.begin(), buf.m_data.end());
+			if (typeid(ibuf) == typeid(Buffer))
+			{
+				const Buffer& buf = static_cast<const Buffer&>(ibuf);
+				std::lock_guard<std::mutex> guard1(m_mutex);
+				std::lock_guard<std::mutex> guard2(buf.m_mutex);
+				m_data.insert(m_data.end(), buf.m_data.begin(), buf.m_data.end());
+			}
+			else
+			{
+				IBuffer::copyFrom(ibuf);
+			}
 		}
 
-		virtual void moveFrom(Buffer& buf)
+		/*virtual void moveFrom(Buffer& buf)
 		{
 			std::lock_guard<std::mutex> guard1(m_mutex);
 			std::lock_guard<std::mutex> guard2(buf.m_mutex);
 			m_data.insert(m_data.end(),
 				std::make_move_iterator(buf.m_data.begin()),
 				std::make_move_iterator(buf.m_data.end()));
-		}
+		}*/
 
 		friend std::ostream& operator<<(std::ostream& o, const Buffer& buf)
 		{

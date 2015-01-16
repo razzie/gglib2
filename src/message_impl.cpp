@@ -51,7 +51,7 @@ bool gg::sendMessage(std::shared_ptr<gg::IMessage> msg, MessageReceiverID receiv
 	return false;
 }
 
-std::shared_ptr<gg::IMessage> gg::deserializeMessage(gg::Buffer& buf)
+std::shared_ptr<gg::IMessage> gg::deserializeMessage(gg::IBuffer& buf)
 {
 	MessageType type;
 	gg::MessageConstructor msg_ctor;

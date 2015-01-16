@@ -9,14 +9,14 @@
 #ifndef GG_SAFEBUFFER_HPP_INCLUDED
 #define GG_SAFEBUFFER_HPP_INCLUDED
 
-#include "gg/buffer.hpp"
+#include "gg/serializer.hpp"
 
 namespace gg
 {
-	class SafeBuffer : public Buffer
+	class SafeBuffer : public IBuffer
 	{
 	public:
-		SafeBuffer(Buffer& buf) :
+		SafeBuffer(IBuffer& buf) :
 			m_buf(buf), m_pos(0)
 		{
 		}
@@ -54,7 +54,7 @@ namespace gg
 			m_buf.write(ptr, len);
 		}
 
-		virtual size_t peek(char* ptr, size_t len, size_t start_pos = 0)
+		virtual size_t peek(char* ptr, size_t len, size_t start_pos = 0) const
 		{
 			return m_buf.peek(ptr, len, start_pos + m_pos);
 		}
@@ -73,7 +73,7 @@ namespace gg
 		}
 
 	private:
-		Buffer& m_buf;
+		IBuffer& m_buf;
 		size_t m_pos;
 	};
 };

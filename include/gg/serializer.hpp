@@ -15,46 +15,66 @@
 #include <string>
 #include <typeinfo>
 #include <type_traits>
-#include "gg/buffer.hpp"
 #include "gg/var.hpp"
 #include "gg/storage.hpp"
 
 namespace gg
 {
+	class IBuffer
+	{
+	public:
+		virtual ~IBuffer() {}
+		virtual size_t available() const = 0;
+		virtual void skip(size_t len) = 0;
+		virtual void clear() = 0;
+		virtual void write(char c) = 0;
+		virtual void write(const char* ptr, size_t len) = 0;
+		virtual size_t peek(char* ptr, size_t len, size_t start_pos = 0) const = 0;
+		virtual size_t read(char* ptr, size_t len) = 0;
+		virtual void copyFrom(const IBuffer& buf)
+		{
+			size_t a = buf.available();
+			char* tmp = new char[a];
+			a = buf.peek(tmp, a);
+			write(tmp, a);
+			delete[] tmp;
+		}
+	};
+
 	class ISerializable
 	{
 	public:
 		virtual ~ISerializable() {}
-		virtual bool serialize(Buffer&) const = 0;
-		virtual bool deserialize(Buffer&) = 0;
+		virtual bool serialize(IBuffer&) const = 0;
+		virtual bool deserialize(IBuffer&) = 0;
 	};
 
-	typedef std::function<bool(const void*, Buffer&)> SerializerFunction;
-	typedef std::function<bool(void*, Buffer&)> DeserializerFunction;
+	typedef std::function<bool(const void*, IBuffer&)> SerializerFunction;
+	typedef std::function<bool(void*, IBuffer&)> DeserializerFunction;
 	bool addSerializableType(const std::type_info&, size_t, SerializerFunction, DeserializerFunction);
 
 	// overloaded serializer functions
-	bool serialize(const ISerializable&, Buffer&);
-	bool serialize(const Var&, Buffer&);
-	bool serialize(const VarArray&, Buffer&);
-	bool serialize(const IStorage&, Buffer&);
-	bool serialize(const std::type_info&, const void*, Buffer&);
+	bool serialize(const ISerializable&, IBuffer&);
+	bool serialize(const Var&, IBuffer&);
+	bool serialize(const VarArray&, IBuffer&);
+	bool serialize(const IStorage&, IBuffer&);
+	bool serialize(const std::type_info&, const void*, IBuffer&);
 
 	template<class T>
-	bool serialize(const T& o, Buffer& buf)
+	bool serialize(const T& o, IBuffer& buf)
 	{
 		return serialize(typeid(T), reinterpret_cast<const void*>(&o), buf);
 	}
 
 	// overloaded deserializer functions
-	bool deserialize(ISerializable&, Buffer&);
-	bool deserialize(Var&, Buffer&); // var.construct<T>() should be called previously
-	bool deserialize(VarArray&, Buffer&); // all Var entries should be (default) constructed previously
-	bool deserialize(IStorage&, Buffer&);
-	bool deserialize(const std::type_info&, void*, Buffer&);
+	bool deserialize(ISerializable&, IBuffer&);
+	bool deserialize(Var&, IBuffer&); // var.construct<T>() should be called previously
+	bool deserialize(VarArray&, IBuffer&); // all Var entries should be (default) constructed previously
+	bool deserialize(IStorage&, IBuffer&);
+	bool deserialize(const std::type_info&, void*, IBuffer&);
 
 	template<class T>
-	bool deserialize(T& o, Buffer& buf)
+	bool deserialize(T& o, IBuffer& buf)
 	{
 		return deserialize(typeid(T), reinterpret_cast<void*>(&o), buf);
 	}
@@ -64,13 +84,13 @@ namespace gg
 		typename std::enable_if<std::is_base_of<ISerializable, T>::value>::type* = 0)
 	{
 		SerializerFunction save_func =
-			[](const void* ptr, Buffer& buf) -> bool
+			[](const void* ptr, IBuffer& buf) -> bool
 		{
 			return reinterpret_cast<const ISerializable*>(ptr)->serialize(buf);
 		};
 
 		DeserializerFunction init_func =
-			[](void* ptr, Buffer& buf) -> bool
+			[](void* ptr, IBuffer& buf) -> bool
 		{
 			return reinterpret_cast<ISerializable*>(ptr)->deserialize(buf);
 		};
@@ -80,18 +100,18 @@ namespace gg
 
 	template<class T>
 	bool addSerializableType(
-		std::function<bool(const T&, Buffer&)> orig_save_func,
-		std::function<bool(T&, Buffer&)> orig_init_func)
+		std::function<bool(const T&, IBuffer&)> orig_save_func,
+		std::function<bool(T&, IBuffer&)> orig_init_func)
 	{
 		SerializerFunction save_func =
-			[orig_save_func](const void* ptr, Buffer& buf) -> bool
+			[orig_save_func](const void* ptr, IBuffer& buf) -> bool
 		{
 			const T& o = *reinterpret_cast<const T*>(ptr);
 			return orig_save_func(o, buf);
 		};
 
 		DeserializerFunction init_func =
-			[orig_init_func](void* ptr, Buffer& buf) -> bool
+			[orig_init_func](void* ptr, IBuffer& buf) -> bool
 		{
 			T& o = *reinterpret_cast<T*>(ptr);
 			return orig_init_func(o, buf);
@@ -105,14 +125,14 @@ namespace gg
 		typename std::enable_if<std::is_trivial<T>::value>::type* = 0)
 	{
 		SerializerFunction save_func =
-			[](const void* ptr, Buffer& buf) -> bool
+			[](const void* ptr, IBuffer& buf) -> bool
 		{
 			buf.write(reinterpret_cast<const char*>(ptr), sizeof(T));
 			return true;
 		};
 
 		DeserializerFunction init_func =
-			[](void* ptr, Buffer& buf) -> bool
+			[](void* ptr, IBuffer& buf) -> bool
 		{
 			if (buf.read(reinterpret_cast<char*>(ptr), sizeof(T)) < sizeof(T))
 				return false;

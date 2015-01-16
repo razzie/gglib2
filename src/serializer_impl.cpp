@@ -9,18 +9,19 @@
 #include <map>
 #include <typeindex>
 #include "gg/fastmutex.hpp"
+#include "buffer.hpp"
 #include "safebuffer.hpp"
 #include "ieee754.hpp"
 #include "serializer_impl.hpp"
 
-static bool serializeFloat(const float& f, gg::Buffer& buf)
+static bool serializeFloat(const float& f, gg::IBuffer& buf)
 {
 	uint64_t tmp = pack754_32(f);
 	buf.write(reinterpret_cast<const char*>(&tmp), sizeof(tmp));
 	return true;
 }
 
-static bool deserializeFloat(float& f, gg::Buffer& buf)
+static bool deserializeFloat(float& f, gg::IBuffer& buf)
 {
 	uint64_t tmp;
 	if (buf.read(reinterpret_cast<char*>(&tmp), sizeof(tmp)) < sizeof(tmp))
@@ -29,14 +30,14 @@ static bool deserializeFloat(float& f, gg::Buffer& buf)
 	return true;
 }
 
-static bool serializeDouble(const double& f, gg::Buffer& buf)
+static bool serializeDouble(const double& f, gg::IBuffer& buf)
 {
 	uint64_t tmp = pack754_64(f);
 	buf.write(reinterpret_cast<const char*>(&tmp), sizeof(tmp));
 	return true;
 }
 
-static bool deserializeDouble(double& f, gg::Buffer& buf)
+static bool deserializeDouble(double& f, gg::IBuffer& buf)
 {
 	uint64_t tmp;
 	if (buf.read(reinterpret_cast<char*>(&tmp), sizeof(tmp)) < sizeof(tmp))
@@ -45,7 +46,7 @@ static bool deserializeDouble(double& f, gg::Buffer& buf)
 	return true;
 }
 
-static bool serializeString(const std::string& str, gg::Buffer& buf)
+static bool serializeString(const std::string& str, gg::IBuffer& buf)
 {
 	const uint16_t len = str.length();
 	buf.write(reinterpret_cast<const char*>(&len), sizeof(len));
@@ -53,7 +54,7 @@ static bool serializeString(const std::string& str, gg::Buffer& buf)
 	return true;
 }
 
-static bool deserializeString(std::string& str, gg::Buffer& buf)
+static bool deserializeString(std::string& str, gg::IBuffer& buf)
 {
 	uint16_t len;
 	if (buf.read(reinterpret_cast<char*>(&len), sizeof(len)) < sizeof(len))
@@ -105,7 +106,7 @@ bool gg::addSerializableType(const std::type_info& type, size_t size, gg::Serial
 	return globals.types.emplace(std::type_index(type), SerializableType{ &type, size, save_func, init_func }).second;
 }
 
-bool gg::serialize(const gg::ISerializable& s, gg::Buffer& buf)
+bool gg::serialize(const gg::ISerializable& s, gg::IBuffer& buf)
 {
 	gg::Buffer tmp_buf;
 	bool result = s.serialize(tmp_buf);
@@ -113,12 +114,12 @@ bool gg::serialize(const gg::ISerializable& s, gg::Buffer& buf)
 	return result;
 }
 
-bool gg::serialize(const gg::Var& var, gg::Buffer& buf)
+bool gg::serialize(const gg::Var& var, gg::IBuffer& buf)
 {
 	return gg::serialize(var.getType(), var.getPtr(), buf);
 }
 
-bool gg::serialize(const gg::VarArray& va, gg::Buffer& buf)
+bool gg::serialize(const gg::VarArray& va, gg::IBuffer& buf)
 {
 	gg::Buffer tmp_buf;
 
@@ -132,7 +133,7 @@ bool gg::serialize(const gg::VarArray& va, gg::Buffer& buf)
 	return true;
 }
 
-bool gg::serialize(const gg::IStorage& st, gg::Buffer& buf)
+bool gg::serialize(const gg::IStorage& st, gg::IBuffer& buf)
 {
 	gg::Buffer tmp_buf;
 
@@ -146,7 +147,7 @@ bool gg::serialize(const gg::IStorage& st, gg::Buffer& buf)
 	return true;
 }
 
-bool gg::serialize(const std::type_info& type, const void* ptr, gg::Buffer& buf)
+bool gg::serialize(const std::type_info& type, const void* ptr, gg::IBuffer& buf)
 {
 	SerializableType* data = nullptr;
 
@@ -166,7 +167,7 @@ bool gg::serialize(const std::type_info& type, const void* ptr, gg::Buffer& buf)
 	return result;
 }
 
-bool gg::deserialize(gg::ISerializable& s, gg::Buffer& buf)
+bool gg::deserialize(gg::ISerializable& s, gg::IBuffer& buf)
 {
 	gg::SafeBuffer tmp_buf(buf);
 	bool result = s.deserialize(tmp_buf);
@@ -174,12 +175,12 @@ bool gg::deserialize(gg::ISerializable& s, gg::Buffer& buf)
 	return result;
 }
 
-bool gg::deserialize(gg::Var& var, gg::Buffer& buf)
+bool gg::deserialize(gg::Var& var, gg::IBuffer& buf)
 {
 	return gg::deserialize(var.getType(), var.getPtr(), buf);
 }
 
-bool gg::deserialize(gg::VarArray& va, gg::Buffer& buf)
+bool gg::deserialize(gg::VarArray& va, gg::IBuffer& buf)
 {
 	gg::SafeBuffer tmp_buf(buf);
 
@@ -193,7 +194,7 @@ bool gg::deserialize(gg::VarArray& va, gg::Buffer& buf)
 	return true;
 }
 
-bool gg::deserialize(gg::IStorage& st, gg::Buffer& buf)
+bool gg::deserialize(gg::IStorage& st, gg::IBuffer& buf)
 {
 	gg::SafeBuffer tmp_buf(buf);
 
@@ -207,7 +208,7 @@ bool gg::deserialize(gg::IStorage& st, gg::Buffer& buf)
 	return true;
 }
 
-bool gg::deserialize(const std::type_info& type, void* ptr, gg::Buffer& buf)
+bool gg::deserialize(const std::type_info& type, void* ptr, gg::IBuffer& buf)
 {
 	SerializableType* data = nullptr;
 

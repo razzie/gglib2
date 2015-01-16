@@ -77,7 +77,7 @@ namespace gg
 		virtual const std::type_info& getType(unsigned) const = 0;
 
 		// inherited from ISerializable
-		virtual bool serialize(Buffer& buf) const
+		virtual bool serialize(IBuffer& buf) const
 		{
 			bool result =
 				gg::serialize(m_type, buf) &&
@@ -86,7 +86,7 @@ namespace gg
 			return result;
 		}
 
-		virtual bool deserialize(Buffer& buf)
+		virtual bool deserialize(IBuffer& buf)
 		{
 			bool result =
 				gg::deserialize(m_type, buf) &&
@@ -147,16 +147,16 @@ namespace gg
 		return std::shared_ptr<IMessage>(new Message<Params...>(type, std::forward<Params>(params)...));
 	}
 
-	typedef std::function<std::shared_ptr<IMessage>(Buffer&)> MessageConstructor;
+	typedef std::function<std::shared_ptr<IMessage>(IBuffer&)> MessageConstructor;
 	bool addMessageType(MessageType, MessageConstructor);
 	bool sendMessage(std::shared_ptr<IMessage>, MessageReceiverID);
-	std::shared_ptr<IMessage> deserializeMessage(Buffer&);
+	std::shared_ptr<IMessage> deserializeMessage(IBuffer&);
 
 	template<class... Params>
 	bool addMessageType(MessageType type) // message types between 1-100 are reserved
 	{
 		MessageConstructor msg_ctor =
-			[type](Buffer& buf) -> std::shared_ptr<IMessage>
+			[type](IBuffer& buf) -> std::shared_ptr<IMessage>
 		{
 			std::shared_ptr<IMessage> msg(new Message<Params...>(type));
 			if (msg->deserialize(buf))
