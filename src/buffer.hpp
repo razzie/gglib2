@@ -29,39 +29,39 @@ namespace gg
 
 		virtual size_t available() const
 		{
-			std::lock_guard<std::mutex> guard(m_mutex);
+			std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 			return m_data.size();
 		}
 
 		virtual void skip(size_t len)
 		{
-			std::lock_guard<std::mutex> guard(m_mutex);
+			std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 			auto it_begin = m_data.begin(), it_end = std::next(it_begin, len);
 			m_data.erase(it_begin, it_end);
 		}
 
 		virtual void clear()
 		{
-			std::lock_guard<std::mutex> guard(m_mutex);
+			std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 			m_data.clear();
 		}
 
 		virtual void write(char c)
 		{
-			std::lock_guard<std::mutex> guard(m_mutex);
+			std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 			m_data.push_back(c);
 		}
 
 		virtual void write(const char* ptr, size_t len)
 		{
-			std::lock_guard<std::mutex> guard(m_mutex);
+			std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 			for (size_t i = 0; i < len; ++i)
 				m_data.push_back(ptr[i]);
 		}
 
 		virtual size_t peek(char* ptr, size_t len, size_t start_pos = 0) const
 		{
-			std::lock_guard<std::mutex> guard(m_mutex);
+			std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 
 			if (start_pos > m_data.size()) return 0;
 
@@ -77,7 +77,7 @@ namespace gg
 
 		virtual size_t read(char* ptr, size_t len)
 		{
-			std::lock_guard<std::mutex> guard(m_mutex);
+			std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 
 			auto it = m_data.begin(), end = m_data.end();
 			size_t i = 0;
@@ -97,8 +97,8 @@ namespace gg
 			if (typeid(ibuf) == typeid(Buffer))
 			{
 				const Buffer& buf = static_cast<const Buffer&>(ibuf);
-				std::lock_guard<std::mutex> guard1(m_mutex);
-				std::lock_guard<std::mutex> guard2(buf.m_mutex);
+				std::lock_guard<decltype(m_mutex)> guard1(m_mutex);
+				std::lock_guard<decltype(buf.m_mutex)> guard2(buf.m_mutex);
 				m_data.insert(m_data.end(), buf.m_data.begin(), buf.m_data.end());
 			}
 			else
@@ -107,18 +107,9 @@ namespace gg
 			}
 		}
 
-		/*virtual void moveFrom(Buffer& buf)
-		{
-			std::lock_guard<std::mutex> guard1(m_mutex);
-			std::lock_guard<std::mutex> guard2(buf.m_mutex);
-			m_data.insert(m_data.end(),
-				std::make_move_iterator(buf.m_data.begin()),
-				std::make_move_iterator(buf.m_data.end()));
-		}*/
-
 		friend std::ostream& operator<<(std::ostream& o, const Buffer& buf)
 		{
-			std::lock_guard<std::mutex> guard(buf.m_mutex);
+			std::lock_guard<decltype(buf.m_mutex)> guard(buf.m_mutex);
 			std::ios state(NULL);
 			int i = 0;
 

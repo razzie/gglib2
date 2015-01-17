@@ -34,14 +34,14 @@ bool gg::Console::FunctionData::Comparator
 gg::Console::SafeRedirect::SafeRedirect(gg::Console& console, std::ostream& output) :
 	m_console(console)
 {
-	std::lock_guard<FastMutex> guard(m_console.m_mutex);
+	std::lock_guard<decltype(m_console.m_mutex)> guard(m_console.m_mutex);
 	std::ostream* ptr = (&output == &console) ? nullptr : &output;
 	m_console.m_redirect_stack[std::this_thread::get_id()].push_back(ptr);
 }
 
 gg::Console::SafeRedirect::~SafeRedirect()
 {
-	std::lock_guard<FastMutex> guard(m_console.m_mutex);
+	std::lock_guard<decltype(m_console.m_mutex)> guard(m_console.m_mutex);
 	m_console.m_redirect_stack[std::this_thread::get_id()].pop_back();
 }
 
@@ -67,7 +67,7 @@ bool gg::Console::addFunction(const std::string& fname, gg::Function func, gg::V
 	ss << defaults;
 	Expression sign(ss.str());
 
-	std::lock_guard<FastMutex> guard(m_mutex);
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 	return m_functions.emplace(fname, FunctionData{ func, defaults, std::move(sign) }).second;
 }
 
@@ -106,7 +106,7 @@ void gg::Console::write(const std::string& str)
 {
 	if (str.empty()) return;
 
-	std::lock_guard<gg::FastMutex> guard(m_mutex);
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 	auto& output_stack = m_redirect_stack[std::this_thread::get_id()];
 
 	if (output_stack.empty() || output_stack.back() == nullptr)
@@ -125,7 +125,7 @@ void gg::Console::write(std::string&& str)
 {
 	if (str.empty()) return;
 
-	std::lock_guard<gg::FastMutex> guard(m_mutex);
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 	auto& output_stack = m_redirect_stack[std::this_thread::get_id()];
 
 	if (output_stack.empty() || output_stack.back() == nullptr)
@@ -144,7 +144,7 @@ int gg::Console::overflow(int c)
 {
 	if (thread_buffer == nullptr)
 	{
-		std::lock_guard<gg::FastMutex> guard(m_mutex);
+		std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 		thread_buffer = &m_buffer[std::this_thread::get_id()];
 	}
 
@@ -185,7 +185,7 @@ bool gg::Console::isValidFunctionName(const std::string& fname) const
 
 void gg::Console::findMatchingFunctions(const std::string& prefix, std::vector<std::string>& out_matches) const
 {
-	std::lock_guard<FastMutex> guard(m_mutex);
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 
 	std::string fn = gg::trim(prefix);
 	size_t len = fn.size();
@@ -293,7 +293,7 @@ void gg::Console::completeExpr(std::string& expr, bool print) const
 		{
 			e.setName(name);
 
-			std::lock_guard<FastMutex> guard(m_mutex);
+			std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 			auto pos = m_functions.find(name);
 			if (pos != m_functions.end())
 			{
@@ -313,7 +313,7 @@ void gg::Console::completeExpr(std::string& expr, bool print) const
 				completeFn(name, print);
 				child.setName(name);
 
-				std::lock_guard<FastMutex> guard(m_mutex);
+				std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 				auto pos = m_functions.find(name);
 				if (pos != m_functions.end()) completeExprSignature(e, pos->second.signature);
 			}
@@ -358,7 +358,7 @@ bool gg::Console::evaluate(const gg::Expression& expr, gg::Var& rval) const
 			const Function* func = nullptr;
 
 			{
-				std::lock_guard<FastMutex> guard(m_mutex);
+				std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 				auto pos = m_functions.find(name);
 				if (pos != m_functions.end()) func = &(pos->second.function);
 			}

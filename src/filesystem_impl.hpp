@@ -104,7 +104,7 @@ namespace gg
 
 		virtual const char* getData() const
 		{
-			std::lock_guard<std::mutex> guard(m_mutex);
+			std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 
 			if (m_data == nullptr)
 				m_vdir->loadFileData(m_name.substr(m_name.find('/') + 1), &m_data, &m_size);
@@ -114,7 +114,7 @@ namespace gg
 
 		virtual size_t getSize() const
 		{
-			std::lock_guard<std::mutex> guard(m_mutex);
+			std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 
 			if (m_data == nullptr)
 				m_vdir->loadFileData(m_name.substr(m_name.find('/') + 1), &m_data, &m_size);
@@ -124,7 +124,7 @@ namespace gg
 
 		virtual void unload()
 		{
-			std::lock_guard<std::mutex> guard(m_mutex);
+			std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 
 			if (m_data != nullptr)
 			{

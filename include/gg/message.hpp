@@ -198,7 +198,7 @@ namespace gg
 
 		std::shared_ptr<IMessage> getNextMessage()
 		{
-			std::lock_guard<FastMutex> guard(m_msg_queue_mutex);
+			std::lock_guard<decltype(m_msg_queue_mutex)> guard(m_msg_queue_mutex);
 
 			if (!m_msg_queue.empty())
 			{

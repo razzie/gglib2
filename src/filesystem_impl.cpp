@@ -46,7 +46,7 @@ bool gg::addVirtualDirectory(const std::string& vdir_path)
 
 	if (vdir->init())
 	{
-		std::lock_guard<std::mutex> guard(globals.vdirs_mutex);
+		std::lock_guard<decltype(globals.vdirs_mutex)> guard(globals.vdirs_mutex);
 		globals.vdirs.emplace(getPathEnd(vdir_path), vdir);
 		return true;
 	}
@@ -145,7 +145,7 @@ std::shared_ptr<gg::IDirectory> gg::VirtualDirectory::getDirectory(const std::st
 
 std::shared_ptr<gg::IFile> gg::VirtualDirectory::getFile(const std::string& file_name)
 {
-	std::lock_guard<std::mutex> guard(m_mutex);
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 
 	auto it = m_files.find(file_name);
 	if (it != m_files.end())
@@ -169,7 +169,7 @@ std::shared_ptr<gg::IFile> gg::VirtualDirectory::getFile(const std::string& file
 
 bool gg::VirtualDirectory::loadDirectoryData(const std::string& dir_name, std::vector<IDirectory::FileOrDirectory>* files)
 {
-	std::lock_guard<std::mutex> guard(m_mutex);
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 
 	std::set<std::string> directories;
 	const size_t name_begin_pos = dir_name.size();
@@ -209,7 +209,7 @@ bool gg::VirtualDirectory::loadDirectoryData(const std::string& dir_name, std::v
 
 bool gg::VirtualDirectory::loadFileData(const std::string& file_name, const char** data, size_t* size)
 {
-	std::lock_guard<std::mutex> guard(m_mutex);
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 
 	auto it = m_files.find(file_name);
 	if (it != m_files.end())

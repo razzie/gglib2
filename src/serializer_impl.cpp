@@ -102,7 +102,7 @@ static GlobalsSRL globals;
 
 bool gg::addSerializableType(const std::type_info& type, size_t size, gg::SerializerFunction save_func, gg::DeserializerFunction init_func)
 {
-	std::lock_guard<gg::FastMutex> guard(globals.types_mutex);
+	std::lock_guard<decltype(globals.types_mutex)> guard(globals.types_mutex);
 	return globals.types.emplace(std::type_index(type), SerializableType{ &type, size, save_func, init_func }).second;
 }
 
@@ -152,7 +152,7 @@ bool gg::serialize(const std::type_info& type, const void* ptr, gg::IBuffer& buf
 	SerializableType* data = nullptr;
 
 	{ // exception-safe mutex locking
-		std::lock_guard<gg::FastMutex> guard(globals.types_mutex);
+		std::lock_guard<decltype(globals.types_mutex)> guard(globals.types_mutex);
 		auto it = globals.types.find(type);
 		if (it == globals.types.end())
 			return false;
@@ -213,7 +213,7 @@ bool gg::deserialize(const std::type_info& type, void* ptr, gg::IBuffer& buf)
 	SerializableType* data = nullptr;
 
 	{ // exception-safe mutex locking
-		std::lock_guard<gg::FastMutex> guard(globals.types_mutex);
+		std::lock_guard<decltype(globals.types_mutex)> guard(globals.types_mutex);
 		auto it = globals.types.find(type);
 		if (it == globals.types.end())
 			return false;

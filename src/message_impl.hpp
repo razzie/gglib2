@@ -33,7 +33,7 @@ namespace gg
 
 		void pushMessage(std::shared_ptr<IMessage> msg)
 		{
-			std::lock_guard<gg::FastMutex> guard(m_handler->m_msg_queue_mutex);
+			std::lock_guard<decltype(m_handler->m_msg_queue_mutex)> guard(m_handler->m_msg_queue_mutex);
 			m_handler->m_msg_queue.push(msg);
 		}
 

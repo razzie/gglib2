@@ -29,7 +29,7 @@ static GlobalsMSG globals;
 
 bool gg::addMessageType(gg::MessageType msg_type, MessageConstructor msg_ctor)
 {
-	std::lock_guard<gg::FastMutex> guard(globals.msg_types_mutex);
+	std::lock_guard<decltype(globals.msg_types_mutex)> guard(globals.msg_types_mutex);
 	return globals.msg_types.emplace(msg_type, msg_ctor).second;
 }
 
@@ -37,7 +37,9 @@ bool gg::sendMessage(std::shared_ptr<gg::IMessage> msg, MessageReceiverID receiv
 {
 	if (receiver_id == 0) return false;
 
-	std::lock_guard<gg::FastMutex> guard(globals.msg_receivers_mutex[receiver_id % MSG_HANDLERS_SEPARATION_NUM]);
+	std::lock_guard<decltype(globals.msg_receivers_mutex[receiver_id % MSG_HANDLERS_SEPARATION_NUM])>
+		guard(globals.msg_receivers_mutex[receiver_id % MSG_HANDLERS_SEPARATION_NUM]);
+
 	auto it = globals.msg_receivers[receiver_id % MSG_HANDLERS_SEPARATION_NUM].find(receiver_id);
 	if (it != globals.msg_receivers[receiver_id % MSG_HANDLERS_SEPARATION_NUM].end())
 	{
@@ -61,7 +63,7 @@ std::shared_ptr<gg::IMessage> gg::deserializeMessage(gg::IBuffer& buf)
 		return{};
 
 	{ // exception-safe mutex locking
-		std::lock_guard<gg::FastMutex> guard(globals.msg_types_mutex);
+		std::lock_guard<decltype(globals.msg_types_mutex)> guard(globals.msg_types_mutex);
 		auto it = globals.msg_types.find(type);
 		if (it == globals.msg_types.end())
 			return{};
@@ -81,7 +83,9 @@ void gg::IMessageReceiver::registerInstance(gg::IMessageReceiver* receiver)
 	MessageReceiverID receiver_id = globals.msg_receiver_id.fetch_add(1);
 	MessageReceiverAccessor(receiver).setID(receiver_id);
 
-	std::lock_guard<gg::FastMutex> guard(globals.msg_receivers_mutex[receiver_id % MSG_HANDLERS_SEPARATION_NUM]);
+	std::lock_guard<decltype(globals.msg_receivers_mutex[receiver_id % MSG_HANDLERS_SEPARATION_NUM])>
+		guard(globals.msg_receivers_mutex[receiver_id % MSG_HANDLERS_SEPARATION_NUM]);
+
 	globals.msg_receivers[receiver_id % MSG_HANDLERS_SEPARATION_NUM].emplace(receiver_id, receiver);
 }
 
@@ -89,6 +93,8 @@ void gg::IMessageReceiver::unregisterInstance(gg::MessageReceiverID receiver_id)
 {
 	if (receiver_id == 0) return;
 
-	std::lock_guard<gg::FastMutex> guard(globals.msg_receivers_mutex[receiver_id % MSG_HANDLERS_SEPARATION_NUM]);
+	std::lock_guard<decltype(globals.msg_receivers_mutex[receiver_id % MSG_HANDLERS_SEPARATION_NUM])>
+		guard(globals.msg_receivers_mutex[receiver_id % MSG_HANDLERS_SEPARATION_NUM]);
+
 	globals.msg_receivers[receiver_id % MSG_HANDLERS_SEPARATION_NUM].erase(receiver_id);
 }

@@ -57,7 +57,7 @@ void gg::Logger::redirect(std::ostream& o)
 
 void gg::Logger::redirect(std::shared_ptr<std::ostream> ptr)
 {
-	std::lock_guard<gg::FastMutex> guard(m_mutex);
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 
 	if (ptr->rdbuf() == this)
 		throw std::runtime_error("gg::log redirected to itself");
@@ -81,7 +81,7 @@ void gg::Logger::write(const std::string& str) const
 
 	if (len == 0) return;
 
-	std::lock_guard<gg::FastMutex> guard(m_mutex);
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 	std::stringstream stamp;
 
 	if (m_timestamp == Timestamp::ELAPSED_TIME)
@@ -115,7 +115,7 @@ int gg::Logger::overflow(int c)
 {
 	if (thread_buffer == nullptr)
 	{
-		std::lock_guard<gg::FastMutex> guard(m_mutex);
+		std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 		thread_buffer = &m_buffer[std::this_thread::get_id()];
 	}
 
