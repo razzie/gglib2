@@ -3,6 +3,9 @@
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
+#ifdef _WIN32
+#include <windows.h>
+#endif
 #include "logger_impl.hpp"
 
 #if defined _MSC_VER
@@ -16,6 +19,17 @@ gg::ILogger& gg::log = s_logger;
 
 static THREAD_LOCAL std::string* thread_buffer = nullptr;
 
+
+static int getTimeZoneBiasInMinutes() // UTC - local time
+{
+#ifdef _WIN32
+	TIME_ZONE_INFORMATION tzi;
+	GetTimeZoneInformation(&tzi);
+	return tzi.Bias;
+#else
+	return 0;
+#endif
+}
 
 gg::Logger::Logger() :
 	std::ostream(this),
@@ -80,6 +94,9 @@ void gg::Logger::write(const std::string& str) const
 	else if (m_timestamp == Timestamp::SYSTEM_TIME)
 	{
 		auto sec = duration_cast<seconds>(system_clock::now().time_since_epoch()).count();
+		auto timezone_bias = getTimeZoneBiasInMinutes();
+
+		sec -= timezone_bias * 60;
 
 		stamp << std::setfill('0') << "["
 			<< std::setw(2) << (sec / 3600) % 24 << ":"
