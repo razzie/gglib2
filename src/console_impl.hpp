@@ -28,6 +28,8 @@ namespace gg
 		virtual bool addFunction(const std::string& fname, Function func, VarArray&& defaults);
 		virtual unsigned complete(std::string& expression, unsigned cursor_start = 0) const;
 		virtual bool exec(const std::string& expression, Var* rval = nullptr) const;
+		void write(const std::string&);
+		void write(std::string&&);
 
 	protected:
 		// inherited from std::streambuf
@@ -72,9 +74,8 @@ namespace gg
 		bool completeFn(std::string&, bool print = false) const;
 		bool completeFn(std::string&, const std::vector<std::string>&, bool print = false) const;
 		void completeExpr(std::string&, bool print = false) const;
-		std::string::iterator completeAndJumpCursor(
-			std::string& expr, std::string::iterator start_pos, bool print) const;
 		bool evaluate(const Expression&, Var&) const;
+		static void jumpToNextArg(const std::string&, std::string::const_iterator& in_out_pos);
 		static DriverType getDriverType();
 		/*void renderGL() const;
 		void renderDX9() const;

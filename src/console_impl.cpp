@@ -35,7 +35,6 @@ gg::Console::Console() :
 	m_hwnd(nullptr),
 	m_driver_type(DriverType::UNKNOWN)
 {
-
 }
 
 gg::Console::~Console()
@@ -59,13 +58,11 @@ bool gg::Console::addFunction(const std::string& fname, gg::Function func, gg::V
 
 unsigned gg::Console::complete(std::string& expression, unsigned cursor_start) const
 {
-	std::string::iterator start, end;
 	const size_t len = expression.size();
-
-	start = std::next(expression.begin(), (cursor_start > len) ? len : cursor_start);
-	end = completeAndJumpCursor(expression, start, false);
-
-	return std::distance(expression.begin(), end);
+	std::string::iterator pos = std::next(expression.begin(), (cursor_start > len) ? len : cursor_start);
+	jumpToNextArg(expression, pos);
+	completeExpr(expression, false);
+	return std::distance(expression.begin(), pos);
 }
 
 bool gg::Console::exec(const std::string& expression, gg::Var* rval) const
@@ -85,13 +82,51 @@ bool gg::Console::exec(const std::string& expression, gg::Var* rval) const
 	return false;
 }
 
+void gg::Console::write(const std::string& str)
+{
+	if (str.empty()) return;
+
+	std::lock_guard<gg::FastMutex> guard(m_mutex);
+	m_output.push_back(str);
+	std::string& s = m_output.back();
+	if (s.back() == '\n') s.back() = '\0';
+}
+
+void gg::Console::write(std::string&& str)
+{
+	if (str.empty()) return;
+
+	std::lock_guard<gg::FastMutex> guard(m_mutex);
+	m_output.push_back(str);
+	std::string& s = m_output.back();
+	if (s.back() == '\n') s.back() = '\0';
+}
+
 int gg::Console::overflow(int c)
 {
+	if (thread_buffer == nullptr)
+	{
+		std::lock_guard<gg::FastMutex> guard(m_mutex);
+		thread_buffer = &m_buffer[std::this_thread::get_id()];
+	}
+
+	char ch = c;
+	thread_buffer->append(&ch, 1);
+
 	return c;
 }
 
 int gg::Console::sync()
 {
+	if (thread_buffer != nullptr)
+	{
+		if (thread_buffer->back() == '\n')
+			thread_buffer->back() = '\0';
+
+		write(*thread_buffer);
+		thread_buffer->clear();
+	}
+
 	return 0;
 }
 
@@ -250,16 +285,6 @@ void gg::Console::completeExpr(std::string& expr, bool print) const
 	expr = e.getExpression();
 }
 
-std::string::iterator gg::Console::completeAndJumpCursor(
-	std::string& expr, std::string::iterator start_pos, bool print) const
-{
-	completeExpr(expr, false);
-
-	// cursor moving here!
-
-	return start_pos;
-}
-
 bool gg::Console::evaluate(const gg::Expression& expr, gg::Var& rval) const
 {
 	std::string name = expr.getName();
@@ -309,6 +334,23 @@ bool gg::Console::evaluate(const gg::Expression& expr, gg::Var& rval) const
 	}
 
 	return false;
+}
+
+void gg::Console::jumpToNextArg(const std::string& expr, std::string::const_iterator& pos)
+{
+	for (; pos != expr.end(); ++pos)
+	{
+		if (*pos == '(' || *pos == ',')
+		{
+			++pos;
+			if (pos != expr.end())
+			{
+				if (*pos == ' ') for (; pos != expr.end() && *pos == ' '; ++pos);
+				if (*pos == '"') ++pos;
+			}
+			break;
+		}
+	}
 }
 
 gg::Console::DriverType gg::Console::getDriverType()

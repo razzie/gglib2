@@ -60,6 +60,11 @@ void gg::Logger::write(const std::string& str) const
 {
 	using namespace std::chrono;
 
+	size_t len = str.length();
+	for (; len && str[len-1] == '\n'; --len);
+
+	if (len == 0) return;
+
 	std::lock_guard<gg::FastMutex> guard(m_mutex);
 	std::stringstream stamp;
 
@@ -82,7 +87,9 @@ void gg::Logger::write(const std::string& str) const
 			<< std::setw(2) << sec % 60 << "] ";
 	}
 
-	*m_output << stamp.rdbuf() << str << std::endl;
+	*m_output << stamp.rdbuf();
+	m_output->write(str.c_str(), len);
+	*m_output << std::endl;
 }
 
 int gg::Logger::overflow(int c)
@@ -103,9 +110,6 @@ int gg::Logger::sync()
 {
 	if (thread_buffer != nullptr)
 	{
-		if (thread_buffer->back() == '\n')
-			thread_buffer->back() = '\0';
-
 		write(*thread_buffer);
 		thread_buffer->clear();
 	}
