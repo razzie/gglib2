@@ -26,7 +26,7 @@ namespace gg
 		enum Timestamp
 		{
 			ELAPSED_TIME, // [min:sec:msec] - default
-			SYSTEM_TIME, // [hour:min:sec] - in UTC
+			SYSTEM_TIME, // [hour:min:sec]
 			NONE
 		};
 

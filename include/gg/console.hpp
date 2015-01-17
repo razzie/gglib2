@@ -48,7 +48,8 @@ namespace gg
 
 		// true returned: 'expression' was evaluated and its value was copied to 'rval'
 		// false returned: 'rval' contains the error message as an 'std::string'
-		virtual bool exec(const std::string& expression, Var* rval = nullptr) const = 0;
+		// while executing messages sent to 'gg::console' are redirected to 'output'
+		virtual bool exec(const std::string& expression, std::ostream& output, Var* rval = nullptr) const = 0;
 
 	protected:
 		IConsole() : std::ostream(nullptr) {}

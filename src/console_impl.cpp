@@ -15,6 +15,8 @@
 #define THREAD_LOCAL __declspec(thread)
 #elif defined __GNUG__
 #define THREAD_LOCAL __thread
+#else
+#define THREAD_LOCAL thread_local
 #endif
 
 static gg::Console s_console;
@@ -29,11 +31,24 @@ bool gg::Console::FunctionData::Comparator
 	return (gg::strcmpi(a, b) < 0);
 }
 
+gg::Console::SafeRedirect::SafeRedirect(gg::Console& console, std::ostream& output) :
+	m_console(console)
+{
+	std::lock_guard<FastMutex> guard(m_console.m_mutex);
+	std::ostream* ptr = (&output == &console) ? nullptr : &output;
+	m_console.m_redirect_stack[std::this_thread::get_id()].push_back(ptr);
+}
+
+gg::Console::SafeRedirect::~SafeRedirect()
+{
+	std::lock_guard<FastMutex> guard(m_console.m_mutex);
+	m_console.m_redirect_stack[std::this_thread::get_id()].pop_back();
+}
+
 gg::Console::Console() :
 	std::ostream(this),
 	m_cmd_pos(m_cmd.begin()),
-	m_hwnd(nullptr),
-	m_driver_type(DriverType::UNKNOWN)
+	m_hwnd(nullptr)
 {
 }
 
@@ -65,13 +80,18 @@ unsigned gg::Console::complete(std::string& expression, unsigned cursor_start) c
 	return std::distance(expression.begin(), pos);
 }
 
-bool gg::Console::exec(const std::string& expression, gg::Var* rval) const
+bool gg::Console::exec(const std::string& expression, std::ostream& output, gg::Var* rval) const
 {
 	try
 	{
 		Var v;
+		SafeRedirect(const_cast<Console&>(*this), output);
 		Expression e(expression);
-		return evaluate(e, (rval == nullptr) ? v : *rval);
+
+		bool result = evaluate(e, (rval == nullptr) ? v : *rval);
+		output.flush();
+
+		return result;
 	}
 	catch (ExpressionError& err)
 	{
@@ -87,9 +107,18 @@ void gg::Console::write(const std::string& str)
 	if (str.empty()) return;
 
 	std::lock_guard<gg::FastMutex> guard(m_mutex);
-	m_output.push_back(str);
-	std::string& s = m_output.back();
-	if (s.back() == '\n') s.back() = '\0';
+	auto& output_stack = m_redirect_stack[std::this_thread::get_id()];
+
+	if (output_stack.empty() || output_stack.back() == nullptr)
+	{
+		m_output.push_back(str);
+		std::string& s = m_output.back();
+		if (s.back() == '\n') s.back() = '\0';
+	}
+	else
+	{
+		output_stack.back()->write(str.c_str(), str.length());
+	}
 }
 
 void gg::Console::write(std::string&& str)
@@ -97,9 +126,18 @@ void gg::Console::write(std::string&& str)
 	if (str.empty()) return;
 
 	std::lock_guard<gg::FastMutex> guard(m_mutex);
-	m_output.push_back(str);
-	std::string& s = m_output.back();
-	if (s.back() == '\n') s.back() = '\0';
+	auto& output_stack = m_redirect_stack[std::this_thread::get_id()];
+
+	if (output_stack.empty() || output_stack.back() == nullptr)
+	{
+		m_output.push_back(str);
+		std::string& s = m_output.back();
+		if (s.back() == '\n') s.back() = '\0';
+	}
+	else
+	{
+		output_stack.back()->write(str.c_str(), str.length());
+	}
 }
 
 int gg::Console::overflow(int c)
@@ -351,9 +389,4 @@ void gg::Console::jumpToNextArg(const std::string& expr, std::string::const_iter
 			break;
 		}
 	}
-}
-
-gg::Console::DriverType gg::Console::getDriverType()
-{
-	return DriverType::GDI;
 }

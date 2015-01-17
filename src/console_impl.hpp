@@ -27,7 +27,7 @@ namespace gg
 		virtual bool bindToWindow(WindowHandle);
 		virtual bool addFunction(const std::string& fname, Function func, VarArray&& defaults);
 		virtual unsigned complete(std::string& expression, unsigned cursor_start = 0) const;
-		virtual bool exec(const std::string& expression, Var* rval = nullptr) const;
+		virtual bool exec(const std::string& expression, std::ostream& output, Var* rval = nullptr) const;
 		void write(const std::string&);
 		void write(std::string&&);
 
@@ -49,13 +49,14 @@ namespace gg
 			};
 		};
 
-		enum DriverType
+		class SafeRedirect
 		{
-			GL,
-			DX9,
-			DX11,
-			GDI,
-			UNKNOWN
+		public:
+			SafeRedirect(Console&, std::ostream&);
+			~SafeRedirect();
+
+		private:
+			Console& m_console;
 		};
 
 		mutable FastMutex m_mutex;
@@ -65,8 +66,8 @@ namespace gg
 		std::vector<std::string> m_cmd_history;
 		std::vector<std::string>::iterator m_cmd_history_pos;
 		WindowHandle m_hwnd;
-		DriverType m_driver_type;
 		std::vector<std::string> m_output;
+		std::map<std::thread::id, std::vector<std::ostream*>> m_redirect_stack;
 		std::map<std::thread::id, std::string> m_buffer;
 
 		bool isValidFunctionName(const std::string&) const;
@@ -76,11 +77,6 @@ namespace gg
 		void completeExpr(std::string&, bool print = false) const;
 		bool evaluate(const Expression&, Var&) const;
 		static void jumpToNextArg(const std::string&, std::string::const_iterator& in_out_pos);
-		static DriverType getDriverType();
-		/*void renderGL() const;
-		void renderDX9() const;
-		void renderDX11() const;
-		void renderGDI() const;*/
 	};
 };
 

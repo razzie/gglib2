@@ -12,6 +12,8 @@
 #define THREAD_LOCAL __declspec(thread)
 #elif defined __GNUG__
 #define THREAD_LOCAL __thread
+#else
+#define THREAD_LOCAL thread_local
 #endif
 
 static gg::Logger s_logger;
@@ -20,7 +22,7 @@ gg::ILogger& gg::log = s_logger;
 static THREAD_LOCAL std::string* thread_buffer = nullptr;
 
 
-static int getTimeZoneBiasInMinutes() // UTC - local time
+static int getTimeZoneBiasInMinutes() // bias = UTC - local time
 {
 #ifdef _WIN32
 	TIME_ZONE_INFORMATION tzi;
