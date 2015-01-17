@@ -69,7 +69,7 @@ static void makeValidLeafExpr(std::string& expr)
 
 
 gg::Expression::Expression(gg::Expression* parent, std::string orig_expr, bool auto_complete) :
-	m_expr(false), m_root((parent == nullptr))
+	m_expr(false), m_root(parent == nullptr)
 {
 	std::string expr = gg::trim(orig_expr);
 
@@ -136,7 +136,7 @@ gg::Expression::Expression(gg::Expression* parent, std::string orig_expr, bool a
 				std::string child_expr(expr_begin, it);
 				if (dbl_apost_cnt || !trim(child_expr).empty())
 				{
-					m_children.emplace(m_children.end(), this, child_expr, auto_complete);
+					this->addChild(child_expr, auto_complete);
 				}
 
 				expr_mode = EXPR_COMPLETE;
@@ -157,7 +157,7 @@ gg::Expression::Expression(gg::Expression* parent, std::string orig_expr, bool a
 				std::string child_expr(expr_begin, it);
 				if (dbl_apost_cnt || !trim(child_expr).empty())
 				{
-					m_children.emplace(m_children.end(), this, child_expr, auto_complete);
+					this->addChild(child_expr, auto_complete);
 				}
 
 				expr_begin = it + 1;
@@ -186,7 +186,7 @@ gg::Expression::Expression(gg::Expression* parent, std::string orig_expr, bool a
 
 			if (dbl_apost_cnt || !trim(child_expr).empty())
 			{
-				m_children.emplace(m_children.end(), this, child_expr, auto_complete);
+				this->addChild(child_expr, auto_complete);
 			}
 		}
 		else if (expr_mode == EXPR_NONE)
@@ -223,20 +223,12 @@ gg::Expression::Expression(gg::Expression&& expr) :
 	m_name(std::move(expr.m_name)),
 	m_children(std::move(expr.m_children)),
 	m_expr(expr.m_expr),
-	m_root(true)
+	m_root(expr.m_root)
 {
 }
 
 gg::Expression::~Expression()
 {
-}
-
-void gg::Expression::setName(std::string name)
-{
-	if (!isLeaf() && gg::containsSpace(name))
-		throw gg::ExpressionError("non-leaf expressions cannot contain space");
-
-	m_name = trim(name);
 }
 
 std::string gg::Expression::getName() const
@@ -269,9 +261,9 @@ std::string gg::Expression::getExpression() const
 	return expr;
 }
 
-void gg::Expression::setAsExpression()
+unsigned gg::Expression::getChildCount() const
 {
-	m_expr = true;
+	return m_children.size();
 }
 
 bool gg::Expression::isRoot() const
@@ -282,6 +274,24 @@ bool gg::Expression::isRoot() const
 bool gg::Expression::isLeaf() const
 {
 	return (m_children.empty() && !m_expr);
+}
+
+void gg::Expression::setName(std::string name)
+{
+	if (!isLeaf() && gg::containsSpace(name))
+		throw gg::ExpressionError("non-leaf expressions cannot contain space");
+
+	m_name = trim(name);
+}
+
+void gg::Expression::addChild(std::string expr, bool auto_complete)
+{
+	m_children.emplace(m_children.end(), this, expr, auto_complete);
+}
+
+void gg::Expression::setAsExpression()
+{
+	m_expr = true;
 }
 
 gg::Expression::Iterator gg::Expression::begin()
@@ -302,4 +312,14 @@ gg::Expression::ConstIterator gg::Expression::begin() const
 gg::Expression::ConstIterator gg::Expression::end() const
 {
 	return m_children.end();
+}
+
+gg::Expression::Iterator gg::Expression::insert(Iterator it, std::string expr, bool auto_complete)
+{
+	return m_children.emplace(it, this, expr, auto_complete);
+}
+
+gg::Expression::Iterator gg::Expression::erase(Iterator it)
+{
+	return m_children.erase(it);
 }

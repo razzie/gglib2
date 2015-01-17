@@ -148,7 +148,7 @@ namespace gg
 		}
 
 		template<class T>
-		operator const T&() const
+		operator T() const
 		{
 			return get<T>();
 		}

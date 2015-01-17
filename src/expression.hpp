@@ -22,16 +22,20 @@ namespace gg
 		Expression(std::string expr, bool auto_complete = false);
 		Expression(Expression&& e);
 		~Expression();
-		void setName(std::string name);
 		std::string getName() const;
 		std::string getExpression() const;
-		void setAsExpression();
+		unsigned getChildCount() const;
 		bool isRoot() const;
 		bool isLeaf() const;
+		void setName(std::string name);
+		void addChild(std::string expr, bool auto_complete = false);
+		void setAsExpression();
 		Iterator begin();
 		Iterator end();
 		ConstIterator begin() const;
 		ConstIterator end() const;
+		Iterator insert(Iterator, std::string expr, bool auto_complete = false);
+		Iterator erase(Iterator);
 
 	protected:
 		friend class std::allocator<Expression>;

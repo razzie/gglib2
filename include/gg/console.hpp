@@ -46,7 +46,8 @@ namespace gg
 		// completes the missing parts of 'expression' (if possible) and returns cursor position
 		virtual unsigned complete(std::string& expression, unsigned cursor_start = 0) const = 0;
 
-		// evaluates 'expression' and returns its value (or ParseError) in 'rval'
+		// true returned: 'expression' was evaluated and its value was copied to 'rval'
+		// false returned: 'rval' contains the error message as an 'std::string'
 		virtual bool exec(const std::string& expression, Var* rval = nullptr) const = 0;
 
 	protected:

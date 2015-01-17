@@ -39,7 +39,7 @@ namespace gg
 		{
 			Function function;
 			VarArray defaults;
-			std::string signature;
+			Expression signature;
 
 			struct Comparator
 			{
@@ -52,10 +52,11 @@ namespace gg
 			GL,
 			DX9,
 			DX11,
-			GDI
+			GDI,
+			UNKNOWN
 		};
 
-		FastMutex m_mutex;
+		mutable FastMutex m_mutex;
 		std::map<std::string, FunctionData, FunctionData::Comparator> m_functions;
 		std::string m_cmd;
 		std::string::iterator m_cmd_pos;
@@ -71,6 +72,8 @@ namespace gg
 		bool completeFn(std::string&, bool print = false) const;
 		bool completeFn(std::string&, const std::vector<std::string>&, bool print = false) const;
 		void completeExpr(std::string&, bool print = false) const;
+		std::string::iterator completeAndJumpCursor(
+			std::string& expr, std::string::iterator start_pos, bool print) const;
 		bool evaluate(const Expression&, Var&) const;
 		static DriverType getDriverType();
 		/*void renderGL() const;
