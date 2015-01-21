@@ -9,11 +9,12 @@
 #ifndef GG_CONSOLE_IMPL_HPP_INCLUDED
 #define GG_CONSOLE_IMPL_HPP_INCLUDED
 
+#include <list>
 #include <map>
+#include <mutex>
 #include <string>
 #include <thread>
 #include <vector>
-#include "gg/fastmutex.hpp"
 #include "expression.hpp"
 #include "gg/console.hpp"
 
@@ -24,12 +25,13 @@ namespace gg
 	public:
 		Console();
 		virtual ~Console();
-		virtual bool bindToWindow(WindowHandle);
+		virtual bool init();
 		virtual bool addFunction(const std::string& fname, Function func, VarArray&& defaults);
 		virtual unsigned complete(std::string& expression, unsigned cursor_start = 0) const;
 		virtual bool exec(const std::string& expression, std::ostream& output, Var* rval = nullptr) const;
 		void write(const std::string&);
 		void write(std::string&&);
+		void render();
 
 	protected:
 		// inherited from std::streambuf
@@ -37,6 +39,8 @@ namespace gg
 		int sync();
 
 	private:
+		friend class ConsoleAccessor;
+
 		struct FunctionData
 		{
 			Function function;
@@ -49,6 +53,23 @@ namespace gg
 			};
 		};
 
+		struct OutputData
+		{
+			enum Type
+			{
+				NORMAL,
+				FUNCTION_CALL,
+				FUNCTION_OUTPUT
+			};
+
+			Type type;
+			std::string text;
+			void* render_data;
+			unsigned lines;
+			unsigned output_num;
+			bool dirty;
+		};
+
 		class SafeRedirect
 		{
 		public:
@@ -59,16 +80,18 @@ namespace gg
 			Console& m_console;
 		};
 
-		mutable FastMutex m_mutex;
+		mutable std::recursive_mutex m_mutex;
 		std::map<std::string, FunctionData, FunctionData::Comparator> m_functions;
 		std::string m_cmd;
 		std::string::iterator m_cmd_pos;
 		std::vector<std::string> m_cmd_history;
 		std::vector<std::string>::iterator m_cmd_history_pos;
-		WindowHandle m_hwnd;
-		std::vector<std::string> m_output;
 		std::map<std::thread::id, std::vector<std::ostream*>> m_redirect_stack;
 		std::map<std::thread::id, std::string> m_buffer;
+		std::list<OutputData> m_output;
+		OutputData::Type m_curr_output_type;
+		unsigned m_output_counter;
+		bool m_render;
 
 		bool isValidFunctionName(const std::string&) const;
 		void findMatchingFunctions(const std::string&, std::vector<std::string>&) const;

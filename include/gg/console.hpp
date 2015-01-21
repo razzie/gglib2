@@ -17,8 +17,6 @@
 
 namespace gg
 {
-	typedef void* WindowHandle;
-
 	class IConsole : public virtual std::ostream
 	{
 	public:
@@ -29,8 +27,8 @@ namespace gg
 
 		virtual ~IConsole() {}
 
-		// binds the console to a window and unbinds it from the previous one (if any)
-		virtual bool bindToWindow(WindowHandle) = 0;
+		// should be called BEFORE initializing OPENGL or DIRECTX context
+		virtual bool init() = 0;
 
 		// add a function which can be used inside the console
 		virtual bool addFunction(const std::string& fname, Function func, VarArray&& defaults) = 0;

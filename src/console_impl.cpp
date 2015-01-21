@@ -48,17 +48,14 @@ gg::Console::SafeRedirect::~SafeRedirect()
 gg::Console::Console() :
 	std::ostream(this),
 	m_cmd_pos(m_cmd.begin()),
-	m_hwnd(nullptr)
+	m_curr_output_type(OutputData::Type::NORMAL),
+	m_output_counter(0),
+	m_render(true)
 {
 }
 
 gg::Console::~Console()
 {
-}
-
-bool gg::Console::bindToWindow(gg::WindowHandle hwnd)
-{
-	return false;
 }
 
 bool gg::Console::addFunction(const std::string& fname, gg::Function func, gg::VarArray&& defaults)
@@ -111,8 +108,8 @@ void gg::Console::write(const std::string& str)
 
 	if (output_stack.empty() || output_stack.back() == nullptr)
 	{
-		m_output.push_back(str);
-		std::string& s = m_output.back();
+		m_output.emplace_back(OutputData{ m_curr_output_type, str, nullptr, 0, ++m_output_counter, true });
+		std::string& s = m_output.back().text;
 		if (s.back() == '\n') s.back() = '\0';
 	}
 	else
@@ -130,8 +127,8 @@ void gg::Console::write(std::string&& str)
 
 	if (output_stack.empty() || output_stack.back() == nullptr)
 	{
-		m_output.push_back(str);
-		std::string& s = m_output.back();
+		m_output.emplace_back(OutputData{ m_curr_output_type, str, nullptr, 0, ++m_output_counter, true });
+		std::string& s = m_output.back().text;
 		if (s.back() == '\n') s.back() = '\0';
 	}
 	else

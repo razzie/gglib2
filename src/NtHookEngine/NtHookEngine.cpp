@@ -3,9 +3,9 @@
 #include <stdlib.h>
 #include "distorm.h"
 
-#pragma comment(lib, "lib/distorm_x86.lib")
-#pragma comment(lib, "lib/distorm_x64.lib")
-#pragma warning (disable : 4099)
+#pragma comment(lib, "distorm_x86.lib")
+//#pragma comment(lib, "distorm_x64.lib")
+//#pragma warning (disable : 4099)
 
 // 10000 hooks should be enough
 #define MAX_HOOKS 10000
@@ -62,26 +62,14 @@ UINT CurrentBridgeBufferSize = 0; // This number is incremented as
 	return TRUE;
 }*/
 
-class Initializer
+void initNtHookEngine()
 {
-public:
-	Initializer()
-	{
-		initNtHookEngine();
-	}
-
-private:
-	void initNtHookEngine()
-	{
-		pBridgeBuffer = (BYTE *)VirtualAlloc(NULL, MAX_HOOKS * (JUMP_WORST * 3),
-			MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-	}
-};
-
-static Initializer init;
+	pBridgeBuffer = (BYTE *)VirtualAlloc(NULL, MAX_HOOKS * (JUMP_WORST * 3),
+		MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+}
 
 
-HOOK_INFO *GetHookInfoFromFunction(ULONG_PTR OriginalFunction)
+static HOOK_INFO *GetHookInfoFromFunction(ULONG_PTR OriginalFunction)
 {
 	if (NumberOfHooks == 0)
 		return NULL;
@@ -99,7 +87,7 @@ HOOK_INFO *GetHookInfoFromFunction(ULONG_PTR OriginalFunction)
 // This function  retrieves the necessary size for the jump
 //
 
-UINT GetJumpSize(ULONG_PTR PosA, ULONG_PTR PosB)
+static UINT GetJumpSize(ULONG_PTR PosA, ULONG_PTR PosB)
 {
 	ULONG_PTR res = max(PosA, PosB) - min(PosA, PosB);
 
@@ -131,7 +119,7 @@ UINT GetJumpSize(ULONG_PTR PosA, ULONG_PTR PosB)
 // both for x86 and x64
 //
 
-VOID WriteJump(VOID *pAddress, ULONG_PTR JumpTo)
+static VOID WriteJump(VOID *pAddress, ULONG_PTR JumpTo)
 {
 	DWORD dwOldProtect = 0;
 
@@ -181,7 +169,7 @@ VOID WriteJump(VOID *pAddress, ULONG_PTR JumpTo)
 // This function creates a bridge of the original function
 //
 
-VOID *CreateBridge(ULONG_PTR Function, const UINT JumpSize)
+static VOID *CreateBridge(ULONG_PTR Function, const UINT JumpSize)
 {
 	if (pBridgeBuffer == NULL) return NULL;
 
@@ -265,8 +253,8 @@ VOID *CreateBridge(ULONG_PTR Function, const UINT JumpSize)
 // Hooks a function
 //
 
-extern "C" __declspec(dllexport)
-BOOL __cdecl HookFunction(ULONG_PTR OriginalFunction, ULONG_PTR NewFunction)
+/*extern "C" __declspec(dllexport)*/
+BOOL /*__cdecl*/ HookFunction(ULONG_PTR OriginalFunction, ULONG_PTR NewFunction)
 {
 	//
 	// Check if the function has already been hooked
@@ -307,8 +295,8 @@ BOOL __cdecl HookFunction(ULONG_PTR OriginalFunction, ULONG_PTR NewFunction)
 // Unhooks a function
 //
 
-extern "C" __declspec(dllexport)
-VOID __cdecl UnhookFunction(ULONG_PTR Function)
+/*extern "C" __declspec(dllexport)*/
+VOID /*__cdecl*/ UnhookFunction(ULONG_PTR Function)
 {
 	//
 	// Check if the function has already been hooked
@@ -333,8 +321,8 @@ VOID __cdecl UnhookFunction(ULONG_PTR Function)
 // Get the bridge to call instead of the original function from hook
 //
 
-extern "C" __declspec(dllexport)
-ULONG_PTR __cdecl GetOriginalFunction(ULONG_PTR Hook)
+/*extern "C" __declspec(dllexport)*/
+ULONG_PTR /*__cdecl*/ GetOriginalFunction(ULONG_PTR Hook)
 {
 	if (NumberOfHooks == 0)
 		return NULL;
