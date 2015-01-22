@@ -36,6 +36,7 @@
 #include <queue>
 #include <stdexcept>
 #include <typeinfo>
+#include "gg/config.hpp"
 #include "gg/fastmutex.hpp"
 #include "gg/storage.hpp"
 #include "gg/serializer.hpp"
@@ -148,9 +149,9 @@ namespace gg
 	}
 
 	typedef std::function<std::shared_ptr<IMessage>(IBuffer&)> MessageConstructor;
-	bool addMessageType(MessageType, MessageConstructor);
-	bool sendMessage(std::shared_ptr<IMessage>, MessageReceiverID);
-	std::shared_ptr<IMessage> deserializeMessage(IBuffer&);
+	bool GG_API addMessageType(MessageType, MessageConstructor);
+	bool GG_API sendMessage(std::shared_ptr<IMessage>, MessageReceiverID);
+	std::shared_ptr<IMessage> GG_API deserializeMessage(IBuffer&);
 
 	template<class... Params>
 	bool addMessageType(MessageType type) // message types between 1-100 are reserved
@@ -219,8 +220,8 @@ namespace gg
 		FastMutex m_msg_queue_mutex;
 		std::queue<std::shared_ptr<IMessage>> m_msg_queue;
 
-		static void registerInstance(IMessageReceiver*);
-		static void unregisterInstance(MessageReceiverID);
+		static void GG_API registerInstance(IMessageReceiver*);
+		static void GG_API unregisterInstance(MessageReceiverID);
 	};
 };
 

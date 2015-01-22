@@ -12,6 +12,7 @@
 #include <iostream>
 #include <string>
 #include <type_traits>
+#include "gg/config.hpp"
 #include "gg/var.hpp"
 #include "gg/function.hpp"
 
@@ -85,7 +86,7 @@ namespace gg
 		};
 	};
 
-	extern IConsole& console;
+	extern GG_API IConsole& console;
 };
 
 #endif // GG_CONSOLE_HPP_INCLUDED

@@ -9,26 +9,38 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "packer", "packer.vcxproj", 
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug DLL|Win32 = Debug DLL|Win32
+		Debug LIB|Win32 = Debug LIB|Win32
 		Debug|Win32 = Debug|Win32
+		Release DLL|Win32 = Release DLL|Win32
+		Release LIB|Win32 = Release LIB|Win32
 		Release|Win32 = Release|Win32
-		StaticLib Debug|Win32 = StaticLib Debug|Win32
-		StaticLib Release|Win32 = StaticLib Release|Win32
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1A069F5F-7A61-48E9-9F52-150E520D7A44}.Debug DLL|Win32.ActiveCfg = Debug DLL|Win32
+		{1A069F5F-7A61-48E9-9F52-150E520D7A44}.Debug DLL|Win32.Build.0 = Debug DLL|Win32
+		{1A069F5F-7A61-48E9-9F52-150E520D7A44}.Debug LIB|Win32.ActiveCfg = Debug LIB|Win32
+		{1A069F5F-7A61-48E9-9F52-150E520D7A44}.Debug LIB|Win32.Build.0 = Debug LIB|Win32
 		{1A069F5F-7A61-48E9-9F52-150E520D7A44}.Debug|Win32.ActiveCfg = Debug|Win32
 		{1A069F5F-7A61-48E9-9F52-150E520D7A44}.Debug|Win32.Build.0 = Debug|Win32
+		{1A069F5F-7A61-48E9-9F52-150E520D7A44}.Release DLL|Win32.ActiveCfg = Release DLL|Win32
+		{1A069F5F-7A61-48E9-9F52-150E520D7A44}.Release DLL|Win32.Build.0 = Release DLL|Win32
+		{1A069F5F-7A61-48E9-9F52-150E520D7A44}.Release LIB|Win32.ActiveCfg = Release LIB|Win32
+		{1A069F5F-7A61-48E9-9F52-150E520D7A44}.Release LIB|Win32.Build.0 = Release LIB|Win32
 		{1A069F5F-7A61-48E9-9F52-150E520D7A44}.Release|Win32.ActiveCfg = Release|Win32
 		{1A069F5F-7A61-48E9-9F52-150E520D7A44}.Release|Win32.Build.0 = Release|Win32
-		{1A069F5F-7A61-48E9-9F52-150E520D7A44}.StaticLib Debug|Win32.ActiveCfg = StaticLib Debug|Win32
-		{1A069F5F-7A61-48E9-9F52-150E520D7A44}.StaticLib Debug|Win32.Build.0 = StaticLib Debug|Win32
-		{1A069F5F-7A61-48E9-9F52-150E520D7A44}.StaticLib Release|Win32.ActiveCfg = StaticLib Release|Win32
-		{1A069F5F-7A61-48E9-9F52-150E520D7A44}.StaticLib Release|Win32.Build.0 = StaticLib Release|Win32
+		{B445BD89-D145-409A-8104-EDA7CA3579A5}.Debug DLL|Win32.ActiveCfg = Debug|Win32
+		{B445BD89-D145-409A-8104-EDA7CA3579A5}.Debug DLL|Win32.Build.0 = Debug|Win32
+		{B445BD89-D145-409A-8104-EDA7CA3579A5}.Debug LIB|Win32.ActiveCfg = Debug|Win32
+		{B445BD89-D145-409A-8104-EDA7CA3579A5}.Debug LIB|Win32.Build.0 = Debug|Win32
 		{B445BD89-D145-409A-8104-EDA7CA3579A5}.Debug|Win32.ActiveCfg = Debug|Win32
 		{B445BD89-D145-409A-8104-EDA7CA3579A5}.Debug|Win32.Build.0 = Debug|Win32
+		{B445BD89-D145-409A-8104-EDA7CA3579A5}.Release DLL|Win32.ActiveCfg = Release|Win32
+		{B445BD89-D145-409A-8104-EDA7CA3579A5}.Release DLL|Win32.Build.0 = Release|Win32
+		{B445BD89-D145-409A-8104-EDA7CA3579A5}.Release LIB|Win32.ActiveCfg = Release|Win32
+		{B445BD89-D145-409A-8104-EDA7CA3579A5}.Release LIB|Win32.Build.0 = Release|Win32
 		{B445BD89-D145-409A-8104-EDA7CA3579A5}.Release|Win32.ActiveCfg = Release|Win32
 		{B445BD89-D145-409A-8104-EDA7CA3579A5}.Release|Win32.Build.0 = Release|Win32
-		{B445BD89-D145-409A-8104-EDA7CA3579A5}.StaticLib Debug|Win32.ActiveCfg = StaticLib Debug|Win32
-		{B445BD89-D145-409A-8104-EDA7CA3579A5}.StaticLib Release|Win32.ActiveCfg = StaticLib Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

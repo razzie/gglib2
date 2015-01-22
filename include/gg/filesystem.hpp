@@ -30,15 +30,16 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "gg/config.hpp"
 
 namespace gg
 {
 	class IDirectory;
 	class IFile;
 
-	bool addVirtualDirectory(const std::string& vdir_path);
-	std::shared_ptr<IDirectory> openDirectory(const std::string& dir_name);
-	std::shared_ptr<IFile> openFile(const std::string& file_name);
+	bool GG_API addVirtualDirectory(const std::string& vdir_path);
+	std::shared_ptr<IDirectory> GG_API openDirectory(const std::string& dir_name);
+	std::shared_ptr<IFile> GG_API openFile(const std::string& file_name);
 
 	class IDirectory
 	{

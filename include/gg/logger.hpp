@@ -17,6 +17,7 @@
 
 #include <iostream>
 #include <memory>
+#include "gg/config.hpp"
 
 namespace gg
 {
@@ -40,7 +41,7 @@ namespace gg
 		ILogger() : std::ostream(nullptr) {}
 	};
 
-	extern ILogger& log;
+	extern GG_API ILogger& log;
 
 	inline void hookStdCout()
 	{

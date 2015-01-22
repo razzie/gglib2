@@ -26,6 +26,7 @@
 #define FONT g_DefaultNormalFont
 
 static gg::Console* console = nullptr;
+static HWND console_hwnd = 0;
 
 
 static BOOL HookVtableFunction(void* obj, ULONG_PTR hook_func, unsigned index)
@@ -47,6 +48,8 @@ static void hookWindow(HWND hwnd)
 	};
 
 	SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)hook_proc);
+
+	console_hwnd = hwnd;
 }
 
 static void hookGL()
@@ -175,6 +178,10 @@ void gg::Console::render()
 
 	std::lock_guard<std::recursive_mutex> guard(m_mutex);
 
+	RECT client_rect;
+	GetClientRect(console_hwnd, &client_rect);
+	g_TwMgr->m_Graph->BeginDraw(client_rect.right, client_rect.bottom);
+
 	std::vector<std::string> lines;
 	std::vector<color32> colors;
 	unsigned curr_height = 0;
@@ -217,6 +224,11 @@ void gg::Console::render()
 		g_TwMgr->m_Graph->DrawText(output.render_data, 10, 10 + curr_height, 0, 0);
 		curr_height += output.lines * (FONT->m_CharHeight + 2);
 	}
+
+	// for debugging
+	g_TwMgr->m_Graph->DrawRect(10, 10, 20, 20, 0xffff0000);
+
+	g_TwMgr->m_Graph->EndDraw();
 }
 
 #else

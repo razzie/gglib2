@@ -15,6 +15,7 @@
 #include <string>
 #include <typeinfo>
 #include <type_traits>
+#include "gg/config.hpp"
 #include "gg/var.hpp"
 #include "gg/storage.hpp"
 
@@ -51,14 +52,14 @@ namespace gg
 
 	typedef std::function<bool(const void*, IBuffer&)> SerializerFunction;
 	typedef std::function<bool(void*, IBuffer&)> DeserializerFunction;
-	bool addSerializableType(const std::type_info&, size_t, SerializerFunction, DeserializerFunction);
+	bool GG_API addSerializableType(const std::type_info&, size_t, SerializerFunction, DeserializerFunction);
 
 	// overloaded serializer functions
-	bool serialize(const ISerializable&, IBuffer&);
-	bool serialize(const Var&, IBuffer&);
-	bool serialize(const VarArray&, IBuffer&);
-	bool serialize(const IStorage&, IBuffer&);
-	bool serialize(const std::type_info&, const void*, IBuffer&);
+	bool GG_API serialize(const ISerializable&, IBuffer&);
+	bool GG_API serialize(const Var&, IBuffer&);
+	bool GG_API serialize(const VarArray&, IBuffer&);
+	bool GG_API serialize(const IStorage&, IBuffer&);
+	bool GG_API serialize(const std::type_info&, const void*, IBuffer&);
 
 	template<class T>
 	bool serialize(const T& o, IBuffer& buf)
@@ -67,11 +68,11 @@ namespace gg
 	}
 
 	// overloaded deserializer functions
-	bool deserialize(ISerializable&, IBuffer&);
-	bool deserialize(Var&, IBuffer&); // var.construct<T>() should be called previously
-	bool deserialize(VarArray&, IBuffer&); // all Var entries should be (default) constructed previously
-	bool deserialize(IStorage&, IBuffer&);
-	bool deserialize(const std::type_info&, void*, IBuffer&);
+	bool GG_API deserialize(ISerializable&, IBuffer&);
+	bool GG_API deserialize(Var&, IBuffer&); // var.construct<T>() should be called previously
+	bool GG_API deserialize(VarArray&, IBuffer&); // all Var entries should be (default) constructed previously
+	bool GG_API deserialize(IStorage&, IBuffer&);
+	bool GG_API deserialize(const std::type_info&, void*, IBuffer&);
 
 	template<class T>
 	bool deserialize(T& o, IBuffer& buf)

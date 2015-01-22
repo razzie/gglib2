@@ -13,6 +13,7 @@
 #include <locale>
 #include <stdexcept>
 #include <string>
+#include "gg/config.hpp"
 
 namespace gg
 {
@@ -80,7 +81,7 @@ namespace gg
 	};
 
 
-	OstreamManipulator<const char*> format(const char*);
+	OstreamManipulator<const char*> GG_API format(const char*);
 
 	inline IstreamManipulator<char> delimiter(char d)
 	{
