@@ -115,6 +115,7 @@ static void hookDX9()
 		(*ppReturnedDeviceInterface)->GetSwapChain(0, &pSwapChain);
 		HookVtableFunction(pSwapChain, (ULONG_PTR)Present_hook, 3);
 		//HookVtableFunction(*ppReturnedDeviceInterface, (ULONG_PTR)Present_hook, 17);
+		TwInit(TW_DIRECT3D9, *ppReturnedDeviceInterface);
 		return result;
 	};
 

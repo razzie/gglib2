@@ -21,11 +21,6 @@ namespace gg
 	class IConsole : public virtual std::ostream
 	{
 	public:
-		struct ParseError
-		{
-			std::string error;
-		};
-
 		virtual ~IConsole() {}
 
 		// should be called BEFORE initializing OPENGL or DIRECTX context
@@ -45,9 +40,9 @@ namespace gg
 		// completes the missing parts of 'expression' (if possible) and returns cursor position
 		virtual unsigned complete(std::string& expression, unsigned cursor_start = 0) const = 0;
 
-		// true returned: 'expression' was evaluated and its value was copied to 'rval'
-		// false returned: 'rval' contains the error message as an 'std::string'
-		// while executing messages sent to 'gg::console' are redirected to 'output'
+		// if returned true: 'expression' was evaluated and its value was copied to 'rval'
+		// if returned false: 'rval' contains the error message as an 'std::string'
+		// messages sent to 'gg::console' are redirected to 'output' while execution
 		virtual bool exec(const std::string& expression, std::ostream& output, Var* rval = nullptr) const = 0;
 
 	protected:
