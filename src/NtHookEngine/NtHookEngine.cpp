@@ -1,14 +1,14 @@
 //#include "stdafx.h"
 #include <windows.h>
 #include <stdlib.h>
-#include "distorm.h"
+#include "distorm/distorm.h"
 
-#pragma comment(lib, "distorm_x86.lib")
+//#pragma comment(lib, "distorm_x86.lib")
 //#pragma comment(lib, "distorm_x64.lib")
 //#pragma warning (disable : 4099)
 
 // 10000 hooks should be enough
-#define MAX_HOOKS 10000
+#define MAX_HOOKS 100
 
 typedef struct _HOOK_INFO
 {

@@ -404,6 +404,7 @@ void CTwGraphOpenGL::BeginDraw(int _WndWidth, int _WndHeight)
         m_PrevProgramObjectARB = _glGetHandleARB(GL_PROGRAM_OBJECT_ARB);
         _glUseProgramObjectARB(0);
     }
+	_glUseProgram(0); // gg
     _glDisable(GL_TEXTURE_1D);
     _glDisable(GL_TEXTURE_2D);
     if( _glTexImage3D!=NULL )
