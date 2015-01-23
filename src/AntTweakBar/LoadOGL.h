@@ -362,7 +362,7 @@ ANT_GL_DECL(void, glTexSubImage1D, (GLenum target, GLint level, GLint xoffset, G
 ANT_GL_DECL(void, glTexSubImage2D, (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels))
 ANT_GL_DECL(void, glTranslated, (GLdouble x, GLdouble y, GLdouble z))
 ANT_GL_DECL(void, glTranslatef, (GLfloat x, GLfloat y, GLfloat z))
-ANT_GL_DECL(void, glUseProgram, (GLuint programObj))
+//ANT_GL_DECL(void, glUseProgram, (GLuint programObj))
 ANT_GL_DECL(void, glVertex2d, (GLdouble x, GLdouble y))
 ANT_GL_DECL(void, glVertex2dv, (const GLdouble *v))
 ANT_GL_DECL(void, glVertex2f, (GLfloat x, GLfloat y))

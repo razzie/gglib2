@@ -23,7 +23,7 @@ namespace gg
 	public:
 		virtual ~IConsole() {}
 
-		// should be called BEFORE initializing OPENGL or DIRECTX context
+		// should be called BEFORE initializing OpenGL or Direct3D context
 		virtual bool init() = 0;
 
 		// add a function which can be used inside the console

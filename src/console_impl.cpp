@@ -45,6 +45,17 @@ gg::Console::SafeRedirect::~SafeRedirect()
 	m_console.m_redirect_stack[std::this_thread::get_id()].pop_back();
 }
 
+gg::Console::OutputData::OutputData(gg::Console& console, std::string&& str) :
+	type(console.m_curr_output_type),
+	text(str),
+	render_data(nullptr),
+	lines(0),
+	output_num(++console.m_output_counter),
+	dirty(true)
+{
+}
+
+
 gg::Console::Console() :
 	std::ostream(this),
 	m_cmd_pos(m_cmd.begin()),
@@ -103,19 +114,8 @@ void gg::Console::write(const std::string& str)
 {
 	if (str.empty()) return;
 
-	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
-	auto& output_stack = m_redirect_stack[std::this_thread::get_id()];
-
-	if (output_stack.empty() || output_stack.back() == nullptr)
-	{
-		m_output.emplace_back(OutputData{ m_curr_output_type, str, nullptr, 0, ++m_output_counter, true });
-		std::string& s = m_output.back().text;
-		if (s.back() == '\n') s.back() = '\0';
-	}
-	else
-	{
-		output_stack.back()->write(str.c_str(), str.length());
-	}
+	std::string str_copy(str);
+	write(std::move(str_copy));
 }
 
 void gg::Console::write(std::string&& str)
@@ -127,7 +127,7 @@ void gg::Console::write(std::string&& str)
 
 	if (output_stack.empty() || output_stack.back() == nullptr)
 	{
-		m_output.emplace_back(OutputData{ m_curr_output_type, str, nullptr, 0, ++m_output_counter, true });
+		m_output.emplace_back(*this, std::move(str));
 		std::string& s = m_output.back().text;
 		if (s.back() == '\n') s.back() = '\0';
 	}

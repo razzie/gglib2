@@ -68,6 +68,8 @@ namespace gg
 			unsigned lines;
 			unsigned output_num;
 			bool dirty;
+
+			OutputData(Console& console, std::string&& text);
 		};
 
 		class SafeRedirect

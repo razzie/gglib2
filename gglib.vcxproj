@@ -442,6 +442,7 @@
     <ClInclude Include="src\logger_impl.hpp" />
     <ClInclude Include="src\message_impl.hpp" />
     <ClInclude Include="src\NtHookEngine\NtHookEngine.hpp" />
+    <ClInclude Include="src\renderer\renderer.hpp" />
     <ClInclude Include="src\safebuffer.hpp" />
     <ClInclude Include="src\serializer_impl.hpp" />
     <ClInclude Include="src\stringutil.hpp" />

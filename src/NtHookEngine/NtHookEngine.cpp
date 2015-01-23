@@ -1,11 +1,19 @@
-//#include "stdafx.h"
+/**
+ * Copyright (c) 2014-2015 Gábor Görzsöny (www.gorzsony.com)
+ *
+ * This source is a private work and can be used only with the
+ * written permission of the author. Do not redistribute it!
+ * All rights reserved.
+ */
+
+/**
+ * Original code: Daniel Pistelli
+ * http://www.codeproject.com/Articles/21414/Powerful-x86-x64-Mini-Hook-Engine
+ */
+
 #include <windows.h>
 #include <stdlib.h>
 #include "distorm/distorm.h"
-
-//#pragma comment(lib, "distorm_x86.lib")
-//#pragma comment(lib, "distorm_x64.lib")
-//#pragma warning (disable : 4099)
 
 // 10000 hooks should be enough
 #define MAX_HOOKS 100
@@ -290,6 +298,18 @@ BOOL /*__cdecl*/ HookFunction(ULONG_PTR OriginalFunction, ULONG_PTR NewFunction)
 	return TRUE;
 }
 
+//
+// Hooks a function in Vtable
+// (Custom addition to the original source)
+//
+
+BOOL HookVtableFunction(VOID* pObj, ULONG_PTR NewFunction, unsigned VtableIndex)
+{
+	UINT_PTR* pVtable = (UINT_PTR*)(*((UINT_PTR*)pObj));
+	UINT_PTR OriginalFunction = pVtable[VtableIndex];
+
+	return HookFunction(OriginalFunction, NewFunction);
+}
 
 //
 // Unhooks a function

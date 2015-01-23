@@ -29,13 +29,6 @@ static gg::Console* console = nullptr;
 static HWND console_hwnd = 0;
 
 
-static BOOL HookVtableFunction(void* obj, ULONG_PTR hook_func, unsigned index)
-{
-	UINT_PTR* vtable = (UINT_PTR*)(*((UINT_PTR*)obj));
-	UINT_PTR orig_func = vtable[index];
-	return HookFunction(orig_func, hook_func);
-}
-
 namespace wnd
 {
 	static WNDPROC orig_wnd_proc;
@@ -93,32 +86,6 @@ namespace ogl
 
 namespace dx9
 {
-	/*static HRESULT STDMETHODCALLTYPE Present_hook(
-		IDirect3DDevice9 FAR* This, CONST RECT* pSourceRect,
-		CONST RECT* pDestRect, HWND hDestWindowOverride,
-		CONST RGNDATA* pDirtyRegion)
-	{
-		typedef HRESULT(STDMETHODCALLTYPE* PRESENT)(IDirect3DDevice9 FAR*, CONST RECT*, CONST RECT*, HWND, CONST RGNDATA*);
-
-		console->render();
-
-		return ((PRESENT)GetOriginalFunction((ULONG_PTR)Present_hook))
-			(This, pSourceRect, pDestRect, hDestWindowOverride, pDirtyRegion);
-	}*/
-
-	/*static HRESULT STDMETHODCALLTYPE Present_hook(
-		IDirect3DSwapChain9 FAR* This, CONST RECT* pSourceRect,
-		CONST RECT* pDestRect, HWND hDestWindowOverride,
-		CONST RGNDATA* pDirtyRegion, DWORD dwFlags)
-	{
-		typedef HRESULT(STDMETHODCALLTYPE* PRESENT)(IDirect3DSwapChain9 FAR*, CONST RECT*, CONST RECT*, HWND, CONST RGNDATA*, DWORD);
-
-		console->render();
-
-		return ((PRESENT)GetOriginalFunction((ULONG_PTR)Present_hook))
-			(This, pSourceRect, pDestRect, hDestWindowOverride, pDirtyRegion, dwFlags);
-	}*/
-
 	static HRESULT STDMETHODCALLTYPE EndScene_hook(IDirect3DDevice9 FAR* This)
 	{
 		typedef HRESULT(STDMETHODCALLTYPE* ENDSCENE)(IDirect3DDevice9 FAR*);
@@ -140,10 +107,6 @@ namespace dx9
 
 		wnd::hookWnd(hFocusWindow);
 
-		/*HookVtableFunction(*ppReturnedDeviceInterface, (ULONG_PTR)Present_hook, 17);*/
-		/*IDirect3DSwapChain9* pSwapChain;
-		(*ppReturnedDeviceInterface)->GetSwapChain(0, &pSwapChain);
-		HookVtableFunction(pSwapChain, (ULONG_PTR)Present_hook, 3);*/
 		HookVtableFunction(*ppReturnedDeviceInterface, (ULONG_PTR)EndScene_hook, 42);
 		UnhookFunction((ULONG_PTR)CreateDevice_hook);
 		TwInit(TW_DIRECT3D9, *ppReturnedDeviceInterface);
@@ -151,22 +114,16 @@ namespace dx9
 		return result;
 	}
 
-	static IDirect3D9* WINAPI Direct3DCreate9_hook(UINT SDKVersion)
+	static void setupHooks()
 	{
 		typedef IDirect3D9*(WINAPI *DIRECT3DCREATE9)(UINT);
 
-		IDirect3D9* pD3D = ((DIRECT3DCREATE9)GetOriginalFunction((ULONG_PTR)Direct3DCreate9_hook))(SDKVersion);
-
-		HookVtableFunction(pD3D, (ULONG_PTR)CreateDevice_hook, 16);
-		UnhookFunction((ULONG_PTR)Direct3DCreate9_hook);
-
-		return pD3D;
-	}
-
-	static void setupHooks()
-	{
 		HMODULE DX9Library = LoadLibrary(TEXT("d3d9.dll"));
-		HookFunction((ULONG_PTR)GetProcAddress(DX9Library, "Direct3DCreate9"), (ULONG_PTR)Direct3DCreate9_hook);
+		DIRECT3DCREATE9 Direct3DCreate9_orig = (DIRECT3DCREATE9)GetProcAddress(DX9Library, "Direct3DCreate9");
+
+		IDirect3D9* pD3D = Direct3DCreate9_orig(D3D_SDK_VERSION);
+		HookVtableFunction(pD3D, (ULONG_PTR)CreateDevice_hook, 16);
+		pD3D->Release();
 	}
 };
 
