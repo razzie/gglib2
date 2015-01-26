@@ -29,6 +29,20 @@ static gg::Console* console = nullptr;
 static HWND console_hwnd = 0;
 
 
+static void hookVtableFunc(void* obj, unsigned index, void* hook_func, void*& orig_func)
+{
+	void** vtable = (void**)(*((void**)obj));
+	DWORD old_protect;
+
+	// storage pointer to original function
+	orig_func = vtable[index];
+
+	// replace pointer to hook function
+	VirtualProtect(&vtable[index], sizeof(void*), PAGE_READWRITE, &old_protect);
+	vtable[index] = hook_func;
+	VirtualProtect(&vtable[index], sizeof(void*), old_protect, &old_protect);
+}
+
 namespace wnd
 {
 	static WNDPROC orig_wnd_proc;
@@ -86,28 +100,29 @@ namespace ogl
 
 namespace dx9
 {
+	typedef HRESULT(STDMETHODCALLTYPE* ENDSCENE)(IDirect3DDevice9 FAR*);
+	static ENDSCENE EndScene_orig;
 	static HRESULT STDMETHODCALLTYPE EndScene_hook(IDirect3DDevice9 FAR* This)
 	{
-		typedef HRESULT(STDMETHODCALLTYPE* ENDSCENE)(IDirect3DDevice9 FAR*);
-
 		console->render();
-		return ((ENDSCENE)GetOriginalFunction((ULONG_PTR)EndScene_hook))(This);
+		return EndScene_orig(This);
 	}
 
+	typedef HRESULT(STDMETHODCALLTYPE* CREATEDEVICE)(IDirect3D9 FAR*, UINT, D3DDEVTYPE, HWND, DWORD, D3DPRESENT_PARAMETERS*, IDirect3DDevice9**);
+	static CREATEDEVICE CreateDevice_orig;
 	static HRESULT STDMETHODCALLTYPE CreateDevice_hook(
 		IDirect3D9 FAR* This,
 		UINT Adapter, D3DDEVTYPE DeviceType, HWND hFocusWindow,
 		DWORD BehaviorFlags, D3DPRESENT_PARAMETERS* pPresentationParameters,
 		IDirect3DDevice9** ppReturnedDeviceInterface)
 	{
-		typedef HRESULT(STDMETHODCALLTYPE* CREATEDEVICE)(IDirect3D9 FAR*, UINT, D3DDEVTYPE, HWND, DWORD, D3DPRESENT_PARAMETERS*, IDirect3DDevice9**);
-
-		HRESULT result = ((CREATEDEVICE)GetOriginalFunction((ULONG_PTR)CreateDevice_hook))
-			(This, Adapter, DeviceType, hFocusWindow, BehaviorFlags, pPresentationParameters, ppReturnedDeviceInterface);
+		HRESULT result = CreateDevice_orig(
+			This, Adapter, DeviceType, hFocusWindow, BehaviorFlags,
+			pPresentationParameters, ppReturnedDeviceInterface);
 
 		wnd::hookWnd(hFocusWindow);
 
-		HookVtableFunction(*ppReturnedDeviceInterface, (ULONG_PTR)EndScene_hook, 42);
+		hookVtableFunc(*ppReturnedDeviceInterface, 42, EndScene_hook, (void*&)EndScene_orig);
 		UnhookFunction((ULONG_PTR)CreateDevice_hook);
 		TwInit(TW_DIRECT3D9, *ppReturnedDeviceInterface);
 
@@ -122,7 +137,7 @@ namespace dx9
 		DIRECT3DCREATE9 Direct3DCreate9_orig = (DIRECT3DCREATE9)GetProcAddress(DX9Library, "Direct3DCreate9");
 
 		IDirect3D9* pD3D = Direct3DCreate9_orig(D3D_SDK_VERSION);
-		HookVtableFunction(pD3D, (ULONG_PTR)CreateDevice_hook, 16);
+		hookVtableFunc(pD3D, 16, CreateDevice_hook, (void*&)CreateDevice_orig);
 		pD3D->Release();
 	}
 };
