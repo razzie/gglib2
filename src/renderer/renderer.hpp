@@ -15,28 +15,11 @@
 namespace gg
 {
 	class IRenderer;
+	class ITextObject;
 
 	typedef uint32_t Color;
 	typedef std::function<void(IRenderer*)> RenderCallback;
 	typedef void* WindowHandle;
-
-	// don't inherit from this class, as the instances will be static_cast'ed
-	class ITextObject
-	{
-	public:
-		enum FontSize
-		{
-			SMALL,
-			NORMAL, // default
-			LARGE
-		};
-
-		virtual ~ITextObject() {}
-		virtual bool setText(const char*) = 0;
-		virtual bool setColor(Color) = 0;
-		virtual bool setFontSize(FontSize) = 0;
-		virtual unsigned getHeight() const = 0;
-	};
 
 	class IRenderer
 	{
@@ -69,6 +52,25 @@ namespace gg
 		// drawing methods only work from inside the render callback
 		virtual bool drawTextObject(ITextObject*, int x, int y) = 0;
 		virtual bool drawRectangle(int x, int y, int width, int height, Color color) = 0;
+	};
+
+	// don't inherit from this class, the instances are static_cast-ed internally
+	class ITextObject
+	{
+	public:
+		enum FontSize
+		{
+			SMALL,
+			NORMAL, // default
+			LARGE
+		};
+
+		virtual ~ITextObject() {}
+		virtual bool setText(const char*) = 0;
+		virtual bool setColor(Color) = 0;
+		virtual bool setFontSize(FontSize) = 0;
+		virtual unsigned getHeight() const = 0;
+		virtual IRenderer::Backend getBackend() const = 0;
 	};
 };
 

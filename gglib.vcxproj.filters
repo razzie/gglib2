@@ -117,6 +117,15 @@
     <ClCompile Include="src\distorm\x86defs.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\renderer\font.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\renderer\font_data.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\renderer\renderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\gg\function.hpp">
@@ -297,6 +306,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\renderer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\renderer\font.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
