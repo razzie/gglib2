@@ -20,7 +20,7 @@ namespace gg
 	public:
 		D3D9TextObject();
 		virtual ~D3D9TextObject();
-		virtual bool setText(const char*);
+		virtual bool setText(const std::string&);
 		virtual bool setColor(Color);
 		virtual bool setFont(const Font*);
 		virtual unsigned getHeight() const;

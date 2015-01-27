@@ -9,17 +9,25 @@
 #ifndef GG_OPENGL_RENDERER_HPP_INCLUDED
 #define GG_OPENGL_RENDERER_HPP_INCLUDED
 
+#include <vector>
 #include <windows.h>
+#include <gl/GL.h>
 #include "renderer/renderer.hpp"
 
 namespace gg
 {
+	struct GLVec2
+	{
+		GLfloat x;
+		GLfloat y;
+	};
+
 	class OpenGLTextObject : public ITextObject
 	{
 	public:
 		OpenGLTextObject();
 		virtual ~OpenGLTextObject();
-		virtual bool setText(const char*);
+		virtual bool setText(const std::string&);
 		virtual bool setColor(Color);
 		virtual bool setFont(const Font*);
 		virtual unsigned getHeight() const;
@@ -30,6 +38,8 @@ namespace gg
 
 		Color m_color;
 		const Font* m_font;
+		std::vector<GLVec2> m_verts;
+		std::vector<GLVec2> m_uvs;
 	};
 
 	class OpenGLRenderer : public IRenderer
@@ -46,7 +56,17 @@ namespace gg
 		virtual bool drawRectangle(int x, int y, int width, int height, Color color);
 
 	private:
+		struct FontTexturePair
+		{
+			const Font* font;
+			GLuint texture_id;
+		};
+
+		GLuint getFontTextureID(const Font*);
+
 		HWND m_hwnd;
+		std::vector<FontTexturePair> m_font_textures;
+		bool m_drawing;
 	};
 };
 

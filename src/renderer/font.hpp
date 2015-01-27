@@ -18,9 +18,10 @@ namespace gg
 
 		Font();
 		~Font();
-		unsigned getCharWidth(unsigned n);
-		unsigned getCharHeight();
-		bool getUV(unsigned n, float* u0, float* v0, float* u1, float* v1);
+		unsigned getCharWidth(unsigned n) const;
+		unsigned getCharHeight() const;
+		bool getUV(unsigned n, float* u0, float* v0, float* u1, float* v1) const;
+		bool getTexture(const unsigned char** tex, unsigned* w, unsigned* h) const;
 
 	private:
 		unsigned char* m_texture;

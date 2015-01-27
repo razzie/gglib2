@@ -11,6 +11,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <string>
 
 namespace gg
 {
@@ -61,7 +62,7 @@ namespace gg
 	{
 	public:
 		virtual ~ITextObject() {}
-		virtual bool setText(const char*) = 0;
+		virtual bool setText(const std::string&) = 0;
 		virtual bool setColor(Color) = 0;
 		virtual bool setFont(const Font*) = 0;
 		virtual unsigned getHeight() const = 0;

@@ -6,6 +6,10 @@
  * All rights reserved.
  */
 
+/**
+ * Original code borrowed from AntTweakBar library under zlib/libpng license.
+ */
+
 #include "renderer/font.hpp"
 #include "renderer/D3D9_renderer.hpp"
 
@@ -21,7 +25,7 @@ gg::D3D9TextObject::~D3D9TextObject()
 {
 }
 
-bool gg::D3D9TextObject::setText(const char* text)
+bool gg::D3D9TextObject::setText(const std::string& text)
 {
 	return false;
 }
