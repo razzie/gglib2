@@ -15,6 +15,7 @@
 namespace gg
 {
 	class IRenderer;
+	class Font;
 	class ITextObject;
 
 	typedef uint32_t Color;
@@ -59,17 +60,10 @@ namespace gg
 	class ITextObject
 	{
 	public:
-		enum FontSize
-		{
-			SMALL,
-			NORMAL, // default
-			LARGE
-		};
-
 		virtual ~ITextObject() {}
 		virtual bool setText(const char*) = 0;
 		virtual bool setColor(Color) = 0;
-		virtual bool setFontSize(FontSize) = 0;
+		virtual bool setFont(const Font*) = 0;
 		virtual unsigned getHeight() const = 0;
 		virtual IRenderer::Backend getBackend() const = 0;
 	};

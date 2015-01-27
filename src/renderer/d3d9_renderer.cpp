@@ -6,7 +6,48 @@
  * All rights reserved.
  */
 
+#include "renderer/font.hpp"
 #include "renderer/D3D9_renderer.hpp"
+
+
+gg::D3D9TextObject::D3D9TextObject() :
+	m_color(0xffffffff),
+	m_font(gg::getNormalFont())
+{
+
+}
+
+gg::D3D9TextObject::~D3D9TextObject()
+{
+}
+
+bool gg::D3D9TextObject::setText(const char* text)
+{
+	return false;
+}
+
+bool gg::D3D9TextObject::setColor(gg::Color color)
+{
+	m_color = color;
+	return true;
+}
+
+bool gg::D3D9TextObject::setFont(const gg::Font* font)
+{
+	m_font = font;
+	return true;
+}
+
+unsigned gg::D3D9TextObject::getHeight() const
+{
+	return 0;
+}
+
+gg::IRenderer::Backend gg::D3D9TextObject::getBackend() const
+{
+	return IRenderer::Backend::DIRECT3D9;
+}
+
 
 gg::D3D9Renderer::D3D9Renderer(HWND hwnd, IDirect3DDevice9* device) :
 	m_hwnd(hwnd),
@@ -38,7 +79,7 @@ gg::WindowHandle gg::D3D9Renderer::getWindowHandle() const
 	return (WindowHandle)m_hwnd;
 }
 
-gg::ITextObject* gg::D3D9Renderer::createTextObject() const
+gg::D3D9TextObject* gg::D3D9Renderer::createTextObject() const
 {
 	return nullptr;
 }

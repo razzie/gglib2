@@ -6,6 +6,10 @@
  * All rights reserved.
  */
 
+/**
+ * Original code borrowed from AntTweakBar library under zlib/libpng license.
+ */
+
 #include <cstring>
 #include "renderer/font.hpp"
 

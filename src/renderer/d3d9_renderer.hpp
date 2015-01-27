@@ -15,6 +15,24 @@
 
 namespace gg
 {
+	class D3D9TextObject : public ITextObject
+	{
+	public:
+		D3D9TextObject();
+		virtual ~D3D9TextObject();
+		virtual bool setText(const char*);
+		virtual bool setColor(Color);
+		virtual bool setFont(const Font*);
+		virtual unsigned getHeight() const;
+		virtual IRenderer::Backend getBackend() const;
+
+	private:
+		friend class D3D9Renderer;
+
+		Color m_color;
+		const Font* m_font;
+	};
+
 	class D3D9Renderer : public IRenderer
 	{
 	public:
@@ -23,7 +41,7 @@ namespace gg
 		virtual Backend getBackend() const;
 		virtual bool getWindowDimensions(unsigned*, unsigned*) const;
 		virtual WindowHandle getWindowHandle() const;
-		virtual ITextObject* createTextObject() const;
+		virtual D3D9TextObject* createTextObject() const;
 		virtual void render();
 		virtual bool drawTextObject(ITextObject*, int x, int y);
 		virtual bool drawRectangle(int x, int y, int width, int height, Color color);
