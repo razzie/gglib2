@@ -6,17 +6,13 @@
  * All rights reserved.
  */
 
+#include "renderer/renderer.hpp"
 #include "console_impl.hpp"
 
 #ifdef _WIN32
-#pragma warning (disable : 4005)
+//#pragma warning (disable : 4005)
 
 #include <windows.h>
-//#define CINTERFACE
-#include <d3d9.h>
-#include <d3d10_1.h>
-#include <d3d11.h>
-#include "NtHookEngine/NtHookEngine.hpp"
 #include "AntTweakBar/AntTweakBar.h" // public header
 #include "AntTweakBar/TwPrecomp.h"
 #include "AntTweakBar/TwMgr.h"
@@ -25,23 +21,8 @@
 
 #define FONT g_DefaultNormalFont
 
-static gg::Console* console = nullptr;
 static HWND console_hwnd = 0;
 
-
-static void hookVtableFunc(void* obj, unsigned index, void* hook_func, void*& orig_func)
-{
-	void** vtable = (void**)(*((void**)obj));
-	DWORD old_protect;
-
-	// storage pointer to original function
-	orig_func = vtable[index];
-
-	// replace pointer to hook function
-	VirtualProtect(&vtable[index], sizeof(void*), PAGE_READWRITE, &old_protect);
-	vtable[index] = hook_func;
-	VirtualProtect(&vtable[index], sizeof(void*), old_protect, &old_protect);
-}
 
 namespace wnd
 {
@@ -65,112 +46,10 @@ namespace wnd
 	}
 };
 
-namespace ogl
-{
-	static HGLRC WINAPI wglCreateContext_hook(HDC hdc)
-	{
-		typedef HGLRC(WINAPI *WGLCREATECONTEXT)(HDC);
-
-		HGLRC hglrc = ((WGLCREATECONTEXT)GetOriginalFunction((ULONG_PTR)wglCreateContext_hook))(hdc);
-
-		wnd::hookWnd(WindowFromDC(hdc));
-		UnhookFunction((ULONG_PTR)wglCreateContext_hook);
-		TwInit(TW_OPENGL, NULL);
-
-		return hglrc;
-	}
-
-	static BOOL WINAPI SwapBuffers_hook(HDC hdc)
-	{
-		typedef BOOL(WINAPI *SWAPBUFFERS)(HDC);
-
-		console->render();
-		return ((SWAPBUFFERS)GetOriginalFunction((ULONG_PTR)SwapBuffers_hook))(hdc);
-	}
-
-	static void setupHooks()
-	{
-		HMODULE OGLLibrary = LoadLibrary(TEXT("opengl32.dll"));
-		HookFunction((ULONG_PTR)GetProcAddress(OGLLibrary, "wglCreateContext"), (ULONG_PTR)wglCreateContext_hook);
-
-		HMODULE GDILibrary = LoadLibrary(TEXT("gdi32.dll"));
-		HookFunction((ULONG_PTR)GetProcAddress(GDILibrary, "SwapBuffers"), (ULONG_PTR)SwapBuffers_hook);
-	}
-};
-
-namespace dx9
-{
-	typedef HRESULT(STDMETHODCALLTYPE* ENDSCENE)(IDirect3DDevice9 FAR*);
-	static ENDSCENE EndScene_orig;
-	static HRESULT STDMETHODCALLTYPE EndScene_hook(IDirect3DDevice9 FAR* This)
-	{
-		console->render();
-		return EndScene_orig(This);
-	}
-
-	typedef HRESULT(STDMETHODCALLTYPE* CREATEDEVICE)(IDirect3D9 FAR*, UINT, D3DDEVTYPE, HWND, DWORD, D3DPRESENT_PARAMETERS*, IDirect3DDevice9**);
-	static CREATEDEVICE CreateDevice_orig;
-	static HRESULT STDMETHODCALLTYPE CreateDevice_hook(
-		IDirect3D9 FAR* This,
-		UINT Adapter, D3DDEVTYPE DeviceType, HWND hFocusWindow,
-		DWORD BehaviorFlags, D3DPRESENT_PARAMETERS* pPresentationParameters,
-		IDirect3DDevice9** ppReturnedDeviceInterface)
-	{
-		HRESULT result = CreateDevice_orig(
-			This, Adapter, DeviceType, hFocusWindow, BehaviorFlags,
-			pPresentationParameters, ppReturnedDeviceInterface);
-
-		wnd::hookWnd(hFocusWindow);
-
-		hookVtableFunc(*ppReturnedDeviceInterface, 42, EndScene_hook, (void*&)EndScene_orig);
-		UnhookFunction((ULONG_PTR)CreateDevice_hook);
-		TwInit(TW_DIRECT3D9, *ppReturnedDeviceInterface);
-
-		return result;
-	}
-
-	static void setupHooks()
-	{
-		typedef IDirect3D9*(WINAPI *DIRECT3DCREATE9)(UINT);
-
-		HMODULE DX9Library = LoadLibrary(TEXT("d3d9.dll"));
-		DIRECT3DCREATE9 Direct3DCreate9_orig = (DIRECT3DCREATE9)GetProcAddress(DX9Library, "Direct3DCreate9");
-
-		IDirect3D9* pD3D = Direct3DCreate9_orig(D3D_SDK_VERSION);
-		hookVtableFunc(pD3D, 16, CreateDevice_hook, (void*&)CreateDevice_orig);
-		pD3D->Release();
-	}
-};
-
-namespace dx10
-{
-	static void setupHooks()
-	{
-	}
-}
-
-namespace dx11
-{
-	static void setupHooks()
-	{
-	}
-}
-
 bool gg::Console::init()
 {
-	static bool initialized = false;
-
-	if (initialized) return false;
-	initialized = true;
-
-	::console = this;
-
-	initNtHookEngine();
-	ogl::setupHooks();
-	dx9::setupHooks();
-	dx10::setupHooks();
-	dx11::setupHooks();
-
+	IRenderer::injectHooks();
+	IRenderer::setRenderCallback(std::bind(&Console::render, this, std::placeholders::_1));
 	return true;
 }
 
@@ -188,9 +67,11 @@ static void getLines(const std::string& str, std::vector<std::string>& lines)
 	lines.emplace_back(it2, end);
 }
 
-void gg::Console::render()
+void gg::Console::render(gg::IRenderer* renderer)
 {
 	if (!m_render) return;
+
+	if (!console_hwnd) wnd::hookWnd((HWND)renderer->getWindowHandle());
 
 	std::lock_guard<std::recursive_mutex> guard(m_mutex);
 
@@ -254,7 +135,7 @@ bool gg::Console::init()
 	return false;
 }
 
-void gg::Console::render()
+void gg::Console::render(gg::IRenderer*)
 {
 
 }

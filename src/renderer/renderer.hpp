@@ -36,22 +36,23 @@ namespace gg
 		// setup hooks to initialize a renderer instance
 		static bool injectHooks();
 
-		/*// available AFTER OpenGL or Direct3D context is initialized
-		static IRenderer* getInstance();*/
-
 		// sets a callback which is called at the end of each frame rendering
 		// the only way to obtain a pointer to an IRenderer instance is trough the callback
-		static bool setRenderCallback(RenderCallback);
+		static void setRenderCallback(RenderCallback);
 
 		virtual ~IRenderer() {}
 		virtual Backend getBackend() const = 0;
 		virtual bool getWindowDimensions(unsigned*, unsigned*) const = 0;
 		virtual WindowHandle getWindowHandle() const = 0;
 		virtual ITextObject* createTextObject() const = 0;
+		virtual void render() = 0;
 
 		// drawing methods only work from inside the render callback
 		virtual bool drawTextObject(ITextObject*, int x, int y) = 0;
 		virtual bool drawRectangle(int x, int y, int width, int height, Color color) = 0;
+
+	protected:
+		bool invokeRenderCallback();
 	};
 
 	// don't inherit from this class, the instances are static_cast-ed internally

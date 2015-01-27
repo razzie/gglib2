@@ -6,7 +6,7 @@
  * All rights reserved.
  */
 
-#include "font.hpp"
+#include "renderer/font.hpp"
 
 // Small font
 const int FONT0_BM_W = 211;

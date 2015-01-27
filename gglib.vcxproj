@@ -384,8 +384,10 @@
     <ClCompile Include="src\logger_impl.cpp" />
     <ClCompile Include="src\message_impl.cpp" />
     <ClCompile Include="src\NtHookEngine\NtHookEngine.cpp" />
+    <ClCompile Include="src\renderer\d3d9_renderer.cpp" />
     <ClCompile Include="src\renderer\font.cpp" />
     <ClCompile Include="src\renderer\font_data.cpp" />
+    <ClCompile Include="src\renderer\opengl_renderer.cpp" />
     <ClCompile Include="src\renderer\renderer.cpp" />
     <ClCompile Include="src\serializer_impl.cpp" />
     <ClCompile Include="src\streamutil_impl.cpp" />
@@ -445,7 +447,9 @@
     <ClInclude Include="src\logger_impl.hpp" />
     <ClInclude Include="src\message_impl.hpp" />
     <ClInclude Include="src\NtHookEngine\NtHookEngine.hpp" />
+    <ClInclude Include="src\renderer\d3d9_renderer.hpp" />
     <ClInclude Include="src\renderer\font.hpp" />
+    <ClInclude Include="src\renderer\opengl_renderer.hpp" />
     <ClInclude Include="src\renderer\renderer.hpp" />
     <ClInclude Include="src\safebuffer.hpp" />
     <ClInclude Include="src\serializer_impl.hpp" />

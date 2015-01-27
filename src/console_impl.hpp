@@ -20,6 +20,8 @@
 
 namespace gg
 {
+	class IRenderer;
+
 	class Console : public IConsole, public std::streambuf
 	{
 	public:
@@ -31,7 +33,7 @@ namespace gg
 		virtual bool exec(const std::string& expression, std::ostream& output, Var* rval = nullptr) const;
 		void write(const std::string&);
 		void write(std::string&&);
-		void render();
+		void render(IRenderer*);
 
 	protected:
 		// inherited from std::streambuf

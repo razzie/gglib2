@@ -7,7 +7,7 @@
  */
 
 #include <cstring>
-#include "font.hpp"
+#include "renderer/font.hpp"
 
 static int next_sq(int n)
 {
