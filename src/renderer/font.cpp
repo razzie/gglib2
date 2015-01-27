@@ -181,3 +181,22 @@ gg::Font::~Font()
 	m_texture_height = 0;
 	m_char_num = 0;
 }
+
+unsigned gg::Font::getCharWidth(unsigned n)
+{
+	return m_char_width[n];
+}
+
+unsigned gg::Font::getCharHeight()
+{
+	return m_char_height;
+}
+
+bool gg::Font::getUV(unsigned n, float* u0, float* v0, float* u1, float* v1)
+{
+	*u0 = m_char_u0[n];
+	*v0 = m_char_v0[n];
+	*u1 = m_char_u1[n];
+	*v1 = m_char_v1[n];
+	return false;
+}
