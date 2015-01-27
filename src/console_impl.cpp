@@ -48,8 +48,7 @@ gg::Console::SafeRedirect::~SafeRedirect()
 gg::Console::OutputData::OutputData(gg::Console& console, std::string&& str) :
 	type(console.m_curr_output_type),
 	text(str),
-	render_data(nullptr),
-	lines(0),
+	textobj(nullptr),
 	output_num(++console.m_output_counter),
 	dirty(true)
 {
@@ -129,7 +128,7 @@ void gg::Console::write(std::string&& str)
 	{
 		m_output.emplace_back(*this, std::move(str));
 		std::string& s = m_output.back().text;
-		if (s.back() == '\n') s.back() = '\0';
+		if (s.back() == '\n') s.pop_back();
 	}
 	else
 	{
@@ -155,10 +154,7 @@ int gg::Console::sync()
 {
 	if (thread_buffer != nullptr)
 	{
-		if (thread_buffer->back() == '\n')
-			thread_buffer->back() = '\0';
-
-		write(*thread_buffer);
+		write(std::move(*thread_buffer));
 		thread_buffer->clear();
 	}
 

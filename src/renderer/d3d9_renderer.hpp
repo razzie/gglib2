@@ -8,6 +8,7 @@
 
 #ifndef GG_D3D9_RENDERER_HPP_INCLUDED
 #define GG_D3D9_RENDERER_HPP_INCLUDED
+#ifdef _WIN32
 
 #include <windows.h>
 #include <d3d9.h>
@@ -20,9 +21,8 @@ namespace gg
 	public:
 		D3D9TextObject();
 		virtual ~D3D9TextObject();
-		virtual bool setText(const std::string&);
+		virtual bool setText(const std::string&, unsigned line_spacing = 2, const Font* = nullptr);
 		virtual bool setColor(Color);
-		virtual bool setFont(const Font*);
 		virtual unsigned getHeight() const;
 		virtual IRenderer::Backend getBackend() const;
 
@@ -31,6 +31,7 @@ namespace gg
 
 		Color m_color;
 		const Font* m_font;
+		unsigned m_height;
 	};
 
 	class D3D9Renderer : public IRenderer
@@ -43,13 +44,16 @@ namespace gg
 		virtual WindowHandle getWindowHandle() const;
 		virtual D3D9TextObject* createTextObject() const;
 		virtual void render();
-		virtual bool drawTextObject(ITextObject*, int x, int y);
+		virtual bool drawTextObject(ITextObject*, int x, int y, Color* = nullptr);
+		virtual bool drawLine(int x1, int y1, int x2, int y2, Color color);
 		virtual bool drawRectangle(int x, int y, int width, int height, Color color);
 
 	private:
 		HWND m_hwnd;
 		IDirect3DDevice9* m_device;
+		bool m_drawing;
 	};
 };
 
+#endif // _WIN32
 #endif // GG_D3D9_RENDERER_HPP_INCLUDED

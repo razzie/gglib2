@@ -6,20 +6,11 @@
  * All rights reserved.
  */
 
-#include "renderer/renderer.hpp"
 #include "console_impl.hpp"
 
 #ifdef _WIN32
-//#pragma warning (disable : 4005)
-
+#include "renderer/renderer.hpp"
 #include <windows.h>
-/*#include "AntTweakBar/AntTweakBar.h" // public header
-#include "AntTweakBar/TwPrecomp.h"
-#include "AntTweakBar/TwMgr.h"
-#include "AntTweakBar/TwColors.h"
-#include "AntTweakBar/TwFonts.h"
-
-#define FONT g_DefaultNormalFont*/
 
 static HWND console_hwnd = 0;
 
@@ -53,89 +44,59 @@ bool gg::Console::init()
 	return true;
 }
 
-static void getLines(const std::string& str, std::vector<std::string>& lines)
-{
-	auto it1 = str.begin(), it2 = str.begin(), end = str.end();
-	for (; it2 != end; ++it2)
-	{
-		if (*it2 == '\n')
-		{
-			if (it1 != it2) lines.emplace_back(it1, it2);
-			it1 = it2 + 1;
-		}
-	}
-	lines.emplace_back(it2, end);
-}
-
 void gg::Console::render(gg::IRenderer* renderer)
 {
 	if (!m_render) return;
 
 	if (!console_hwnd) wnd::hookWnd((HWND)renderer->getWindowHandle());
 
+	//renderer->drawRectangle(10, 10, 10, 10, 0xffff0000);
+
 	std::lock_guard<std::recursive_mutex> guard(m_mutex);
 
-	/*RECT client_rect;
-	GetClientRect(console_hwnd, &client_rect);
-	g_TwMgr->m_Graph->BeginDraw(client_rect.right, client_rect.bottom);
-
-	std::vector<std::string> lines;
-	std::vector<color32> colors;*/
-	unsigned curr_height = 0;
+	unsigned curr_height = 5;
 
 	for (auto& output : m_output)
 	{
-		if (output.render_data == nullptr)
+		if (output.textobj == nullptr)
 		{
-			/*output.render_data = g_TwMgr->m_Graph->NewTextObj();*/
-			output.render_data = renderer->createTextObject();
+			output.textobj = renderer->createTextObject();
 			output.dirty = true;
 		}
 
-		ITextObject* text = static_cast<ITextObject*>(output.render_data);
-
 		if (output.dirty)
 		{
-			/*lines.clear();
-			getLines(output.text, lines);
-
-			/*color32*/Color color = 0xffffffff;
+			Color color;
 
 			switch (output.type)
 			{
 			case OutputData::Type::NORMAL:
-				color = 0xffaaaaaa;
+				color = 0xffdddddd;
 				break;
 			case OutputData::Type::FUNCTION_CALL:
-				color = 0xffaaaaff;
+				color = 0xffddffff;
 				break;
 			case OutputData::Type::FUNCTION_OUTPUT:
-				color = 0xffffffff;
+				color = 0xffddddff;
 				break;
 			}
 
-			/*colors.clear();
-			colors.insert(colors.end(), lines.size(), color);
+			if (output.output_num % 2)
+				color -= 0x00111111;
 
-			output.lines = lines.size();
-			g_TwMgr->m_Graph->BuildText(output.render_data, lines.data(), colors.data(), NULL, output.lines, FONT, 2, 0);*/
-			text->setText(output.text);
-			text->setColor(color);
+			output.textobj->setText(output.text);
+			output.textobj->setColor(color);
 		}
 
-		/*g_TwMgr->m_Graph->DrawText(output.render_data, 10, 10 + curr_height, 0, 0);
-		curr_height += output.lines * (FONT->m_CharHeight + 2);*/
-		curr_height += text->getHeight();
+		Color shadow_color = 0xff000000;
+		renderer->drawTextObject(output.textobj, 6, curr_height+1, &shadow_color);
+
+		renderer->drawTextObject(output.textobj, 5, curr_height);
+		curr_height += output.textobj->getHeight() + 2;
 	}
-
-	// for debugging
-	/*g_TwMgr->m_Graph->DrawRect(10, 10, 20, 20, 0xffff0000);
-
-	g_TwMgr->m_Graph->EndDraw();*/
-	renderer->drawRectangle(10, 10, 20, 20, 0xffff0000);
 }
 
-#else
+#else // _WIN32
 
 bool gg::Console::init()
 {
@@ -147,4 +108,4 @@ void gg::Console::render(gg::IRenderer*)
 
 }
 
-#endif
+#endif // _WIN32

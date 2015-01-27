@@ -6,6 +6,7 @@
  * All rights reserved.
  */
 
+#ifdef _WIN32
 #include <windows.h>
 #include <d3d9.h>
 #include <d3d10_1.h>
@@ -55,11 +56,14 @@ namespace ogl
 
 		if (renderer == nullptr)
 		{
-			renderer = new gg::OpenGLRenderer(WindowFromDC(hdc));
-
-			HMODULE GDILibrary = LoadLibrary(TEXT("gdi32.dll"));
-			HookFunction((ULONG_PTR)GetProcAddress(GDILibrary, "SwapBuffers"), (ULONG_PTR)SwapBuffers_hook);
+			delete renderer;
+			renderer = nullptr;
 		}
+
+		renderer = new gg::OpenGLRenderer(WindowFromDC(hdc));
+
+		HMODULE GDILibrary = LoadLibrary(TEXT("gdi32.dll"));
+		HookFunction((ULONG_PTR)GetProcAddress(GDILibrary, "SwapBuffers"), (ULONG_PTR)SwapBuffers_hook);
 
 		return hglrc;
 	}
@@ -99,10 +103,13 @@ namespace dx9
 
 		if (renderer == nullptr)
 		{
-			renderer = new gg::D3D9Renderer(hFocusWindow, *ppReturnedDeviceInterface);
-
-			hookVtableFunc(*ppReturnedDeviceInterface, 42, EndScene_hook, (void*&)EndScene_orig);
+			delete renderer;
+			renderer = nullptr;
 		}
+
+		renderer = new gg::D3D9Renderer(hFocusWindow, *ppReturnedDeviceInterface);
+
+		hookVtableFunc(*ppReturnedDeviceInterface, 42, EndScene_hook, (void*&)EndScene_orig);
 
 		return result;
 	}
@@ -167,3 +174,5 @@ bool gg::IRenderer::invokeRenderCallback()
 		return false;
 	}
 }
+
+#endif // _WIN32

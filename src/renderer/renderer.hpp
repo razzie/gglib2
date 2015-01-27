@@ -50,7 +50,8 @@ namespace gg
 		virtual void render() = 0;
 
 		// drawing methods only work from inside the render callback
-		virtual bool drawTextObject(ITextObject*, int x, int y) = 0;
+		virtual bool drawTextObject(ITextObject*, int x, int y, Color* = nullptr) = 0;
+		virtual bool drawLine(int x1, int y1, int x2, int y2, Color color) = 0;
 		virtual bool drawRectangle(int x, int y, int width, int height, Color color) = 0;
 
 	protected:
@@ -62,9 +63,8 @@ namespace gg
 	{
 	public:
 		virtual ~ITextObject() {}
-		virtual bool setText(const std::string&) = 0;
+		virtual bool setText(const std::string&, unsigned line_spacing = 2, const Font* = nullptr) = 0;
 		virtual bool setColor(Color) = 0;
-		virtual bool setFont(const Font*) = 0;
 		virtual unsigned getHeight() const = 0;
 		virtual IRenderer::Backend getBackend() const = 0;
 	};

@@ -21,6 +21,7 @@
 namespace gg
 {
 	class IRenderer;
+	class ITextObject;
 
 	class Console : public IConsole, public std::streambuf
 	{
@@ -66,8 +67,7 @@ namespace gg
 
 			Type type;
 			std::string text;
-			void* render_data;
-			unsigned lines;
+			ITextObject* textobj;
 			unsigned output_num;
 			bool dirty;
 

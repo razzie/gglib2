@@ -8,6 +8,7 @@
 
 #ifndef GG_OPENGL_RENDERER_HPP_INCLUDED
 #define GG_OPENGL_RENDERER_HPP_INCLUDED
+#ifdef _WIN32
 
 #include <vector>
 #include <windows.h>
@@ -27,9 +28,8 @@ namespace gg
 	public:
 		OpenGLTextObject();
 		virtual ~OpenGLTextObject();
-		virtual bool setText(const std::string&);
+		virtual bool setText(const std::string&, unsigned line_spacing = 2, const Font* = nullptr);
 		virtual bool setColor(Color);
-		virtual bool setFont(const Font*);
 		virtual unsigned getHeight() const;
 		virtual IRenderer::Backend getBackend() const;
 
@@ -38,6 +38,7 @@ namespace gg
 
 		Color m_color;
 		const Font* m_font;
+		unsigned m_height;
 		std::vector<GLVec2> m_verts;
 		std::vector<GLVec2> m_uvs;
 	};
@@ -52,7 +53,8 @@ namespace gg
 		virtual WindowHandle getWindowHandle() const;
 		virtual OpenGLTextObject* createTextObject() const;
 		virtual void render();
-		virtual bool drawTextObject(ITextObject*, int x, int y);
+		virtual bool drawTextObject(ITextObject*, int x, int y, Color* = nullptr);
+		virtual bool drawLine(int x1, int y1, int x2, int y2, Color color);
 		virtual bool drawRectangle(int x, int y, int width, int height, Color color);
 
 	private:
@@ -62,12 +64,19 @@ namespace gg
 			GLuint texture_id;
 		};
 
+		// methods
 		GLuint getFontTextureID(const Font*);
 
+		// member variables
 		HWND m_hwnd;
 		std::vector<FontTexturePair> m_font_textures;
 		bool m_drawing;
+
+		// GL functions
+		typedef void(*GLUSEPROGRAM)(GLuint);
+		GLUSEPROGRAM m_glUseProgram;
 	};
 };
 
+#endif // _WIN32
 #endif // GG_OPENGL_RENDERER_HPP_INCLUDED
