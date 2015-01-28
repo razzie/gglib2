@@ -110,6 +110,19 @@ bool gg::D3D9Renderer::drawTextObject(gg::ITextObject* itext, int x, int y, Colo
 	return true;
 }
 
+bool gg::D3D9Renderer::drawCaret(gg::ITextObject* itext, int x, int y, int pos, gg::Color color)
+{
+	if (!m_drawing)
+		return false;
+
+	if (itext->getBackend() != Backend::DIRECT3D9)
+		return false;
+
+	D3D9TextObject* text = static_cast<D3D9TextObject*>(itext);
+
+	return true;
+}
+
 bool gg::D3D9Renderer::drawLine(int x1, int y1, int x2, int y2, gg::Color color)
 {
 	if (!m_drawing)

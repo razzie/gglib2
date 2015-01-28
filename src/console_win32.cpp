@@ -88,10 +88,11 @@ void gg::Console::render(gg::IRenderer* renderer)
 			output.textobj->setColor(color);
 		}
 
+		renderer->drawCaret(output.textobj, 5, curr_height, -1, 0xffff0000);
 		Color shadow_color = 0xff000000;
 		renderer->drawTextObject(output.textobj, 6, curr_height+1, &shadow_color);
-
 		renderer->drawTextObject(output.textobj, 5, curr_height);
+
 		curr_height += output.textobj->getHeight() + 2;
 	}
 }

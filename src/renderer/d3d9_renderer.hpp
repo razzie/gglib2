@@ -45,6 +45,7 @@ namespace gg
 		virtual D3D9TextObject* createTextObject() const;
 		virtual void render();
 		virtual bool drawTextObject(ITextObject*, int x, int y, Color* = nullptr);
+		virtual bool drawCaret(ITextObject*, int x, int y, int pos, Color);
 		virtual bool drawLine(int x1, int y1, int x2, int y2, Color color);
 		virtual bool drawRectangle(int x, int y, int width, int height, Color color);
 

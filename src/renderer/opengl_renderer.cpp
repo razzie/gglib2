@@ -245,6 +245,29 @@ bool gg::OpenGLRenderer::drawTextObject(gg::ITextObject* itext, int x, int y, Co
 	return true;
 }
 
+bool gg::OpenGLRenderer::drawCaret(gg::ITextObject* itext, int x, int y, int pos, gg::Color color)
+{
+	if (!m_drawing)
+		return false;
+
+	if (itext->getBackend() != Backend::OPENGL)
+		return false;
+
+	OpenGLTextObject* text = static_cast<OpenGLTextObject*>(itext);
+
+	if (pos == 0)
+		return drawRectangle(x, y, 3, text->m_font->getCharHeight(), color);
+
+	int text_len = text->m_verts.size() / 6; // 1 char has 6 vertices
+	if (pos > text_len)
+		return false;
+	if (pos < 0)
+		pos = text_len;
+
+	GLVec2 v = text->m_verts[((pos - 1) * 6) + 1];
+	return drawRectangle(x + (int)v.x, y + (int)v.y, 3, text->m_font->getCharHeight(), color);
+}
+
 bool gg::OpenGLRenderer::drawLine(int x1, int y1, int x2, int y2, gg::Color color)
 {
 	if (!m_drawing)
