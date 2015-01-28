@@ -244,6 +244,12 @@ namespace gg
 
 	inline std::ostream& operator<<(std::ostream& s, const VarArray& va)
 	{
+		if (va.empty())
+		{
+			s << "()";
+			return s;
+		}
+
 		auto it = va.begin();
 
 		s << "(" << insert(*(it++));

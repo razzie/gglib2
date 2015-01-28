@@ -306,7 +306,6 @@
     <ClCompile Include="src\AntTweakBar\TwOpenGLCore.cpp" />
     <ClCompile Include="src\AntTweakBar\TwPrecomp.cpp" />
     <ClCompile Include="src\console_impl.cpp" />
-    <ClCompile Include="src\console_win32.cpp" />
     <ClCompile Include="src\distorm\decoder.c">
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">CompileAsC</CompileAs>
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release DLL|Win32'">CompileAsC</CompileAs>

@@ -45,6 +45,9 @@ namespace gg
 		// messages sent to 'gg::console' are redirected to 'output' while execution
 		virtual bool exec(const std::string& expression, std::ostream& output, Var* rval = nullptr) const = 0;
 
+		// clears existing output lines
+		virtual void clear() = 0;
+
 	protected:
 		IConsole() : std::ostream(nullptr) {}
 
@@ -69,7 +72,7 @@ namespace gg
 				else if (std::is_floating_point<P0>::value)
 					va.push_back(std::string("0.0"));
 				else if (std::is_same<P0, gg::VarArray>::value)
-					va.push_back(std::string("(())"));
+					va.push_back(std::string("()"));
 				else
 					va.push_back(std::string("\"\""));
 

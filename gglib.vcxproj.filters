@@ -48,9 +48,6 @@
     <ClCompile Include="src\console_impl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\console_win32.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\NtHookEngine\NtHookEngine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

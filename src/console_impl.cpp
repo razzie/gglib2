@@ -6,9 +6,11 @@
  * All rights reserved.
  */
 
+#include <cctype>
 #include <locale>
 #include <sstream>
 #include "stringutil.hpp"
+#include "renderer/renderer.hpp"
 #include "console_impl.hpp"
 
 #if defined _MSC_VER
@@ -23,6 +25,115 @@ static gg::Console s_console;
 gg::IConsole& gg::console = s_console;
 
 static THREAD_LOCAL std::string* thread_buffer = nullptr;
+
+
+#ifdef _WIN32
+#include <windows.h>
+
+static WNDPROC orig_wnd_proc;
+static HWND console_hwnd = 0;
+
+static LRESULT CALLBACK consoleWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	if (uMsg == WM_KEYDOWN && wParam == VK_F11)
+	{
+		s_console.switchRendering();
+		return 0;
+	}
+
+	if (!s_console.isRendering())
+	{
+		return CallWindowProc(orig_wnd_proc, hwnd, uMsg, wParam, lParam);
+	}
+
+	switch (uMsg)
+	{
+	case WM_CHAR:
+		// handling CTRL + C
+		if (/*GetKeyState(VK_CONTROL) && wParam == 'c'*/ wParam == 3) // EndOfText
+		{
+			s_console.handleSpecialKeyInput(gg::Console::SpecialKey::CTRL_C);
+			break;
+		}
+
+		// handling currently typed command
+		switch (wParam)
+		{
+		case VK_RETURN:
+			// execute command
+			if ((lParam & (1 << 30)) == 0) // first press
+				s_console.handleSpecialKeyInput(gg::Console::SpecialKey::ENTER);
+			break;
+
+		case VK_TAB:
+			// auto command completion
+			if ((lParam & (1 << 30)) == 0) // first press
+				s_console.handleSpecialKeyInput(gg::Console::SpecialKey::TAB);
+			break;
+
+		default:
+			s_console.handleCharInput(wParam);
+			break;
+		}
+		break;
+
+	case WM_KEYDOWN:
+		switch (wParam)
+		{
+		case VK_BACK:
+			s_console.handleSpecialKeyInput(gg::Console::SpecialKey::BACKSPACE);
+			break;
+
+		case VK_DELETE:
+			s_console.handleSpecialKeyInput(gg::Console::SpecialKey::DEL);
+			break;
+
+		case VK_HOME:
+			s_console.handleSpecialKeyInput(gg::Console::SpecialKey::HOME);
+			break;
+
+		case VK_END:
+			s_console.handleSpecialKeyInput(gg::Console::SpecialKey::END);
+			break;
+
+		case VK_LEFT:
+			s_console.handleSpecialKeyInput(gg::Console::SpecialKey::LEFT);
+			break;
+
+		case VK_RIGHT:
+			s_console.handleSpecialKeyInput(gg::Console::SpecialKey::RIGHT);
+			break;
+
+		case VK_UP:
+			s_console.handleSpecialKeyInput(gg::Console::SpecialKey::UP);
+			break;
+
+		case VK_DOWN:
+			s_console.handleSpecialKeyInput(gg::Console::SpecialKey::DOWN);
+			break;
+		}
+		break;
+
+	default:
+		return CallWindowProc(orig_wnd_proc, hwnd, uMsg, wParam, lParam);
+	}
+
+	return 0;
+}
+
+static void hookWnd(HWND hwnd)
+{
+	static bool hooked = false;
+
+	if (!hooked)
+	{
+		orig_wnd_proc = (WNDPROC)GetWindowLongPtr(hwnd, GWLP_WNDPROC);
+		SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)consoleWndProc);
+		console_hwnd = hwnd;
+	}
+}
+
+#endif // _WIN32
 
 
 bool gg::Console::FunctionData::Comparator
@@ -45,8 +156,8 @@ gg::Console::SafeRedirect::~SafeRedirect()
 	m_console.m_redirect_stack[std::this_thread::get_id()].pop_back();
 }
 
-gg::Console::OutputData::OutputData(gg::Console& console, std::string&& str) :
-	type(console.m_curr_output_type),
+gg::Console::OutputData::OutputData(gg::Console& console, std::string&& str, OutputType type) :
+	type(type),
 	text(str),
 	textobj(nullptr),
 	output_num(++console.m_output_counter),
@@ -54,18 +165,37 @@ gg::Console::OutputData::OutputData(gg::Console& console, std::string&& str) :
 {
 }
 
+gg::Console::OutputData::~OutputData()
+{
+	if (textobj != nullptr)
+		delete textobj;
+}
+
 
 gg::Console::Console() :
 	std::ostream(this),
 	m_cmd_pos(m_cmd.begin()),
-	m_curr_output_type(OutputData::Type::NORMAL),
+	m_cmd_textobj(nullptr),
+	m_cmd_dirty(false),
 	m_output_counter(0),
-	m_render(true)
+	m_render(false)
 {
+	static_cast<IConsole*>(this)->addFunction("clear", [&](){ gg::console.clear(); });
 }
 
 gg::Console::~Console()
 {
+	if (m_cmd_textobj != nullptr)
+		delete m_cmd_textobj;
+
+	m_output.clear();
+}
+
+bool gg::Console::init()
+{
+	IRenderer::injectHooks();
+	IRenderer::setRenderCallback(std::bind(&Console::render, this, std::placeholders::_1));
+	return true;
 }
 
 bool gg::Console::addFunction(const std::string& fname, gg::Function func, gg::VarArray&& defaults)
@@ -91,6 +221,8 @@ bool gg::Console::exec(const std::string& expression, std::ostream& output, gg::
 {
 	try
 	{
+		output.flush();
+
 		Var v;
 		SafeRedirect(const_cast<Console&>(*this), output);
 		Expression e(expression);
@@ -109,15 +241,21 @@ bool gg::Console::exec(const std::string& expression, std::ostream& output, gg::
 	return false;
 }
 
-void gg::Console::write(const std::string& str)
+void gg::Console::clear()
+{
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
+	m_output.clear();
+}
+
+void gg::Console::write(const std::string& str, OutputType type)
 {
 	if (str.empty()) return;
 
 	std::string str_copy(str);
-	write(std::move(str_copy));
+	write(std::move(str_copy), type);
 }
 
-void gg::Console::write(std::string&& str)
+void gg::Console::write(std::string&& str, OutputType type)
 {
 	if (str.empty()) return;
 
@@ -126,13 +264,265 @@ void gg::Console::write(std::string&& str)
 
 	if (output_stack.empty() || output_stack.back() == nullptr)
 	{
-		m_output.emplace_back(*this, std::move(str));
+		m_output.emplace_back(*this, std::move(str), type);
 		std::string& s = m_output.back().text;
 		if (s.back() == '\n') s.pop_back();
 	}
 	else
 	{
 		output_stack.back()->write(str.c_str(), str.length());
+	}
+}
+
+void gg::Console::render(gg::IRenderer* renderer)
+{
+	if (!m_render) return;
+
+	#ifdef _WIN32
+	if (!console_hwnd) hookWnd((HWND)renderer->getWindowHandle());
+	#endif
+
+	//renderer->drawRectangle(10, 10, 10, 10, 0xffff0000);
+
+	std::lock_guard<std::recursive_mutex> guard(m_mutex);
+
+	Color shadow_color = 0xff000000;
+	unsigned curr_height = 5;
+
+	for (auto& output : m_output)
+	{
+		if (output.textobj == nullptr)
+		{
+			output.textobj = renderer->createTextObject();
+			output.dirty = true;
+		}
+
+		if (output.dirty)
+		{
+			Color color;
+
+			switch (output.type)
+			{
+			case OutputType::NORMAL:
+				color = 0xffeeeeee;
+				break;
+			case OutputType::FUNCTION_OUTPUT:
+				color = 0xffddddff;
+				break;
+			case OutputType::FUNCTION_SUCCESS:
+				color = 0xffddffdd;
+				break;
+			case OutputType::FUNCTION_FAIL:
+				color = 0xffffdddd;
+				break;
+			}
+
+			if (output.output_num % 2)
+				color -= 0x00222222;
+
+			output.textobj->setText(output.text);
+			output.textobj->setColor(color);
+		}
+
+		renderer->drawTextObject(output.textobj, 6, curr_height + 1, &shadow_color);
+		renderer->drawTextObject(output.textobj, 5, curr_height);
+
+		curr_height += output.textobj->getHeight() + 2;
+	}
+
+	if (m_cmd_textobj == nullptr)
+	{
+		m_cmd_textobj = renderer->createTextObject();
+		m_cmd_textobj->setColor(0xffffffff);
+		m_cmd_dirty = true;
+	}
+
+	if (m_cmd_dirty)
+	{
+		m_cmd_textobj->setText(m_cmd);
+	}
+
+	renderer->drawCaret(m_cmd_textobj, 5, curr_height, std::distance(m_cmd.begin(), m_cmd_pos), 0xff000000);
+	renderer->drawTextObject(m_cmd_textobj, 5, curr_height + 1, &shadow_color);
+	renderer->drawTextObject(m_cmd_textobj, 5, curr_height);
+}
+
+void gg::Console::switchRendering()
+{
+	m_render = !m_render;
+}
+
+bool gg::Console::isRendering() const
+{
+	return m_render;
+}
+
+void gg::Console::handleSpecialKeyInput(gg::Console::SpecialKey key)
+{
+	switch (key)
+	{
+	case SpecialKey::CONSOLE_TRIGGER:
+		switchRendering();
+		break;
+
+	case SpecialKey::CTRL_C:
+		m_cmd.clear();
+		m_cmd_pos = m_cmd.end();
+		m_cmd_dirty = true;
+		break;
+
+	case SpecialKey::ENTER:
+		{
+			if (m_cmd.empty()) break;
+
+			std::string tmp_cmd;
+			std::stringstream tmp_output;
+
+			try
+			{
+				// moving currently types command to temporary buffer
+				std::swap(m_cmd, tmp_cmd);
+				m_cmd_pos = m_cmd.end();
+				m_cmd_dirty = true;
+
+				// command evaluation
+				Var v;
+				SafeRedirect(*this, tmp_output);
+				Expression e(tmp_cmd);
+				bool result = evaluate(e, v);
+
+				// saving command to history
+				m_cmd_history.emplace_back(tmp_cmd);
+				m_cmd_history_pos = m_cmd_history.end();
+				
+				// printing the results
+				if (result)
+				{
+					if (!v.isEmpty())
+					{
+						std::string result_str;
+						v.convert<std::string>(result_str);
+						tmp_cmd += " -> ";
+						tmp_cmd += std::move(result_str);
+					}
+					write(std::move(tmp_cmd), OutputType::FUNCTION_SUCCESS);
+				}
+				else
+				{
+					write(std::move(tmp_cmd), OutputType::FUNCTION_FAIL);
+				}
+				if (tmp_output.rdbuf()->in_avail())
+				{
+					write(tmp_output.str(), OutputType::FUNCTION_OUTPUT);
+				}
+			}
+			catch (ExpressionError& err)
+			{
+				write(err.what(), OutputType::FUNCTION_FAIL);
+
+				// in case of expression error let's put back the incomplete command
+				std::swap(m_cmd, tmp_cmd);
+				m_cmd_pos = m_cmd.begin();
+				jumpToNextArg(m_cmd, m_cmd_pos);
+			}
+			catch (std::exception& e)
+			{
+				std::string err = typeid(e).name();
+				err += ":";
+				err += e.what();
+				write(std::move(err), OutputType::FUNCTION_FAIL);
+			}
+		}
+		break;
+
+	case SpecialKey::TAB:
+		completeExpr(m_cmd, true);
+		jumpToNextArg(m_cmd, m_cmd_pos);
+		m_cmd_dirty = true;
+		break;
+
+	case SpecialKey::BACKSPACE:
+		if (m_cmd_pos != m_cmd.begin())
+		{
+			m_cmd_pos = m_cmd.erase(m_cmd_pos - 1);
+			m_cmd_dirty = true;
+		}
+		break;
+
+	case SpecialKey::DEL:
+		if (m_cmd_pos != m_cmd.end())
+		{
+			m_cmd_pos = m_cmd.erase(m_cmd_pos);
+			m_cmd_dirty = true;
+		}
+		break;
+
+	case SpecialKey::HOME:
+		m_cmd_pos = m_cmd.begin();
+		break;
+
+	case SpecialKey::END:
+		m_cmd_pos = m_cmd.end();
+		break;
+
+	case SpecialKey::LEFT:
+		if (m_cmd_pos != m_cmd.begin())
+		{
+			--(m_cmd_pos);
+		}
+		break;
+
+	case SpecialKey::RIGHT:
+		if (m_cmd_pos != m_cmd.end())
+		{
+			++(m_cmd_pos);
+		}
+		break;
+
+	case SpecialKey::UP:
+		if (m_cmd_history_pos != m_cmd_history.begin())
+		{
+			m_cmd = *(--(m_cmd_history_pos));
+			m_cmd_pos = m_cmd.begin();
+			jumpToNextArg(m_cmd, m_cmd_pos);
+			m_cmd_dirty = true;
+		}
+		break;
+
+	case SpecialKey::DOWN:
+		if (m_cmd_history.empty() || m_cmd_history_pos == m_cmd_history.end() - 1)
+		{
+			m_cmd_history_pos = m_cmd_history.end();
+			m_cmd.erase();
+			m_cmd_pos = m_cmd.end();
+			m_cmd_dirty = true;
+		}
+		else if (m_cmd_history_pos != m_cmd_history.end())
+		{
+			m_cmd = *(++(m_cmd_history_pos));
+			m_cmd_pos = m_cmd.begin();
+			jumpToNextArg(m_cmd, m_cmd_pos);
+			m_cmd_dirty = true;
+		}
+		break;
+	}
+}
+
+void gg::Console::handleCharInput(unsigned char ch)
+{
+	if (std::isprint(ch))
+	{
+		if (m_cmd_pos != m_cmd.end() && *(m_cmd_pos) == '0' && std::isdigit(ch) &&
+			(m_cmd_pos == m_cmd.begin() || *(m_cmd_pos - 1) == '(' ||
+			*(m_cmd_pos - 1) == ',' || *(m_cmd_pos - 1) == ' '))
+		{
+			*(m_cmd_pos) = ch;
+			++(m_cmd_pos);
+		}
+		else
+		{
+			m_cmd_pos = m_cmd.insert(m_cmd_pos, ch) + 1;
+		}
 	}
 }
 
@@ -154,8 +544,10 @@ int gg::Console::sync()
 {
 	if (thread_buffer != nullptr)
 	{
-		write(std::move(*thread_buffer));
-		thread_buffer->clear();
+		//std::lock_guard<decltype(m_mutex)> guard(m_mutex);
+		//OutputType type = (m_redirect_stack.empty()) ? OutputType::NORMAL : OutputType::FUNCTION_OUTPUT;
+		write(std::move(*thread_buffer)/*, type*/);
+		//thread_buffer->clear();
 	}
 
 	return 0;

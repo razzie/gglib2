@@ -26,15 +26,44 @@ namespace gg
 	class Console : public IConsole, public std::streambuf
 	{
 	public:
+		enum OutputType
+		{
+			NORMAL,
+			FUNCTION_OUTPUT,
+			FUNCTION_SUCCESS,
+			FUNCTION_FAIL
+		};
+
+		enum SpecialKey
+		{
+			CONSOLE_TRIGGER,
+			ENTER,
+			CTRL_C,
+			TAB,
+			BACKSPACE,
+			DEL,
+			HOME,
+			END,
+			LEFT,
+			RIGHT,
+			UP,
+			DOWN
+		};
+
 		Console();
 		virtual ~Console();
 		virtual bool init();
 		virtual bool addFunction(const std::string& fname, Function func, VarArray&& defaults);
 		virtual unsigned complete(std::string& expression, unsigned cursor_start = 0) const;
 		virtual bool exec(const std::string& expression, std::ostream& output, Var* rval = nullptr) const;
-		void write(const std::string&);
-		void write(std::string&&);
+		virtual void clear();
+		void write(const std::string&, OutputType = OutputType::NORMAL);
+		void write(std::string&&, OutputType = OutputType::NORMAL);
 		void render(IRenderer*);
+		void switchRendering();
+		bool isRendering() const;
+		void handleSpecialKeyInput(SpecialKey);
+		void handleCharInput(unsigned char);
 
 	protected:
 		// inherited from std::streambuf
@@ -42,8 +71,6 @@ namespace gg
 		int sync();
 
 	private:
-		friend class ConsoleAccessor;
-
 		struct FunctionData
 		{
 			Function function;
@@ -58,20 +85,14 @@ namespace gg
 
 		struct OutputData
 		{
-			enum Type
-			{
-				NORMAL,
-				FUNCTION_CALL,
-				FUNCTION_OUTPUT
-			};
-
-			Type type;
+			OutputType type;
 			std::string text;
 			ITextObject* textobj;
 			unsigned output_num;
 			bool dirty;
 
-			OutputData(Console& console, std::string&& text);
+			OutputData(Console& console, std::string&& text, OutputType);
+			~OutputData();
 		};
 
 		class SafeRedirect
@@ -90,10 +111,11 @@ namespace gg
 		std::string::iterator m_cmd_pos;
 		std::vector<std::string> m_cmd_history;
 		std::vector<std::string>::iterator m_cmd_history_pos;
+		ITextObject* m_cmd_textobj;
+		bool m_cmd_dirty;
 		std::map<std::thread::id, std::vector<std::ostream*>> m_redirect_stack;
 		std::map<std::thread::id, std::string> m_buffer;
 		std::list<OutputData> m_output;
-		OutputData::Type m_curr_output_type;
 		unsigned m_output_counter;
 		bool m_render;
 
