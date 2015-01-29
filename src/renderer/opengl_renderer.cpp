@@ -236,7 +236,7 @@ bool gg::OpenGLRenderer::drawTextObject(gg::ITextObject* itext, int x, int y, Co
 
 	glDrawArrays(GL_TRIANGLES, 0, (int)text->m_verts.size());
 
-	//glDisable(GL_TEXTURE_2D);
+	glDisable(GL_TEXTURE_2D);
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 

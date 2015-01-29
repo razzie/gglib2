@@ -48,6 +48,10 @@ static LRESULT CALLBACK consoleWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 
 	switch (uMsg)
 	{
+	case WM_CHAR:
+	case WM_KEYUP:
+		break;
+
 	case WM_KEYDOWN:
 		switch (wParam)
 		{
