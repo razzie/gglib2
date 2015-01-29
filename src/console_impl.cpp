@@ -48,38 +48,17 @@ static LRESULT CALLBACK consoleWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 
 	switch (uMsg)
 	{
-	case WM_CHAR:
-		// handling CTRL + C
-		if (/*GetKeyState(VK_CONTROL) && wParam == 'c'*/ wParam == 3) // EndOfText
-		{
-			s_console.handleSpecialKeyInput(gg::Console::SpecialKey::CTRL_C);
-			break;
-		}
-
-		// handling currently typed command
-		switch (wParam)
-		{
-		case VK_RETURN:
-			// execute command
-			if ((lParam & (1 << 30)) == 0) // first press
-				s_console.handleSpecialKeyInput(gg::Console::SpecialKey::ENTER);
-			break;
-
-		case VK_TAB:
-			// auto command completion
-			if ((lParam & (1 << 30)) == 0) // first press
-				s_console.handleSpecialKeyInput(gg::Console::SpecialKey::TAB);
-			break;
-
-		default:
-			s_console.handleCharInput(wParam);
-			break;
-		}
-		break;
-
 	case WM_KEYDOWN:
 		switch (wParam)
 		{
+		case VK_RETURN:
+			s_console.handleSpecialKeyInput(gg::Console::SpecialKey::ENTER);
+			break;
+
+		case VK_TAB:
+			s_console.handleSpecialKeyInput(gg::Console::SpecialKey::TAB);
+			break;
+
 		case VK_BACK:
 			s_console.handleSpecialKeyInput(gg::Console::SpecialKey::BACKSPACE);
 			break;
@@ -111,6 +90,30 @@ static LRESULT CALLBACK consoleWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 		case VK_DOWN:
 			s_console.handleSpecialKeyInput(gg::Console::SpecialKey::DOWN);
 			break;
+
+		default:
+			{
+				BYTE kbs[256];
+				WORD ch;
+
+				GetKeyboardState(kbs);
+				if (kbs[VK_CONTROL] & 0x00000080)
+				{
+					kbs[VK_CONTROL] &= 0x0000007f;
+					ToAscii(wParam, MapVirtualKey(wParam, MAPVK_VK_TO_VSC), kbs, &ch, 0);
+					kbs[VK_CONTROL] |= 0x00000080;
+				}
+				else
+				{
+					ToAscii(wParam, MapVirtualKey(wParam, MAPVK_VK_TO_VSC), kbs, &ch, 0);
+				}
+
+				if (ch == 3) // CTRL + C
+					s_console.handleSpecialKeyInput(gg::Console::SpecialKey::CTRL_C);
+				else
+					s_console.handleCharInput((unsigned char)ch);
+			}
+			break;
 		}
 		break;
 
@@ -121,16 +124,22 @@ static LRESULT CALLBACK consoleWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 	return 0;
 }
 
+static void unhookWnd()
+{
+	if (!console_hwnd) return;
+
+	SetWindowLongPtr(console_hwnd, GWLP_WNDPROC, (LONG_PTR)orig_wnd_proc);
+	console_hwnd = 0;
+}
+
 static void hookWnd(HWND hwnd)
 {
-	static bool hooked = false;
+	if (console_hwnd)
+		unhookWnd();
 
-	if (!hooked)
-	{
-		orig_wnd_proc = (WNDPROC)GetWindowLongPtr(hwnd, GWLP_WNDPROC);
-		SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)consoleWndProc);
-		console_hwnd = hwnd;
-	}
+	orig_wnd_proc = (WNDPROC)GetWindowLongPtr(hwnd, GWLP_WNDPROC);
+	SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)consoleWndProc);
+	console_hwnd = hwnd;
 }
 
 #endif // _WIN32
@@ -276,11 +285,12 @@ void gg::Console::write(std::string&& str, OutputType type)
 
 void gg::Console::render(gg::IRenderer* renderer)
 {
-	if (!m_render) return;
-
 	#ifdef _WIN32
-	if (!console_hwnd) hookWnd((HWND)renderer->getWindowHandle());
+	if (!console_hwnd || console_hwnd != (HWND)renderer->getWindowHandle())
+		hookWnd((HWND)renderer->getWindowHandle());
 	#endif
+
+	if (!m_render) return;
 
 	//renderer->drawRectangle(10, 10, 10, 10, 0xffff0000);
 
