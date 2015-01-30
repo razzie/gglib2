@@ -10,12 +10,26 @@
 #define GG_D3D9_RENDERER_HPP_INCLUDED
 #ifdef _WIN32
 
+#include <vector>
 #include <windows.h>
 #include <d3d9.h>
 #include "renderer/renderer.hpp"
 
 namespace gg
 {
+	struct D3D9Vertex
+	{
+		float pos[4];
+		//Color color;
+	};
+
+	struct D3D9VertexUV
+	{
+		float pos[4];
+		//Color color;
+		float uv[2];
+	};
+
 	class D3D9TextObject : public ITextObject
 	{
 	public:
@@ -32,6 +46,7 @@ namespace gg
 		Color m_color;
 		const Font* m_font;
 		unsigned m_height;
+		std::vector<D3D9VertexUV> m_vertices;
 	};
 
 	class D3D9Renderer : public IRenderer
@@ -44,14 +59,31 @@ namespace gg
 		virtual WindowHandle getWindowHandle() const;
 		virtual D3D9TextObject* createTextObject() const;
 		virtual void render();
-		virtual bool drawTextObject(ITextObject*, int x, int y, Color* = nullptr);
-		virtual bool drawCaret(ITextObject*, int x, int y, int pos, Color);
+		virtual bool drawTextObject(const ITextObject*, int x, int y, Color* = nullptr);
+		virtual bool drawCaret(const ITextObject*, int x, int y, int pos, Color);
 		virtual bool drawLine(int x1, int y1, int x2, int y2, Color color);
 		virtual bool drawRectangle(int x, int y, int width, int height, Color color);
 
 	private:
+		struct FontTexturePair
+		{
+			const Font* font;
+			IDirect3DTexture9* texture;
+
+			~FontTexturePair()
+			{
+				texture->Release();
+			}
+		};
+
+		IDirect3DTexture9* getFontTexture(const Font*);
+
 		HWND m_hwnd;
 		IDirect3DDevice9* m_device;
+		D3DCAPS9 m_caps;
+		IDirect3DStateBlock9 *m_stateblock;
+		std::vector<FontTexturePair> m_font_textures;
+		bool m_puredevice;
 		bool m_drawing;
 	};
 };

@@ -8,9 +8,6 @@
 
 #ifdef _WIN32
 #include <windows.h>
-#include <d3d9.h>
-#include <d3d10_1.h>
-#include <d3d11.h>
 #include "renderer/renderer.hpp"
 #include "renderer/opengl_renderer.hpp"
 #include "renderer/d3d9_renderer.hpp"
@@ -52,7 +49,7 @@ namespace ogl
 
 		HGLRC hglrc = ((WGLCREATECONTEXT)GetOriginalFunction((ULONG_PTR)wglCreateContext_hook))(hdc);
 
-		UnhookFunction((ULONG_PTR)wglCreateContext_hook);
+		//UnhookFunction((ULONG_PTR)wglCreateContext_hook);
 
 		if (renderer == nullptr)
 		{
@@ -99,8 +96,6 @@ namespace dx9
 			This, Adapter, DeviceType, hFocusWindow, BehaviorFlags,
 			pPresentationParameters, ppReturnedDeviceInterface);
 
-		UnhookFunction((ULONG_PTR)CreateDevice_hook);
-
 		if (renderer == nullptr)
 		{
 			delete renderer;
@@ -109,7 +104,12 @@ namespace dx9
 
 		renderer = new gg::D3D9Renderer(hFocusWindow, *ppReturnedDeviceInterface);
 
-		hookVtableFunc(*ppReturnedDeviceInterface, 42, EndScene_hook, (void*&)EndScene_orig);
+		static bool first_use = true;
+		if (SUCCEEDED(result) && first_use)
+		{
+			hookVtableFunc(*ppReturnedDeviceInterface, 42, EndScene_hook, (void*&)EndScene_orig);
+			first_use = false;
+		}
 
 		return result;
 	}

@@ -50,8 +50,8 @@ namespace gg
 		virtual void render() = 0;
 
 		// drawing methods only work from inside the render callback
-		virtual bool drawTextObject(ITextObject*, int x, int y, Color* = nullptr) = 0;
-		virtual bool drawCaret(ITextObject*, int x, int y, int pos, Color) = 0;
+		virtual bool drawTextObject(const ITextObject*, int x, int y, Color* = nullptr) = 0;
+		virtual bool drawCaret(const ITextObject*, int x, int y, int pos, Color) = 0;
 		virtual bool drawLine(int x1, int y1, int x2, int y2, Color color) = 0;
 		virtual bool drawRectangle(int x, int y, int width, int height, Color color) = 0;
 

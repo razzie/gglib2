@@ -39,8 +39,8 @@ namespace gg
 		Color m_color;
 		const Font* m_font;
 		unsigned m_height;
-		std::vector<GLVec2> m_verts;
-		std::vector<GLVec2> m_uvs;
+		std::vector<GLVec2> m_vertices;
+		std::vector<GLVec2> m_uv_coords;
 	};
 
 	class OpenGLRenderer : public IRenderer
@@ -53,8 +53,8 @@ namespace gg
 		virtual WindowHandle getWindowHandle() const;
 		virtual OpenGLTextObject* createTextObject() const;
 		virtual void render();
-		virtual bool drawTextObject(ITextObject*, int x, int y, Color* = nullptr);
-		virtual bool drawCaret(ITextObject*, int x, int y, int pos, Color);
+		virtual bool drawTextObject(const ITextObject*, int x, int y, Color* = nullptr);
+		virtual bool drawCaret(const ITextObject*, int x, int y, int pos, Color);
 		virtual bool drawLine(int x1, int y1, int x2, int y2, Color color);
 		virtual bool drawRectangle(int x, int y, int width, int height, Color color);
 
@@ -63,6 +63,11 @@ namespace gg
 		{
 			const Font* font;
 			GLuint texture_id;
+
+			~FontTexturePair()
+			{
+				glDeleteTextures(1, &texture_id);
+			}
 		};
 
 		// methods

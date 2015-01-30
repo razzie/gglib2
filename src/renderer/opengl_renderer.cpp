@@ -11,6 +11,7 @@
  */
 
 #ifdef _WIN32
+#include "stringutil.hpp"
 #include "renderer/font.hpp"
 #include "renderer/opengl_renderer.hpp"
 
@@ -27,32 +28,15 @@ gg::OpenGLTextObject::~OpenGLTextObject()
 {
 }
 
-static void getlines(const std::string& str, std::vector<std::string>& lines)
-{
-	auto it1 = str.begin(), it2 = str.begin(), end = str.end();
-	for (; it2 != end; ++it2)
-	{
-		if (*it2 == '\n')
-		{
-			if (it1 != it2) lines.emplace_back(it1, it2);
-			it1 = it2 + 1;
-		}
-	}
-	if (it1 == str.begin())
-		lines.emplace_back(str);
-	else
-		lines.emplace_back(it1, end);
-}
-
 bool gg::OpenGLTextObject::setText(const std::string& text, unsigned line_spacing, const gg::Font* font)
 {
 	m_font = (font != nullptr) ? font : gg::getNormalFont();
 	m_height = 0;
-	m_verts.clear();
-	m_uvs.clear();
+	m_vertices.clear();
+	m_uv_coords.clear();
 
 	std::vector<std::string> lines;
-	getlines(text, lines);
+	gg::separate(text, lines, '\n');
 
 	int x, x1, y, y1, i, len;
 	float u0, v0, u1, v1;
@@ -73,19 +57,19 @@ bool gg::OpenGLTextObject::setText(const std::string& text, unsigned line_spacin
 			x1 = x + m_font->getCharWidth(ch);
 			m_font->getUV(ch, &u0, &v0, &u1, &v1);
 
-			m_verts.push_back(GLVec2{ (GLfloat)x, (GLfloat)y });
-			m_verts.push_back(GLVec2{ (GLfloat)x1, (GLfloat)y });
-			m_verts.push_back(GLVec2{ (GLfloat)x, (GLfloat)y1 });
-			m_verts.push_back(GLVec2{ (GLfloat)x1, (GLfloat)y });
-			m_verts.push_back(GLVec2{ (GLfloat)x1, (GLfloat)y1 });
-			m_verts.push_back(GLVec2{ (GLfloat)x, (GLfloat)y1 });
+			m_vertices.push_back(GLVec2{ (GLfloat)x, (GLfloat)y });
+			m_vertices.push_back(GLVec2{ (GLfloat)x1, (GLfloat)y });
+			m_vertices.push_back(GLVec2{ (GLfloat)x, (GLfloat)y1 });
+			m_vertices.push_back(GLVec2{ (GLfloat)x1, (GLfloat)y });
+			m_vertices.push_back(GLVec2{ (GLfloat)x1, (GLfloat)y1 });
+			m_vertices.push_back(GLVec2{ (GLfloat)x, (GLfloat)y1 });
 
-			m_uvs.push_back(GLVec2{ u0, v0 });
-			m_uvs.push_back(GLVec2{ u1, v0 });
-			m_uvs.push_back(GLVec2{ u0, v1 });
-			m_uvs.push_back(GLVec2{ u1, v0 });
-			m_uvs.push_back(GLVec2{ u1, v1 });
-			m_uvs.push_back(GLVec2{ u0, v1 });
+			m_uv_coords.push_back(GLVec2{ u0, v0 });
+			m_uv_coords.push_back(GLVec2{ u1, v0 });
+			m_uv_coords.push_back(GLVec2{ u0, v1 });
+			m_uv_coords.push_back(GLVec2{ u1, v0 });
+			m_uv_coords.push_back(GLVec2{ u1, v1 });
+			m_uv_coords.push_back(GLVec2{ u0, v1 });
 
 			x = x1;
 		}
@@ -201,7 +185,7 @@ void gg::OpenGLRenderer::render()
 	//glPopAttrib();
 }
 
-bool gg::OpenGLRenderer::drawTextObject(gg::ITextObject* itext, int x, int y, Color* color_ptr)
+bool gg::OpenGLRenderer::drawTextObject(const gg::ITextObject* itext, int x, int y, Color* color_ptr)
 {
 	if (!m_drawing)
 		return false;
@@ -209,9 +193,9 @@ bool gg::OpenGLRenderer::drawTextObject(gg::ITextObject* itext, int x, int y, Co
 	if (itext->getBackend() != Backend::OPENGL)
 		return false;
 
-	OpenGLTextObject* text = static_cast<OpenGLTextObject*>(itext);
+	const OpenGLTextObject* text = static_cast<const OpenGLTextObject*>(itext);
 
-	if (text->m_verts.size() < 4)
+	if (text->m_vertices.size() < 4)
 		return false;
 
 	Color color = (color_ptr == nullptr) ? text->m_color : *color_ptr;
@@ -226,15 +210,15 @@ bool gg::OpenGLRenderer::drawTextObject(gg::ITextObject* itext, int x, int y, Co
 	glBindTexture(GL_TEXTURE_2D, getFontTextureID(text->m_font));
 
 	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(2, GL_FLOAT, 0, &(text->m_verts[0]));
+	glVertexPointer(2, GL_FLOAT, 0, &(text->m_vertices[0]));
 
 	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-	glTexCoordPointer(2, GL_FLOAT, 0, &(text->m_uvs[0]));
+	glTexCoordPointer(2, GL_FLOAT, 0, &(text->m_uv_coords[0]));
 
 	glDisableClientState(GL_COLOR_ARRAY);
 	glColor4ub(GLubyte(color >> 16), GLubyte(color >> 8), GLubyte(color), GLubyte(color >> 24));
 
-	glDrawArrays(GL_TRIANGLES, 0, (int)text->m_verts.size());
+	glDrawArrays(GL_TRIANGLES, 0, (int)text->m_vertices.size());
 
 	glDisable(GL_TEXTURE_2D);
 	glDisableClientState(GL_VERTEX_ARRAY);
@@ -245,7 +229,7 @@ bool gg::OpenGLRenderer::drawTextObject(gg::ITextObject* itext, int x, int y, Co
 	return true;
 }
 
-bool gg::OpenGLRenderer::drawCaret(gg::ITextObject* itext, int x, int y, int pos, gg::Color color)
+bool gg::OpenGLRenderer::drawCaret(const gg::ITextObject* itext, int x, int y, int pos, gg::Color color)
 {
 	if (!m_drawing)
 		return false;
@@ -253,18 +237,18 @@ bool gg::OpenGLRenderer::drawCaret(gg::ITextObject* itext, int x, int y, int pos
 	if (itext->getBackend() != Backend::OPENGL)
 		return false;
 
-	OpenGLTextObject* text = static_cast<OpenGLTextObject*>(itext);
+	const OpenGLTextObject* text = static_cast<const OpenGLTextObject*>(itext);
 
 	if (pos == 0)
 		return drawRectangle(x, y, 3, text->m_font->getCharHeight(), color);
 
-	int text_len = text->m_verts.size() / 6; // 1 char has 6 vertices
+	int text_len = text->m_vertices.size() / 6; // 1 char has 6 vertices
 	if (pos > text_len)
 		return false;
 	if (pos < 0)
 		pos = text_len;
 
-	GLVec2 v = text->m_verts[((pos - 1) * 6) + 1];
+	GLVec2 v = text->m_vertices[((pos - 1) * 6) + 1];
 	return drawRectangle(x + (int)v.x, y + (int)v.y, 3, text->m_font->getCharHeight(), color);
 }
 

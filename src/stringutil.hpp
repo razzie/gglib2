@@ -67,6 +67,26 @@ namespace gg
         return std::basic_string<T>(it_first, it_last);
     }
 
+	template<class T>
+	void separate(const std::basic_string<T>& s,
+				  std::vector<std::basic_string<T>>& elements,
+				  char delimiter)
+	{
+		auto it1 = s.begin(), it2 = s.begin(), end = s.end();
+		for (; it2 != end; ++it2)
+		{
+			if (*it2 == '\n')
+			{
+				if (it1 != it2) elements.emplace_back(it1, it2);
+				it1 = it2 + 1;
+			}
+		}
+		if (it1 == s.begin())
+			elements.emplace_back(s);
+		else
+			elements.emplace_back(it1, end);
+	}
+
     template<class FROM, class TO>
     std::basic_string<TO> convertString(std::basic_string<FROM> s,
                                         std::locale loc = std::locale())
