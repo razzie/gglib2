@@ -47,20 +47,29 @@ namespace ogl
 	{
 		typedef HGLRC(WINAPI *WGLCREATECONTEXT)(HDC);
 
+		static bool first_use = true;
+
 		HGLRC hglrc = ((WGLCREATECONTEXT)GetOriginalFunction((ULONG_PTR)wglCreateContext_hook))(hdc);
 
-		//UnhookFunction((ULONG_PTR)wglCreateContext_hook);
-
-		if (renderer == nullptr)
+		if (hglrc != NULL)
 		{
-			delete renderer;
-			renderer = nullptr;
+			//UnhookFunction((ULONG_PTR)wglCreateContext_hook);
+
+			if (renderer == nullptr)
+			{
+				delete renderer;
+				renderer = nullptr;
+			}
+
+			renderer = new gg::OpenGLRenderer(WindowFromDC(hdc));
+
+			if (first_use)
+			{
+				first_use = false;
+				HMODULE GDILibrary = LoadLibrary(TEXT("gdi32.dll"));
+				HookFunction((ULONG_PTR)GetProcAddress(GDILibrary, "SwapBuffers"), (ULONG_PTR)SwapBuffers_hook);
+			}
 		}
-
-		renderer = new gg::OpenGLRenderer(WindowFromDC(hdc));
-
-		HMODULE GDILibrary = LoadLibrary(TEXT("gdi32.dll"));
-		HookFunction((ULONG_PTR)GetProcAddress(GDILibrary, "SwapBuffers"), (ULONG_PTR)SwapBuffers_hook);
 
 		return hglrc;
 	}
@@ -92,23 +101,27 @@ namespace dx9
 		DWORD BehaviorFlags, D3DPRESENT_PARAMETERS* pPresentationParameters,
 		IDirect3DDevice9** ppReturnedDeviceInterface)
 	{
+		static bool first_use = true;
+
 		HRESULT result = CreateDevice_orig(
 			This, Adapter, DeviceType, hFocusWindow, BehaviorFlags,
 			pPresentationParameters, ppReturnedDeviceInterface);
 
-		if (renderer == nullptr)
+		if (SUCCEEDED(result))
 		{
-			delete renderer;
-			renderer = nullptr;
-		}
+			if (renderer == nullptr)
+			{
+				delete renderer;
+				renderer = nullptr;
+			}
 
-		renderer = new gg::D3D9Renderer(hFocusWindow, *ppReturnedDeviceInterface);
+			renderer = new gg::D3D9Renderer(hFocusWindow, *ppReturnedDeviceInterface);
 
-		static bool first_use = true;
-		if (SUCCEEDED(result) && first_use)
-		{
-			hookVtableFunc(*ppReturnedDeviceInterface, 42, EndScene_hook, (void*&)EndScene_orig);
-			first_use = false;
+			if (first_use)
+			{
+				first_use = false;
+				hookVtableFunc(*ppReturnedDeviceInterface, 42, EndScene_hook, (void*&)EndScene_orig);
+			}
 		}
 
 		return result;

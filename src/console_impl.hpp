@@ -55,7 +55,7 @@ namespace gg
 		virtual bool init();
 		virtual bool addFunction(const std::string& fname, Function func, VarArray&& defaults);
 		virtual unsigned complete(std::string& expression, unsigned cursor_start = 0) const;
-		virtual bool exec(const std::string& expression, std::ostream& output, Var* rval = nullptr) const;
+		virtual bool exec(const std::string& expression, Var* rval = nullptr, std::ostream* output = nullptr) const;
 		virtual void clear();
 		void write(const std::string&, OutputType = OutputType::NORMAL);
 		void write(std::string&&, OutputType = OutputType::NORMAL);

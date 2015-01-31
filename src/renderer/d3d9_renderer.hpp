@@ -17,19 +17,6 @@
 
 namespace gg
 {
-	struct D3D9Vertex
-	{
-		float pos[4];
-		//Color color;
-	};
-
-	struct D3D9VertexUV
-	{
-		float pos[4];
-		//Color color;
-		float uv[2];
-	};
-
 	class D3D9TextObject : public ITextObject
 	{
 	public:
@@ -41,12 +28,18 @@ namespace gg
 		virtual IRenderer::Backend getBackend() const;
 
 	private:
+		struct Vertex
+		{
+			float pos[3];
+			float uv[2];
+		};
+
 		friend class D3D9Renderer;
 
 		Color m_color;
 		const Font* m_font;
 		unsigned m_height;
-		std::vector<D3D9VertexUV> m_vertices;
+		std::vector<Vertex> m_vertices;
 	};
 
 	class D3D9Renderer : public IRenderer
@@ -69,11 +62,6 @@ namespace gg
 		{
 			const Font* font;
 			IDirect3DTexture9* texture;
-
-			~FontTexturePair()
-			{
-				texture->Release();
-			}
 		};
 
 		IDirect3DTexture9* getFontTexture(const Font*);
@@ -81,7 +69,7 @@ namespace gg
 		HWND m_hwnd;
 		IDirect3DDevice9* m_device;
 		D3DCAPS9 m_caps;
-		IDirect3DStateBlock9 *m_stateblock;
+		IDirect3DStateBlock9* m_stateblock;
 		std::vector<FontTexturePair> m_font_textures;
 		bool m_puredevice;
 		bool m_drawing;

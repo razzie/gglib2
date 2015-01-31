@@ -18,16 +18,6 @@
 
 static const float identity_matrix[4][4] { { 1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 }, { 0, 0, 0, 1 } };
 
-static D3DCOLORVALUE getD3DColor(gg::Color color)
-{
-	D3DCOLORVALUE d3dcolor;
-	d3dcolor.a = (float)((unsigned char)(color >> 24)) / 255.f;
-	d3dcolor.r = (float)((unsigned char)(color >> 16)) / 255.f;
-	d3dcolor.g = (float)((unsigned char)(color >> 8)) / 255.f;
-	d3dcolor.b = (float)((unsigned char)(color)) / 255.f;
-	return d3dcolor;
-}
-
 
 gg::D3D9TextObject::D3D9TextObject() :
 	m_color(0xffffffff),
@@ -54,58 +44,55 @@ bool gg::D3D9TextObject::setText(const std::string& text, unsigned line_spacing,
 	unsigned char ch;
 	const unsigned char *ctext;
 
-	D3D9VertexUV vtx;
+	D3D9TextObject::Vertex vtx;
 	vtx.pos[2] = 0;
-	vtx.pos[3] = 1;
 
 	for (unsigned line = 0; line < lines.size(); ++line)
 	{
 		x = 0;
-		y = line * (font->getCharHeight() +line_spacing);
-		y1 = y + font->getCharHeight();
+		y = line * (m_font->getCharHeight() + line_spacing);
+		y1 = y + m_font->getCharHeight();
 		len = (int)lines[line].length();
 		ctext = (const unsigned char *)(lines[line].c_str());
 
 		for (i = 0; i < len; ++i)
 		{
 			ch = ctext[i];
-			x1 = x + font->getCharWidth(ch);
+			x1 = x + m_font->getCharWidth(ch);
 			m_font->getUV(ch, &u0, &v0, &u1, &v1);
 
-			//vtx.color = m_color;
-
-			vtx.pos[0] = (float)x;
-			vtx.pos[1] = (float)y;
+			vtx.pos[0] = (float)x + 0.5f;
+			vtx.pos[1] = (float)y + 0.5f;
 			vtx.uv[0] = u0;
 			vtx.uv[1] = v0;
 			m_vertices.push_back(vtx);
 
-			vtx.pos[0] = (float)x1;
-			vtx.pos[1] = (float)y;
+			vtx.pos[0] = (float)x1 + 0.5f;
+			vtx.pos[1] = (float)y + 0.5f;
 			vtx.uv[0] = u1;
 			vtx.uv[1] = v0;
 			m_vertices.push_back(vtx);
 
-			vtx.pos[0] = (float)x;
-			vtx.pos[1] = (float)y1;
+			vtx.pos[0] = (float)x + 0.5f;
+			vtx.pos[1] = (float)y1 + 0.5f;
 			vtx.uv[0] = u0;
 			vtx.uv[1] = v1;
 			m_vertices.push_back(vtx);
 
-			vtx.pos[0] = (float)x1;
-			vtx.pos[1] = (float)y;
+			vtx.pos[0] = (float)x1 + 0.5f;
+			vtx.pos[1] = (float)y + 0.5f;
 			vtx.uv[0] = u1;
 			vtx.uv[1] = v0;
 			m_vertices.push_back(vtx);
 
-			vtx.pos[0] = (float)x1;
-			vtx.pos[1] = (float)y1;
+			vtx.pos[0] = (float)x1 + 0.5f;
+			vtx.pos[1] = (float)y1 + 0.5f;
 			vtx.uv[0] = u1;
 			vtx.uv[1] = v1;
 			m_vertices.push_back(vtx);
 
-			vtx.pos[0] = (float)x;
-			vtx.pos[1] = (float)y1;
+			vtx.pos[0] = (float)x + 0.5f;
+			vtx.pos[1] = (float)y1 + 0.5f;
 			vtx.uv[0] = u0;
 			vtx.uv[1] = v1;
 			m_vertices.push_back(vtx);
@@ -122,13 +109,6 @@ bool gg::D3D9TextObject::setText(const std::string& text, unsigned line_spacing,
 bool gg::D3D9TextObject::setColor(gg::Color color)
 {
 	m_color = color;
-
-	/*if (!m_vertices.empty())
-	{
-		for (D3D9VertexUV& v : m_vertices)
-			v.color = m_color;
-	}*/
-
 	return true;
 }
 
@@ -146,12 +126,11 @@ gg::IRenderer::Backend gg::D3D9TextObject::getBackend() const
 gg::D3D9Renderer::D3D9Renderer(HWND hwnd, IDirect3DDevice9* device) :
 	m_hwnd(hwnd),
 	m_device(device),
+	m_stateblock(nullptr),
 	m_drawing(false)
 {
 	std::memset(&m_caps, 0, sizeof(D3DCAPS9));
 	m_device->GetDeviceCaps(&m_caps);
-
-	m_device->CreateStateBlock(D3DSBT_ALL, &m_stateblock);
 
 	D3DDEVICE_CREATION_PARAMETERS cp;
 	m_device->GetCreationParameters(&cp);
@@ -160,7 +139,11 @@ gg::D3D9Renderer::D3D9Renderer(HWND hwnd, IDirect3DDevice9* device) :
 
 gg::D3D9Renderer::~D3D9Renderer()
 {
-	m_stateblock->Release();
+	if (m_stateblock != nullptr)
+		m_stateblock->Release();
+
+	for (auto& it : m_font_textures)
+		it.texture->Release();
 }
 
 gg::IRenderer::Backend gg::D3D9Renderer::getBackend() const
@@ -190,7 +173,12 @@ gg::D3D9TextObject* gg::D3D9Renderer::createTextObject() const
 void gg::D3D9Renderer::render()
 {
 	if (!m_puredevice)
-		m_stateblock->Capture();
+	{
+		if (m_stateblock == nullptr)
+			m_device->CreateStateBlock(D3DSBT_ALL, &m_stateblock);
+		else
+			m_stateblock->Capture();
+	}
 
 	unsigned width, height;
 	getWindowDimensions(&width, &height);
@@ -200,10 +188,23 @@ void gg::D3D9Renderer::render()
 	vp.Y = 0;
 	vp.Width = width;
 	vp.Height = height;
-	vp.MinZ = 0;
-	vp.MaxZ = 1;
+	vp.MinZ = 0.f;
+	vp.MaxZ = 1.f;
 	m_device->SetViewport(&vp);
 
+	D3DMATRIX view;
+	std::memcpy(&view, &identity_matrix, sizeof(D3DMATRIX));
+	view.m[3][0] = -(float)(width / 2);
+	view.m[3][1] = -(float)(height / 2);
+	m_device->SetTransform(D3DTS_VIEW, &view);
+
+	D3DMATRIX proj;
+	std::memcpy(&proj, &identity_matrix, sizeof(D3DMATRIX));
+	proj.m[0][0] = 2.f / (float)width;
+	proj.m[1][1] = -2.f / (float)height;
+	m_device->SetTransform(D3DTS_PROJECTION, &proj);
+
+	m_device->SetRenderState(D3DRS_LIGHTING, FALSE);
 	m_device->SetRenderState(D3DRS_ZENABLE, D3DZB_FALSE);
 	m_device->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
 	m_device->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
@@ -217,16 +218,15 @@ void gg::D3D9Renderer::render()
 	m_device->SetRenderState(D3DRS_FOGENABLE, FALSE);
 	m_device->SetRenderState(D3DRS_STENCILENABLE, FALSE);
 	m_device->SetRenderState(D3DRS_COLORWRITEENABLE, 0x0000000F);
+	//m_device->SetRenderState(D3DRS_COLORWRITEENABLE, D3DCOLORWRITEENABLE_BLUE | D3DCOLORWRITEENABLE_GREEN | D3DCOLORWRITEENABLE_RED);
 	m_device->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
 	if (m_caps.PrimitiveMiscCaps & D3DPMISCCAPS_SEPARATEALPHABLEND)
 		m_device->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, FALSE);
 	//if( m_State->m_Caps.LineCaps & D3DLINECAPS_ANTIALIAS )
 	m_device->SetRenderState(D3DRS_ANTIALIASEDLINEENABLE, FALSE);
 
-	m_device->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
 	m_device->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
-	m_device->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
-	m_device->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
+	m_device->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_CONSTANT);
 	m_device->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
 	m_device->SetTextureStageState(0, D3DTSS_TEXCOORDINDEX, D3DTSS_TCI_PASSTHRU);
 	m_device->SetTextureStageState(0, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_DISABLE);
@@ -244,7 +244,9 @@ void gg::D3D9Renderer::render()
 	m_drawing = false;
 
 	if (!m_puredevice)
+	{
 		m_stateblock->Apply();
+	}
 }
 
 bool gg::D3D9Renderer::drawTextObject(const gg::ITextObject* itext, int x, int y, Color* color_ptr)
@@ -260,22 +262,20 @@ bool gg::D3D9Renderer::drawTextObject(const gg::ITextObject* itext, int x, int y
 	if (text->m_vertices.size() < 4)
 		return false;
 
-	D3DMATERIAL9 material;
-	material.Diffuse = getD3DColor((color_ptr == nullptr) ? text->m_color : *color_ptr);
-	m_device->SetMaterial(&material);
+	D3DMATRIX model;
+	std::memcpy(&model, identity_matrix, sizeof(D3DMATRIX));
+	model.m[3][0] = (float)x;
+	model.m[3][1] = (float)y;
+	m_device->SetTransform(D3DTS_WORLD, &model);
 
-	D3DMATRIX translation;
-	std::memcpy(&translation, identity_matrix, sizeof(D3DMATRIX));
-	translation.m[3][0] = (float)x;
-	translation.m[3][1] = (float)y;
-	m_device->SetTransform(D3DTS_WORLD, &translation);
-
+	DWORD color = (DWORD)((color_ptr == nullptr) ? text->m_color : *color_ptr);
 	m_device->SetTexture(0, getFontTexture(text->m_font));
+	m_device->SetTextureStageState(0, D3DTSS_CONSTANT, color);
 	m_device->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
 	m_device->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
 
-	m_device->SetFVF(D3DFVF_XYZRHW/* | D3DFVF_DIFFUSE*/ | D3DFVF_TEX1 | D3DFVF_TEXCOORDSIZE2(0));
-	m_device->DrawPrimitiveUP(D3DPT_TRIANGLELIST, text->m_vertices.size() / 3, &(text->m_vertices[0]), sizeof(D3D9VertexUV));
+	m_device->SetFVF(D3DFVF_XYZ | D3DFVF_TEX1 | D3DFVF_TEXCOORDSIZE2(0));
+	m_device->DrawPrimitiveUP(D3DPT_TRIANGLELIST, text->m_vertices.size() / 3, &(text->m_vertices[0]), sizeof(D3D9TextObject::Vertex));
 
 	return true;
 }
@@ -299,86 +299,80 @@ bool gg::D3D9Renderer::drawCaret(const gg::ITextObject* itext, int x, int y, int
 	if (pos < 0)
 		pos = text_len;
 
-	D3D9VertexUV v = text->m_vertices[((pos - 1) * 6) + 1];
+	auto v = text->m_vertices[((pos - 1) * 6) + 1];
 	return drawRectangle(x + (int)v.pos[0], y + (int)v.pos[1], 3, text->m_font->getCharHeight(), color);
 }
 
 bool gg::D3D9Renderer::drawLine(int x1, int y1, int x2, int y2, gg::Color color)
 {
+	struct Vertex
+	{
+		float pos[4];
+	};
+
 	if (!m_drawing)
 		return false;
 
-	D3D9Vertex p[2];
+	Vertex p[2];
 
 	p[0].pos[0] = (float)x1;
 	p[0].pos[1] = (float)y1;
-	p[0].pos[2] = 0;
-	p[0].pos[3] = 1;
-	//p[0].color = color;
+	p[0].pos[2] = 0.f;
+	p[0].pos[3] = 1.f;
 
 	p[1].pos[0] = (float)x2;
 	p[1].pos[1] = (float)y2;
-	p[1].pos[2] = 0;
-	p[1].pos[3] = 1;
-	//p[1].color = color;
+	p[1].pos[2] = 0.f;
+	p[1].pos[3] = 1.f;
 
-	D3DMATERIAL9 material;
-	material.Diffuse = getD3DColor(color);
-	m_device->SetMaterial(&material);
-
-	m_device->SetTransform(D3DTS_WORLD, (const D3DMATRIX*)&identity_matrix);
-
-	m_device->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_DISABLE);
+	m_device->SetTextureStageState(0, D3DTSS_CONSTANT, color);
+	m_device->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_SELECTARG2);
 	m_device->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_DISABLE);
 
-	m_device->SetFVF(D3DFVF_XYZRHW/* | D3DFVF_DIFFUSE*/);
-	m_device->DrawPrimitiveUP(D3DPT_LINELIST, 1, p, sizeof(D3D9Vertex));
+	m_device->SetFVF(D3DFVF_XYZRHW);
+	m_device->DrawPrimitiveUP(D3DPT_LINELIST, 1, p, sizeof(Vertex));
 
 	return true;
 }
 
 bool gg::D3D9Renderer::drawRectangle(int x, int y, int width, int height, gg::Color color)
 {
+	struct Vertex
+	{
+		float pos[4];
+	};
+
 	if (!m_drawing)
 		return false;
 
-	D3D9Vertex p[4];
+	Vertex p[4];
 
 	p[0].pos[0] = (float)(x + width);
 	p[0].pos[1] = (float)(y);
-	p[0].pos[2] = 0;
-	p[0].pos[3] = 1;
-	//p[0].color = color;
+	p[0].pos[2] = 0.f;
+	p[0].pos[3] = 1.f;
 
 	p[1].pos[0] = (float)(x);
 	p[1].pos[1] = (float)(y);
-	p[1].pos[2] = 0;
-	p[1].pos[3] = 1;
-	//p[1].color = color;
+	p[1].pos[2] = 0.f;
+	p[1].pos[3] = 1.f;
 
 	p[2].pos[0] = (float)(x + width);
 	p[2].pos[1] = (float)(y + height);
-	p[2].pos[2] = 0;
-	p[2].pos[3] = 1;
-	//p[2].color = color;
+	p[2].pos[2] = 0.f;
+	p[2].pos[3] = 1.f;
 
 	p[3].pos[0] = (float)(x);
 	p[3].pos[1] = (float)(y + height);
-	p[3].pos[2] = 0;
-	p[3].pos[3] = 1;
-	//p[3].color = color;
+	p[3].pos[2] = 0.f;
+	p[3].pos[3] = 1.f;
 
-	D3DMATERIAL9 material;
-	material.Diffuse = getD3DColor(color);
-	m_device->SetMaterial(&material);
-
-	m_device->SetTransform(D3DTS_WORLD, (const D3DMATRIX*)&identity_matrix);
-
-	m_device->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_DISABLE);
+	m_device->SetTextureStageState(0, D3DTSS_CONSTANT, color);
+	m_device->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_SELECTARG2);
 	m_device->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_DISABLE);
 
-	m_device->SetFVF(D3DFVF_XYZRHW/* | D3DFVF_DIFFUSE*/);
-	m_device->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, p, sizeof(D3D9Vertex));
+	m_device->SetFVF(D3DFVF_XYZRHW);
+	m_device->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, p, sizeof(Vertex));
 
 	return true;
 }
@@ -404,7 +398,7 @@ static IDirect3DTexture9* createD3D9Texture(IDirect3DDevice9* device, const unsi
 	if (SUCCEEDED(hr))
 	{
 		gg::Color *p = static_cast<gg::Color*>(r.pBits);
-		for (int i = 0; i < (width * height); ++i, ++p)
+		for (unsigned i = 0; i < (width * height); ++i, ++p)
 			*p = 0x00ffffff | (((gg::Color)(bitmap[i])) << 24);
 		texture->UnlockRect(0);
 	}

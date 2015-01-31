@@ -63,11 +63,6 @@ namespace gg
 		{
 			const Font* font;
 			GLuint texture_id;
-
-			~FontTexturePair()
-			{
-				glDeleteTextures(1, &texture_id);
-			}
 		};
 
 		// methods

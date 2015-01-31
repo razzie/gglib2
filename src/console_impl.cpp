@@ -159,8 +159,9 @@ gg::Console::SafeRedirect::SafeRedirect(gg::Console& console, std::ostream& outp
 	m_console(console)
 {
 	std::lock_guard<decltype(m_console.m_mutex)> guard(m_console.m_mutex);
-	std::ostream* ptr = (&output == &console) ? nullptr : &output;
-	m_console.m_redirect_stack[std::this_thread::get_id()].push_back(ptr);
+	/*std::ostream* ptr = (&output == &console) ? nullptr : &output;
+	m_console.m_redirect_stack[std::this_thread::get_id()].push_back(ptr);*/
+	m_console.m_redirect_stack[std::this_thread::get_id()].push_back(&output);
 }
 
 gg::Console::SafeRedirect::~SafeRedirect()
@@ -230,18 +231,21 @@ unsigned gg::Console::complete(std::string& expression, unsigned cursor_start) c
 	return std::distance(expression.begin(), pos);
 }
 
-bool gg::Console::exec(const std::string& expression, std::ostream& output, gg::Var* rval) const
+bool gg::Console::exec(const std::string& expression, gg::Var* rval, std::ostream* output) const
 {
+	std::stringstream tmp_output;
+
+	if (output == nullptr)
+		output = const_cast<Console*>(this);
+
 	try
 	{
-		output.flush();
-
 		Var v;
-		SafeRedirect(const_cast<Console&>(*this), output);
+		SafeRedirect(const_cast<Console&>(*this), tmp_output);
 		Expression e(expression);
 
 		bool result = evaluate(e, (rval == nullptr) ? v : *rval);
-		output.flush();
+		*output << tmp_output.rdbuf();
 
 		return result;
 	}
@@ -275,7 +279,7 @@ void gg::Console::write(std::string&& str, OutputType type)
 	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 	auto& output_stack = m_redirect_stack[std::this_thread::get_id()];
 
-	if (output_stack.empty() || output_stack.back() == nullptr)
+	if (output_stack.empty()/* || output_stack.back() == nullptr*/)
 	{
 		m_output.emplace_back(*this, std::move(str), type);
 		std::string& s = m_output.back().text;
@@ -394,7 +398,7 @@ void gg::Console::handleSpecialKeyInput(gg::Console::SpecialKey key)
 
 			try
 			{
-				// moving currently types command to temporary buffer
+				// moving currently typed command to temporary buffer
 				std::swap(m_cmd, tmp_cmd);
 				m_cmd_pos = m_cmd.end();
 				m_cmd_dirty = true;
@@ -558,10 +562,8 @@ int gg::Console::sync()
 {
 	if (thread_buffer != nullptr)
 	{
-		//std::lock_guard<decltype(m_mutex)> guard(m_mutex);
-		//OutputType type = (m_redirect_stack.empty()) ? OutputType::NORMAL : OutputType::FUNCTION_OUTPUT;
-		write(std::move(*thread_buffer)/*, type*/);
-		//thread_buffer->clear();
+		write(std::move(*thread_buffer));
+		thread_buffer->clear();
 	}
 
 	return 0;

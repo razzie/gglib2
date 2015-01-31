@@ -106,6 +106,8 @@ gg::OpenGLRenderer::OpenGLRenderer(HWND hwnd) :
 
 gg::OpenGLRenderer::~OpenGLRenderer()
 {
+	for (auto& it : m_font_textures)
+		glDeleteTextures(1, &it.texture_id);
 }
 
 gg::IRenderer::Backend gg::OpenGLRenderer::getBackend() const
@@ -134,7 +136,8 @@ gg::OpenGLTextObject* gg::OpenGLRenderer::createTextObject() const
 
 void gg::OpenGLRenderer::render()
 {
-	//glPushAttrib(GL_ENABLE_BIT);
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
+	glPushClientAttrib(GL_CLIENT_ALL_ATTRIB_BITS);
 
 	if (m_glUseProgram) m_glUseProgram(0);
 
@@ -144,18 +147,18 @@ void gg::OpenGLRenderer::render()
 	glDisable(GL_COLOR_MATERIAL);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	//glDisable(GL_ALPHA_TEST);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glDisable(GL_ALPHA_TEST);
 	glDisable(GL_FOG);
-	//glDisable(GL_LOGIC_OP);
-	//glDisable(GL_SCISSOR_TEST);
+	glDisable(GL_LOGIC_OP);
+	glDisable(GL_SCISSOR_TEST);
 
-	//glDisableClientState(GL_VERTEX_ARRAY);
-	//glDisableClientState(GL_NORMAL_ARRAY);
-	//glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-	//glDisableClientState(GL_INDEX_ARRAY);
-	//glDisableClientState(GL_COLOR_ARRAY);
-	//glDisableClientState(GL_EDGE_FLAG_ARRAY);
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_NORMAL_ARRAY);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	glDisableClientState(GL_INDEX_ARRAY);
+	glDisableClientState(GL_COLOR_ARRAY);
+	glDisableClientState(GL_EDGE_FLAG_ARRAY);
 
 	RECT client_rect;
 	GetClientRect(m_hwnd, &client_rect);
@@ -163,17 +166,24 @@ void gg::OpenGLRenderer::render()
 	int height = client_rect.bottom;
 
 	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
 	glLoadIdentity();
 	glViewport(0, 0, width, height);
 	glOrtho(0.f, (GLfloat)width, (GLfloat)height, 0.f, -1.f, 1.f);
 
 	/*glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
 	glLoadIdentity();
 	GLint viewport[4];
 	glGetIntegerv(GL_VIEWPORT, viewport);
 	glOrtho(viewport[0], viewport[0] + viewport[2], viewport[1] + viewport[3], viewport[1], -1.f, 1.f);*/
 
 	glMatrixMode(GL_TEXTURE);
+	glPushMatrix();
+	glLoadIdentity();
+
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
 	glLoadIdentity();
 
 	m_drawing = true;
@@ -182,7 +192,17 @@ void gg::OpenGLRenderer::render()
 
 	glFlush();
 
-	//glPopAttrib();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+
+	glMatrixMode(GL_TEXTURE);
+	glPopMatrix();
+
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+
+	glPopClientAttrib();
+	glPopAttrib();
 }
 
 bool gg::OpenGLRenderer::drawTextObject(const gg::ITextObject* itext, int x, int y, Color* color_ptr)
@@ -204,8 +224,6 @@ bool gg::OpenGLRenderer::drawTextObject(const gg::ITextObject* itext, int x, int
 	glLoadIdentity();
 	glTranslatef((GLfloat)x, (GLfloat)y, 0.f);
 
-	//glPushAttrib(GL_ENABLE_BIT);
-
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, getFontTextureID(text->m_font));
 
@@ -220,11 +238,9 @@ bool gg::OpenGLRenderer::drawTextObject(const gg::ITextObject* itext, int x, int
 
 	glDrawArrays(GL_TRIANGLES, 0, (int)text->m_vertices.size());
 
-	glDisable(GL_TEXTURE_2D);
+	//glDisable(GL_TEXTURE_2D);
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-
-	//glPopAttrib();
 
 	return true;
 }
@@ -257,8 +273,6 @@ bool gg::OpenGLRenderer::drawLine(int x1, int y1, int x2, int y2, gg::Color colo
 	if (!m_drawing)
 		return false;
 
-	//glPushAttrib(GL_ENABLE_BIT);
-
 	glDisable(GL_TEXTURE_2D);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -269,8 +283,6 @@ bool gg::OpenGLRenderer::drawLine(int x1, int y1, int x2, int y2, gg::Color colo
 		glVertex2f((GLfloat)x2, (GLfloat)y2);
 	glEnd();
 
-	//glPopAttrib();
-
 	return true;
 }
 
@@ -278,8 +290,6 @@ bool gg::OpenGLRenderer::drawRectangle(int x, int y, int width, int height, gg::
 {
 	if (!m_drawing)
 		return false;
-
-	//glPushAttrib(GL_ENABLE_BIT);
 
 	glDisable(GL_TEXTURE_2D);
 	glMatrixMode(GL_MODELVIEW);
@@ -292,8 +302,6 @@ bool gg::OpenGLRenderer::drawRectangle(int x, int y, int width, int height, gg::
 		glVertex2f((GLfloat)(x + width), (GLfloat)(y + height));
 		glVertex2f((GLfloat)x, (GLfloat)(y + height));
 	glEnd();
-
-	//glPopAttrib();
 
 	return true;
 }
