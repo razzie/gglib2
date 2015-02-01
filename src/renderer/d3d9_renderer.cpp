@@ -379,19 +379,23 @@ bool gg::D3D9Renderer::drawRectangle(int x, int y, int width, int height, gg::Co
 
 static IDirect3DTexture9* createD3D9Texture(IDirect3DDevice9* device, const unsigned char* bitmap, unsigned width, unsigned height)
 {
-	IDirect3DTexture9* texture = NULL;
-	IDirect3DDevice9Ex* device_ex = NULL;
-	bool IsD3DDev9Ex = SUCCEEDED(device->QueryInterface(__uuidof(IDirect3DDevice9Ex), (void **)&device_ex)) && device_ex != NULL;
+	IDirect3DTexture9* texture = nullptr;
+	IDirect3DDevice9Ex* device_ex = nullptr;
 	HRESULT hr;
-	if (device_ex)
+
+	hr = device->QueryInterface(__uuidof(IDirect3DDevice9Ex), (void **)&device_ex);
+	if (SUCCEEDED(hr) && device_ex)
 	{
 		hr = device->CreateTexture(width, height, 1, D3DUSAGE_DYNAMIC, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &texture, NULL);
 		device_ex->Release();
 	}
 	else
+	{
 		hr = device->CreateTexture(width, height, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, &texture, NULL);
+	}
+
 	if (FAILED(hr))
-		return NULL;
+		return nullptr;
 
 	D3DLOCKED_RECT r;
 	hr = texture->LockRect(0, &r, NULL, 0);
