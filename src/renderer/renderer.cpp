@@ -60,12 +60,10 @@ namespace ogl
 	{
 		typedef BOOL(WINAPI *WGLDELETECONTEXT)(HGLRC);
 
-		BOOL result = ((WGLDELETECONTEXT)GetOriginalFunction((ULONG_PTR)wglDeleteContext_hook))(hglrc);
-
 		if (renderer && renderer->getBackendHandle() == (void*)hglrc)
 			renderer.reset();
 
-		return result;
+		return ((WGLDELETECONTEXT)GetOriginalFunction((ULONG_PTR)wglDeleteContext_hook))(hglrc);
 	}
 
 	static void hook()
