@@ -44,6 +44,7 @@ namespace gg
 
 		virtual ~IRenderer() {}
 		virtual Backend getBackend() const = 0;
+		virtual void* getBackendHandle() const = 0;
 		virtual bool getWindowDimensions(unsigned*, unsigned*) const = 0;
 		virtual WindowHandle getWindowHandle() const = 0;
 		virtual ITextObject* createTextObject() const = 0;

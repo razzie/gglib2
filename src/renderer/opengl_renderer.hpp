@@ -46,9 +46,10 @@ namespace gg
 	class OpenGLRenderer : public IRenderer
 	{
 	public:
-		OpenGLRenderer(HWND hwnd);
+		OpenGLRenderer(HWND hwnd, HGLRC hglrc);
 		virtual ~OpenGLRenderer();
 		virtual Backend getBackend() const;
+		virtual void* getBackendHandle() const;
 		virtual bool getWindowDimensions(unsigned*, unsigned*) const;
 		virtual WindowHandle getWindowHandle() const;
 		virtual OpenGLTextObject* createTextObject() const;
@@ -70,6 +71,7 @@ namespace gg
 
 		// member variables
 		HWND m_hwnd;
+		HGLRC m_hglrc;
 		std::vector<FontTexturePair> m_font_textures;
 		bool m_drawing;
 

@@ -97,8 +97,9 @@ gg::IRenderer::Backend gg::OpenGLTextObject::getBackend() const
 }
 
 
-gg::OpenGLRenderer::OpenGLRenderer(HWND hwnd) :
+gg::OpenGLRenderer::OpenGLRenderer(HWND hwnd, HGLRC hglrc) :
 	m_hwnd(hwnd),
+	m_hglrc(hglrc),
 	m_drawing(false)
 {
 	m_glUseProgram = (GLUSEPROGRAM)wglGetProcAddress("glUseProgram");
@@ -113,6 +114,11 @@ gg::OpenGLRenderer::~OpenGLRenderer()
 gg::IRenderer::Backend gg::OpenGLRenderer::getBackend() const
 {
 	return Backend::OPENGL;
+}
+
+void* gg::OpenGLRenderer::getBackendHandle() const
+{
+	return (void*)m_hglrc;
 }
 
 bool gg::OpenGLRenderer::getWindowDimensions(unsigned* width, unsigned* height) const

@@ -151,6 +151,11 @@ gg::IRenderer::Backend gg::D3D9Renderer::getBackend() const
 	return Backend::DIRECT3D9;
 }
 
+void* gg::D3D9Renderer::getBackendHandle() const
+{
+	return (void*)m_device;
+}
+
 bool gg::D3D9Renderer::getWindowDimensions(unsigned* width, unsigned* height) const
 {
 	RECT client_rect;

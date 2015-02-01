@@ -48,6 +48,7 @@ namespace gg
 		D3D9Renderer(HWND hwnd, IDirect3DDevice9*);
 		virtual ~D3D9Renderer();
 		virtual Backend getBackend() const;
+		virtual void* getBackendHandle() const;
 		virtual bool getWindowDimensions(unsigned*, unsigned*) const;
 		virtual WindowHandle getWindowHandle() const;
 		virtual D3D9TextObject* createTextObject() const;

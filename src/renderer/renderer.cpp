@@ -7,13 +7,14 @@
  */
 
 #ifdef _WIN32
+#include <memory>
 #include <windows.h>
 #include "renderer/renderer.hpp"
 #include "renderer/opengl_renderer.hpp"
 #include "renderer/d3d9_renderer.hpp"
 #include "NtHookEngine/NtHookEngine.hpp"
 
-static gg::IRenderer* renderer = nullptr;
+static std::shared_ptr<gg::IRenderer> renderer;
 static gg::RenderCallback render_cb;
 
 
@@ -37,7 +38,7 @@ namespace ogl
 	{
 		typedef BOOL(WINAPI *SWAPBUFFERS)(HDC);
 
-		if (renderer != nullptr)
+		if (renderer)
 			renderer->render();
 
 		return ((SWAPBUFFERS)GetOriginalFunction((ULONG_PTR)SwapBuffers_hook))(hdc);
@@ -47,37 +48,34 @@ namespace ogl
 	{
 		typedef HGLRC(WINAPI *WGLCREATECONTEXT)(HDC);
 
-		static bool first_use = true;
-
 		HGLRC hglrc = ((WGLCREATECONTEXT)GetOriginalFunction((ULONG_PTR)wglCreateContext_hook))(hdc);
 
 		if (hglrc != NULL)
-		{
-			//UnhookFunction((ULONG_PTR)wglCreateContext_hook);
-
-			if (renderer == nullptr)
-			{
-				delete renderer;
-				renderer = nullptr;
-			}
-
-			renderer = new gg::OpenGLRenderer(WindowFromDC(hdc));
-
-			if (first_use)
-			{
-				first_use = false;
-				HMODULE GDILibrary = LoadLibrary(TEXT("gdi32.dll"));
-				HookFunction((ULONG_PTR)GetProcAddress(GDILibrary, "SwapBuffers"), (ULONG_PTR)SwapBuffers_hook);
-			}
-		}
+			renderer.reset(new gg::OpenGLRenderer(WindowFromDC(hdc), hglrc));
 
 		return hglrc;
+	}
+
+	static BOOL WINAPI wglDeleteContext_hook(HGLRC hglrc)
+	{
+		typedef BOOL(WINAPI *WGLDELETECONTEXT)(HGLRC);
+
+		BOOL result = ((WGLDELETECONTEXT)GetOriginalFunction((ULONG_PTR)wglDeleteContext_hook))(hglrc);
+
+		if (renderer && renderer->getBackendHandle() == (void*)hglrc)
+			renderer.reset();
+
+		return result;
 	}
 
 	static void hook()
 	{
 		HMODULE OGLLibrary = LoadLibrary(TEXT("opengl32.dll"));
 		HookFunction((ULONG_PTR)GetProcAddress(OGLLibrary, "wglCreateContext"), (ULONG_PTR)wglCreateContext_hook);
+		HookFunction((ULONG_PTR)GetProcAddress(OGLLibrary, "wglDeleteContext"), (ULONG_PTR)wglDeleteContext_hook);
+
+		HMODULE GDILibrary = LoadLibrary(TEXT("gdi32.dll"));
+		HookFunction((ULONG_PTR)GetProcAddress(GDILibrary, "SwapBuffers"), (ULONG_PTR)SwapBuffers_hook);
 	}
 };
 
@@ -87,10 +85,26 @@ namespace dx9
 	static ENDSCENE EndScene_orig;
 	static HRESULT STDMETHODCALLTYPE EndScene_hook(IDirect3DDevice9 FAR* This)
 	{
-		if (renderer != nullptr)
+		if (renderer)
 			renderer->render();
 
 		return EndScene_orig(This);
+	}
+
+	typedef ULONG(STDMETHODCALLTYPE* RELEASE)(IDirect3DDevice9 FAR*);
+	static RELEASE Release_orig;
+	static ULONG STDMETHODCALLTYPE Release_hook(IDirect3DDevice9 FAR* This)
+	{
+		if (renderer && renderer->getBackendHandle() == (void*)This)
+		{
+			ULONG refcnt = This->AddRef() - 1;
+			Release_orig(This);
+
+			if (refcnt == 1)
+				renderer.reset();
+		}
+
+		return Release_orig(This);
 	}
 
 	typedef HRESULT(STDMETHODCALLTYPE* CREATEDEVICE)(IDirect3D9 FAR*, UINT, D3DDEVTYPE, HWND, DWORD, D3DPRESENT_PARAMETERS*, IDirect3DDevice9**);
@@ -109,18 +123,13 @@ namespace dx9
 
 		if (SUCCEEDED(result))
 		{
-			if (renderer == nullptr)
-			{
-				delete renderer;
-				renderer = nullptr;
-			}
-
-			renderer = new gg::D3D9Renderer(hFocusWindow, *ppReturnedDeviceInterface);
+			renderer.reset(new gg::D3D9Renderer(hFocusWindow, *ppReturnedDeviceInterface));
 
 			if (first_use)
 			{
 				first_use = false;
 				hookVtableFunc(*ppReturnedDeviceInterface, 42, EndScene_hook, (void*&)EndScene_orig);
+				hookVtableFunc(*ppReturnedDeviceInterface, 2, Release_hook, (void*&)Release_orig);
 			}
 		}
 
