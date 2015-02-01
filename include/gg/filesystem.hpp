@@ -18,7 +18,7 @@
  *
  * 2nd step:
  * Let's assume the program needs to open 'sky.png', which is a part of 'textures.pak'
- * virtual directory. It can be done by calling: 'auto file = gg::openFile("textures.pack/sky.png")'
+ * virtual directory. It can be done by calling: 'auto file = gg::openFile("textures.pak/sky.png")'
  *
  * Important:
  * Do NOT use backslash '\' characters in a file path. Always use slash '/' instead.

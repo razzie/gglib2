@@ -14,7 +14,7 @@
  * sent from other modules of the program. Upon instantiating such a class, a unique
  * message receiver ID is assigned to it. This ID can be used to send messages directly
  * to the new instance. You can do so by calling:
- * 'gg::sendMessage(type, args..., {destination IDs}, optional sender ID = 0)'
+ * 'auto msg = gg::createMessage(type, args...); gg::sendMessage(msg, received ID);'
  *
  * Use 'gg::IMessageReceiver::getNextMessage()' function to receive queued messages.
  * Message arguments can be accessed by 'message->get<std::string>(param_num)'.
@@ -33,11 +33,11 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <queue>
 #include <stdexcept>
 #include <typeinfo>
 #include "gg/config.hpp"
-#include "gg/fastmutex.hpp"
 #include "gg/storage.hpp"
 #include "gg/serializer.hpp"
 
@@ -117,7 +117,7 @@ namespace gg
 		{
 		}
 
-		// inherited from IMessage (through IStorage)
+		// inherited from IStorage (through IMessage)
 		virtual unsigned size() const
 		{
 			return m_storage.size();
@@ -217,7 +217,7 @@ namespace gg
 		friend class MessageReceiverAccessor;
 
 		MessageReceiverID m_id;
-		FastMutex m_msg_queue_mutex;
+		std::mutex m_msg_queue_mutex;
 		std::queue<std::shared_ptr<IMessage>> m_msg_queue;
 
 		static void GG_API registerInstance(IMessageReceiver*);

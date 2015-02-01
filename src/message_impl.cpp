@@ -9,6 +9,7 @@
 #include <atomic>
 #include <map>
 #include <queue>
+#include "gg/fastmutex.hpp"
 #include "safebuffer.hpp"
 #include "message_impl.hpp"
 
