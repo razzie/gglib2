@@ -383,6 +383,7 @@
     <ClCompile Include="src\streamutil_impl.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\gglib.hpp" />
     <ClInclude Include="include\gg\config.hpp" />
     <ClInclude Include="include\gg\console.hpp" />
     <ClInclude Include="include\gg\fastmutex.hpp" />
