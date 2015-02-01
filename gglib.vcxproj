@@ -293,18 +293,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug LIB|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug DLL|Win32'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="src\AntTweakBar\LoadOGL.cpp" />
-    <ClCompile Include="src\AntTweakBar\LoadOGLCore.cpp" />
-    <ClCompile Include="src\AntTweakBar\TwBar.cpp" />
-    <ClCompile Include="src\AntTweakBar\TwColors.cpp" />
-    <ClCompile Include="src\AntTweakBar\TwDirect3D10.cpp" />
-    <ClCompile Include="src\AntTweakBar\TwDirect3D11.cpp" />
-    <ClCompile Include="src\AntTweakBar\TwDirect3D9.cpp" />
-    <ClCompile Include="src\AntTweakBar\TwFonts.cpp" />
-    <ClCompile Include="src\AntTweakBar\TwMgr.cpp" />
-    <ClCompile Include="src\AntTweakBar\TwOpenGL.cpp" />
-    <ClCompile Include="src\AntTweakBar\TwOpenGLCore.cpp" />
-    <ClCompile Include="src\AntTweakBar\TwPrecomp.cpp" />
     <ClCompile Include="src\console_impl.cpp" />
     <ClCompile Include="src\distorm\decoder.c">
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">CompileAsC</CompileAs>
@@ -401,28 +389,6 @@
     <ClInclude Include="include\gg\logger.hpp" />
     <ClInclude Include="include\gg\message.hpp" />
     <ClInclude Include="include\gg\storage.hpp" />
-    <ClInclude Include="src\AntTweakBar\AntPerfTimer.h" />
-    <ClInclude Include="src\AntTweakBar\AntTweakBar.h" />
-    <ClInclude Include="src\AntTweakBar\d3d10vs2003.h" />
-    <ClInclude Include="src\AntTweakBar\LoadOGL.h" />
-    <ClInclude Include="src\AntTweakBar\LoadOGLCore.h" />
-    <ClInclude Include="src\AntTweakBar\TwBar.h" />
-    <ClInclude Include="src\AntTweakBar\TwColors.h" />
-    <ClInclude Include="src\AntTweakBar\TwDirect3D10.h" />
-    <ClInclude Include="src\AntTweakBar\TwDirect3D11.h" />
-    <ClInclude Include="src\AntTweakBar\TwDirect3D11_LineRectCstColorVS.h" />
-    <ClInclude Include="src\AntTweakBar\TwDirect3D11_LineRectPS.h" />
-    <ClInclude Include="src\AntTweakBar\TwDirect3D11_LineRectVS.h" />
-    <ClInclude Include="src\AntTweakBar\TwDirect3D11_TextCstColorVS.h" />
-    <ClInclude Include="src\AntTweakBar\TwDirect3D11_TextPS.h" />
-    <ClInclude Include="src\AntTweakBar\TwDirect3D11_TextVS.h" />
-    <ClInclude Include="src\AntTweakBar\TwDirect3D9.h" />
-    <ClInclude Include="src\AntTweakBar\TwFonts.h" />
-    <ClInclude Include="src\AntTweakBar\TwGraph.h" />
-    <ClInclude Include="src\AntTweakBar\TwMgr.h" />
-    <ClInclude Include="src\AntTweakBar\TwOpenGL.h" />
-    <ClInclude Include="src\AntTweakBar\TwOpenGLCore.h" />
-    <ClInclude Include="src\AntTweakBar\TwPrecomp.h" />
     <ClInclude Include="src\buffer.hpp" />
     <ClInclude Include="include\gg\filesystem.hpp" />
     <ClInclude Include="include\gg\function.hpp" />
