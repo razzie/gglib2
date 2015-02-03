@@ -35,11 +35,7 @@ gg::D3D9Renderer::D3D9Renderer(HWND hwnd, IDirect3DDevice9* device) :
 
 gg::D3D9Renderer::~D3D9Renderer()
 {
-	if (m_stateblock != nullptr)
-		m_stateblock->Release();
-
-	for (auto& it : m_font_textures)
-		it.texture->Release();
+	reset();
 }
 
 gg::IRenderer::Backend gg::D3D9Renderer::getBackend() const
@@ -148,6 +144,19 @@ void gg::D3D9Renderer::render()
 	{
 		m_stateblock->Apply();
 	}
+}
+
+void gg::D3D9Renderer::reset()
+{
+	if (m_stateblock != nullptr)
+	{
+		m_stateblock->Release();
+		m_stateblock = nullptr;
+	}
+
+	for (auto& it : m_font_textures)
+		it.texture->Release();
+	m_font_textures.clear();
 }
 
 bool gg::D3D9Renderer::drawTextObject(const gg::ITextObject* itext, int x, int y, Color* color_ptr)

@@ -80,16 +80,6 @@ namespace ogl
 
 namespace dx9
 {
-	typedef HRESULT(STDMETHODCALLTYPE* ENDSCENE)(IDirect3DDevice9 FAR*);
-	static ENDSCENE EndScene_orig;
-	static HRESULT STDMETHODCALLTYPE EndScene_hook(IDirect3DDevice9 FAR* This)
-	{
-		if (auto tmp_renderer = renderer)
-			tmp_renderer->render();
-
-		return EndScene_orig(This);
-	}
-
 	typedef ULONG(STDMETHODCALLTYPE* RELEASE)(IDirect3DDevice9 FAR*);
 	static RELEASE Release_orig;
 	static ULONG STDMETHODCALLTYPE Release_hook(IDirect3DDevice9 FAR* This)
@@ -104,6 +94,26 @@ namespace dx9
 		}
 
 		return Release_orig(This);
+	}
+
+	typedef HRESULT(STDMETHODCALLTYPE* RESET)(IDirect3DDevice9 FAR*, D3DPRESENT_PARAMETERS*);
+	static RESET Reset_orig;
+	static HRESULT STDMETHODCALLTYPE Reset_hook(IDirect3DDevice9 FAR* This, D3DPRESENT_PARAMETERS* pPresentationParameters)
+	{
+		if (auto tmp_renderer = renderer)
+			tmp_renderer->reset();
+
+		return Reset_orig(This, pPresentationParameters);
+	}
+
+	typedef HRESULT(STDMETHODCALLTYPE* ENDSCENE)(IDirect3DDevice9 FAR*);
+	static ENDSCENE EndScene_orig;
+	static HRESULT STDMETHODCALLTYPE EndScene_hook(IDirect3DDevice9 FAR* This)
+	{
+		if (auto tmp_renderer = renderer)
+			tmp_renderer->render();
+
+		return EndScene_orig(This);
 	}
 
 	typedef HRESULT(STDMETHODCALLTYPE* CREATEDEVICE)(IDirect3D9 FAR*, UINT, D3DDEVTYPE, HWND, DWORD, D3DPRESENT_PARAMETERS*, IDirect3DDevice9**);
@@ -127,8 +137,9 @@ namespace dx9
 			if (first_use)
 			{
 				first_use = false;
-				hookVtableFunc(*ppReturnedDeviceInterface, 42, EndScene_hook, (void*&)EndScene_orig);
 				hookVtableFunc(*ppReturnedDeviceInterface, 2, Release_hook, (void*&)Release_orig);
+				hookVtableFunc(*ppReturnedDeviceInterface, 16, Reset_hook, (void*&)Reset_orig);
+				hookVtableFunc(*ppReturnedDeviceInterface, 42, EndScene_hook, (void*&)EndScene_orig);
 			}
 		}
 

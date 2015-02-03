@@ -49,6 +49,7 @@ namespace gg
 		virtual WindowHandle getWindowHandle() const = 0;
 		virtual ITextObject* createTextObject() const = 0;
 		virtual void render() = 0;
+		virtual void reset() = 0;
 
 		// drawing methods only work from inside the render callback
 		virtual bool drawTextObject(const ITextObject*, int x, int y, Color* = nullptr) = 0;

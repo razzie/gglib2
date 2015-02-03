@@ -132,6 +132,10 @@ void gg::OpenGLRenderer::render()
 	glPopAttrib();
 }
 
+void gg::OpenGLRenderer::reset()
+{
+}
+
 bool gg::OpenGLRenderer::drawTextObject(const gg::ITextObject* itext, int x, int y, Color* color_ptr)
 {
 	if (!m_drawing)

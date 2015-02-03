@@ -53,6 +53,7 @@ namespace gg
 		virtual WindowHandle getWindowHandle() const;
 		virtual D3D9TextObject* createTextObject() const;
 		virtual void render();
+		virtual void reset();
 		virtual bool drawTextObject(const ITextObject*, int x, int y, Color* = nullptr);
 		virtual bool drawCaret(const ITextObject*, int x, int y, int pos, Color);
 		virtual bool drawLine(int x1, int y1, int x2, int y2, Color color);

@@ -401,18 +401,14 @@ gg::D3D11Renderer::D3D11Renderer(HWND hwnd, ID3D11Device* device, ID3D11DeviceCo
 	m_hwnd(hwnd),
 	m_device(device),
 	m_context(context),
-	m_stateblock(new D3D11StateBlock(device, context)),
+	m_stateblock(nullptr),
 	m_drawing(false)
 {
 }
 
 gg::D3D11Renderer::~D3D11Renderer()
 {
-	m_stateblock->Release();
-	delete m_stateblock;
-
-	for (auto& it : m_font_textures)
-		it.texture->Release();
+	reset();
 }
 
 gg::IRenderer::Backend gg::D3D11Renderer::getBackend() const
@@ -446,6 +442,9 @@ gg::D3D11TextObject* gg::D3D11Renderer::createTextObject() const
 
 void gg::D3D11Renderer::render()
 {
+	if (m_stateblock == nullptr)
+		m_stateblock = new D3D11StateBlock(m_device, m_context);
+	
 	m_stateblock->Capture();
 
 	unsigned width, height;
@@ -477,6 +476,20 @@ void gg::D3D11Renderer::render()
 	m_drawing = false;
 
 	m_stateblock->Apply();
+}
+
+void gg::D3D11Renderer::reset()
+{
+	if (m_stateblock != nullptr)
+	{
+		m_stateblock->Release();
+		delete m_stateblock;
+		m_stateblock = nullptr;
+	}
+
+	for (auto& it : m_font_textures)
+		it.texture->Release();
+	m_font_textures.clear();
 }
 
 bool gg::D3D11Renderer::drawTextObject(const gg::ITextObject* itext, int x, int y, Color* color_ptr)
