@@ -93,6 +93,9 @@
     <ClCompile Include="src\renderer\d3d9_renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\renderer\d3d11_renderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\gg\function.hpp">
@@ -219,6 +222,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\gglib.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\renderer\d3d11_renderer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

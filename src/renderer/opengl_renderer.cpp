@@ -17,85 +17,6 @@
 
 #pragma comment(lib, "opengl32.lib")
 
-gg::OpenGLTextObject::OpenGLTextObject() :
-	m_color(0xff000000),
-	m_font(gg::getNormalFont()),
-	m_height(0)
-{
-}
-
-gg::OpenGLTextObject::~OpenGLTextObject()
-{
-}
-
-bool gg::OpenGLTextObject::setText(const std::string& text, unsigned line_spacing, const gg::Font* font)
-{
-	m_font = (font != nullptr) ? font : gg::getNormalFont();
-	m_height = 0;
-	m_vertices.clear();
-	m_uv_coords.clear();
-
-	std::vector<std::string> lines;
-	gg::separate(text, lines, '\n');
-
-	int x, x1, y, y1, i, len;
-	float u0, v0, u1, v1;
-	unsigned char ch;
-	const unsigned char *ctext;
-
-	for (unsigned line = 0; line < lines.size(); ++line)
-	{
-		x = 0;
-		y = line * (m_font->getCharHeight() + line_spacing);
-		y1 = y + m_font->getCharHeight();
-		len = (int)lines[line].length();
-		ctext = (const unsigned char *)(lines[line].c_str());
-
-		for (i = 0; i < len; ++i)
-		{
-			ch = ctext[i];
-			x1 = x + m_font->getCharWidth(ch);
-			m_font->getUV(ch, &u0, &v0, &u1, &v1);
-
-			m_vertices.push_back(GLVec2{ (GLfloat)x, (GLfloat)y });
-			m_vertices.push_back(GLVec2{ (GLfloat)x1, (GLfloat)y });
-			m_vertices.push_back(GLVec2{ (GLfloat)x, (GLfloat)y1 });
-			m_vertices.push_back(GLVec2{ (GLfloat)x1, (GLfloat)y });
-			m_vertices.push_back(GLVec2{ (GLfloat)x1, (GLfloat)y1 });
-			m_vertices.push_back(GLVec2{ (GLfloat)x, (GLfloat)y1 });
-
-			m_uv_coords.push_back(GLVec2{ u0, v0 });
-			m_uv_coords.push_back(GLVec2{ u1, v0 });
-			m_uv_coords.push_back(GLVec2{ u0, v1 });
-			m_uv_coords.push_back(GLVec2{ u1, v0 });
-			m_uv_coords.push_back(GLVec2{ u1, v1 });
-			m_uv_coords.push_back(GLVec2{ u0, v1 });
-
-			x = x1;
-		}
-	}
-
-	m_height = y1;
-
-	return true;
-}
-
-bool gg::OpenGLTextObject::setColor(gg::Color color)
-{
-	m_color = color;
-	return true;
-}
-
-unsigned gg::OpenGLTextObject::getHeight() const
-{
-	return m_height;
-}
-
-gg::IRenderer::Backend gg::OpenGLTextObject::getBackend() const
-{
-	return IRenderer::Backend::OPENGL;
-}
-
 
 gg::OpenGLRenderer::OpenGLRenderer(HWND hwnd, HGLRC hglrc) :
 	m_hwnd(hwnd),
@@ -361,6 +282,86 @@ GLuint gg::OpenGLRenderer::getFontTextureID(const Font* font)
 		m_font_textures.push_back({ font, texture_id });
 
 	return texture_id;
+}
+
+
+gg::OpenGLTextObject::OpenGLTextObject() :
+m_color(0xff000000),
+m_font(gg::getNormalFont()),
+m_height(0)
+{
+}
+
+gg::OpenGLTextObject::~OpenGLTextObject()
+{
+}
+
+bool gg::OpenGLTextObject::setText(const std::string& text, unsigned line_spacing, const gg::Font* font)
+{
+	m_font = (font != nullptr) ? font : gg::getNormalFont();
+	m_height = 0;
+	m_vertices.clear();
+	m_uv_coords.clear();
+
+	std::vector<std::string> lines;
+	gg::separate(text, lines, '\n');
+
+	int x, x1, y, y1, i, len;
+	float u0, v0, u1, v1;
+	unsigned char ch;
+	const unsigned char *ctext;
+
+	for (unsigned line = 0; line < lines.size(); ++line)
+	{
+		x = 0;
+		y = line * (m_font->getCharHeight() + line_spacing);
+		y1 = y + m_font->getCharHeight();
+		len = (int)lines[line].length();
+		ctext = (const unsigned char *)(lines[line].c_str());
+
+		for (i = 0; i < len; ++i)
+		{
+			ch = ctext[i];
+			x1 = x + m_font->getCharWidth(ch);
+			m_font->getUV(ch, &u0, &v0, &u1, &v1);
+
+			m_vertices.push_back(GLVec2{ (GLfloat)x, (GLfloat)y });
+			m_vertices.push_back(GLVec2{ (GLfloat)x1, (GLfloat)y });
+			m_vertices.push_back(GLVec2{ (GLfloat)x, (GLfloat)y1 });
+			m_vertices.push_back(GLVec2{ (GLfloat)x1, (GLfloat)y });
+			m_vertices.push_back(GLVec2{ (GLfloat)x1, (GLfloat)y1 });
+			m_vertices.push_back(GLVec2{ (GLfloat)x, (GLfloat)y1 });
+
+			m_uv_coords.push_back(GLVec2{ u0, v0 });
+			m_uv_coords.push_back(GLVec2{ u1, v0 });
+			m_uv_coords.push_back(GLVec2{ u0, v1 });
+			m_uv_coords.push_back(GLVec2{ u1, v0 });
+			m_uv_coords.push_back(GLVec2{ u1, v1 });
+			m_uv_coords.push_back(GLVec2{ u0, v1 });
+
+			x = x1;
+		}
+	}
+
+	m_height = y1;
+
+	return true;
+}
+
+bool gg::OpenGLTextObject::setColor(gg::Color color)
+{
+	m_color = color;
+	return true;
+}
+
+unsigned gg::OpenGLTextObject::getHeight() const
+{
+	return m_height;
+}
+
+gg::IRenderer::Backend gg::OpenGLTextObject::getBackend() const
+{
+	return IRenderer::Backend::OPENGL;
 }
 
 #endif // _WIN32

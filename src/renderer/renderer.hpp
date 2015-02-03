@@ -31,7 +31,7 @@ namespace gg
 			UNKNOWN,
 			OPENGL,
 			DIRECT3D9,
-			DIRECT3D10,
+			//DIRECT3D10, // not supported
 			DIRECT3D11
 		};
 

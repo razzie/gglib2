@@ -19,110 +19,6 @@
 static const float identity_matrix[4][4] { { 1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 }, { 0, 0, 0, 1 } };
 
 
-gg::D3D9TextObject::D3D9TextObject() :
-	m_color(0xffffffff),
-	m_font(gg::getNormalFont()),
-	m_height(0)
-{
-}
-
-gg::D3D9TextObject::~D3D9TextObject()
-{
-}
-
-bool gg::D3D9TextObject::setText(const std::string& text, unsigned line_spacing, const gg::Font* font)
-{
-	m_font = (font != nullptr) ? font : gg::getNormalFont();
-	m_height = 0;
-	m_vertices.clear();
-
-	std::vector<std::string> lines;
-	gg::separate(text, lines, '\n');
-
-	int x, x1, y, y1, i, len;
-	float u0, v0, u1, v1;
-	unsigned char ch;
-	const unsigned char *ctext;
-
-	D3D9TextObject::Vertex vtx;
-	vtx.pos[2] = 0;
-
-	for (unsigned line = 0; line < lines.size(); ++line)
-	{
-		x = 0;
-		y = line * (m_font->getCharHeight() + line_spacing);
-		y1 = y + m_font->getCharHeight();
-		len = (int)lines[line].length();
-		ctext = (const unsigned char *)(lines[line].c_str());
-
-		for (i = 0; i < len; ++i)
-		{
-			ch = ctext[i];
-			x1 = x + m_font->getCharWidth(ch);
-			m_font->getUV(ch, &u0, &v0, &u1, &v1);
-
-			vtx.pos[0] = (float)x + 0.5f;
-			vtx.pos[1] = (float)y + 0.5f;
-			vtx.uv[0] = u0;
-			vtx.uv[1] = v0;
-			m_vertices.push_back(vtx);
-
-			vtx.pos[0] = (float)x1 + 0.5f;
-			vtx.pos[1] = (float)y + 0.5f;
-			vtx.uv[0] = u1;
-			vtx.uv[1] = v0;
-			m_vertices.push_back(vtx);
-
-			vtx.pos[0] = (float)x + 0.5f;
-			vtx.pos[1] = (float)y1 + 0.5f;
-			vtx.uv[0] = u0;
-			vtx.uv[1] = v1;
-			m_vertices.push_back(vtx);
-
-			vtx.pos[0] = (float)x1 + 0.5f;
-			vtx.pos[1] = (float)y + 0.5f;
-			vtx.uv[0] = u1;
-			vtx.uv[1] = v0;
-			m_vertices.push_back(vtx);
-
-			vtx.pos[0] = (float)x1 + 0.5f;
-			vtx.pos[1] = (float)y1 + 0.5f;
-			vtx.uv[0] = u1;
-			vtx.uv[1] = v1;
-			m_vertices.push_back(vtx);
-
-			vtx.pos[0] = (float)x + 0.5f;
-			vtx.pos[1] = (float)y1 + 0.5f;
-			vtx.uv[0] = u0;
-			vtx.uv[1] = v1;
-			m_vertices.push_back(vtx);
-
-			x = x1;
-		}
-	}
-
-	m_height = y1;
-
-	return true;
-}
-
-bool gg::D3D9TextObject::setColor(gg::Color color)
-{
-	m_color = color;
-	return true;
-}
-
-unsigned gg::D3D9TextObject::getHeight() const
-{
-	return m_height;
-}
-
-gg::IRenderer::Backend gg::D3D9TextObject::getBackend() const
-{
-	return IRenderer::Backend::DIRECT3D9;
-}
-
-
 gg::D3D9Renderer::D3D9Renderer(HWND hwnd, IDirect3DDevice9* device) :
 	m_hwnd(hwnd),
 	m_device(device),
@@ -433,6 +329,110 @@ IDirect3DTexture9* gg::D3D9Renderer::getFontTexture(const Font* font)
 		m_font_textures.push_back({ font, texture });
 
 	return texture;
+}
+
+
+gg::D3D9TextObject::D3D9TextObject() :
+m_color(0xffffffff),
+m_font(gg::getNormalFont()),
+m_height(0)
+{
+}
+
+gg::D3D9TextObject::~D3D9TextObject()
+{
+}
+
+bool gg::D3D9TextObject::setText(const std::string& text, unsigned line_spacing, const gg::Font* font)
+{
+	m_font = (font != nullptr) ? font : gg::getNormalFont();
+	m_height = 0;
+	m_vertices.clear();
+
+	std::vector<std::string> lines;
+	gg::separate(text, lines, '\n');
+
+	int x, x1, y, y1, i, len;
+	float u0, v0, u1, v1;
+	unsigned char ch;
+	const unsigned char *ctext;
+
+	D3D9TextObject::Vertex vtx;
+	vtx.pos[2] = 0;
+
+	for (unsigned line = 0; line < lines.size(); ++line)
+	{
+		x = 0;
+		y = line * (m_font->getCharHeight() + line_spacing);
+		y1 = y + m_font->getCharHeight();
+		len = (int)lines[line].length();
+		ctext = (const unsigned char *)(lines[line].c_str());
+
+		for (i = 0; i < len; ++i)
+		{
+			ch = ctext[i];
+			x1 = x + m_font->getCharWidth(ch);
+			m_font->getUV(ch, &u0, &v0, &u1, &v1);
+
+			vtx.pos[0] = (float)x + 0.5f;
+			vtx.pos[1] = (float)y + 0.5f;
+			vtx.uv[0] = u0;
+			vtx.uv[1] = v0;
+			m_vertices.push_back(vtx);
+
+			vtx.pos[0] = (float)x1 + 0.5f;
+			vtx.pos[1] = (float)y + 0.5f;
+			vtx.uv[0] = u1;
+			vtx.uv[1] = v0;
+			m_vertices.push_back(vtx);
+
+			vtx.pos[0] = (float)x + 0.5f;
+			vtx.pos[1] = (float)y1 + 0.5f;
+			vtx.uv[0] = u0;
+			vtx.uv[1] = v1;
+			m_vertices.push_back(vtx);
+
+			vtx.pos[0] = (float)x1 + 0.5f;
+			vtx.pos[1] = (float)y + 0.5f;
+			vtx.uv[0] = u1;
+			vtx.uv[1] = v0;
+			m_vertices.push_back(vtx);
+
+			vtx.pos[0] = (float)x1 + 0.5f;
+			vtx.pos[1] = (float)y1 + 0.5f;
+			vtx.uv[0] = u1;
+			vtx.uv[1] = v1;
+			m_vertices.push_back(vtx);
+
+			vtx.pos[0] = (float)x + 0.5f;
+			vtx.pos[1] = (float)y1 + 0.5f;
+			vtx.uv[0] = u0;
+			vtx.uv[1] = v1;
+			m_vertices.push_back(vtx);
+
+			x = x1;
+		}
+	}
+
+	m_height = y1;
+
+	return true;
+}
+
+bool gg::D3D9TextObject::setColor(gg::Color color)
+{
+	m_color = color;
+	return true;
+}
+
+unsigned gg::D3D9TextObject::getHeight() const
+{
+	return m_height;
+}
+
+gg::IRenderer::Backend gg::D3D9TextObject::getBackend() const
+{
+	return IRenderer::Backend::DIRECT3D9;
 }
 
 #endif // _WIN32

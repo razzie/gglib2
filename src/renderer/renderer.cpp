@@ -12,6 +12,7 @@
 #include "renderer/renderer.hpp"
 #include "renderer/opengl_renderer.hpp"
 #include "renderer/d3d9_renderer.hpp"
+#include "renderer/d3d11_renderer.hpp"
 #include "NtHookEngine/NtHookEngine.hpp"
 
 static std::shared_ptr<gg::IRenderer> renderer;
@@ -38,8 +39,8 @@ namespace ogl
 	{
 		typedef BOOL(WINAPI *SWAPBUFFERS)(HDC);
 
-		if (renderer)
-			renderer->render();
+		if (auto tmp_renderer = renderer)
+			tmp_renderer->render();
 
 		return ((SWAPBUFFERS)GetOriginalFunction((ULONG_PTR)SwapBuffers_hook))(hdc);
 	}
@@ -83,8 +84,8 @@ namespace dx9
 	static ENDSCENE EndScene_orig;
 	static HRESULT STDMETHODCALLTYPE EndScene_hook(IDirect3DDevice9 FAR* This)
 	{
-		if (renderer)
-			renderer->render();
+		if (auto tmp_renderer = renderer)
+			tmp_renderer->render();
 
 		return EndScene_orig(This);
 	}
@@ -147,13 +148,6 @@ namespace dx9
 	}
 };
 
-namespace dx10
-{
-	static void hook()
-	{
-	}
-}
-
 namespace dx11
 {
 	static void hook()
@@ -171,7 +165,6 @@ bool gg::IRenderer::injectHooks()
 	initNtHookEngine();
 	ogl::hook();
 	dx9::hook();
-	dx10::hook();
 	dx11::hook();
 
 	return true;
