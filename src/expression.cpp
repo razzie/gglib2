@@ -61,7 +61,8 @@ static void makeValidLeafExpr(std::string& expr)
 
 		if (*it == '"')
 		{
-			it = expr.erase(it) - 1;
+			it = expr.erase(it);
+			if (it != expr.begin()) --it;
 			continue;
 		}
 	}
@@ -126,7 +127,7 @@ gg::Expression::Expression(gg::Expression* parent, std::string orig_expr, bool a
 
 			if (open_brackets < 0)
 			{
-				if (auto_complete) { it = expr.erase(it) - 1; continue; }
+				if (auto_complete) { it = --expr.erase(it); continue; }
 				throw gg::ExpressionError("invalid use of )");
 			}
 
@@ -170,7 +171,7 @@ gg::Expression::Expression(gg::Expression* parent, std::string orig_expr, bool a
 
 		if (expr_mode == EXPR_COMPLETE && !std::isspace(*it))
 		{
-			if (auto_complete) { it = expr.erase(it) - 1; continue; }
+			if (auto_complete) { it = --expr.erase(it); continue; }
 			else throw gg::ExpressionError("character found after expression");
 		}
 	}

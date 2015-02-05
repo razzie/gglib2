@@ -98,24 +98,29 @@ static LRESULT CALLBACK consoleWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 		default:
 			{
 				BYTE kbs[256];
-				WORD ch;
-
 				GetKeyboardState(kbs);
-				if (kbs[VK_CONTROL] & 0x00000080)
-				{
-					kbs[VK_CONTROL] &= 0x0000007f;
-					ToAscii(wParam, MapVirtualKey(wParam, MAPVK_VK_TO_VSC), kbs, &ch, 0);
-					kbs[VK_CONTROL] |= 0x00000080;
-				}
-				else
-				{
-					ToAscii(wParam, MapVirtualKey(wParam, MAPVK_VK_TO_VSC), kbs, &ch, 0);
-				}
 
-				if (ch == 3) // CTRL + C
+				if (wParam == 'C' && kbs[VK_CONTROL] & 0x00000080)
+				{
 					s_console.handleSpecialKeyInput(gg::Console::SpecialKey::CTRL_C);
+				}
 				else
+				{
+					WORD ch;
+
+					if (kbs[VK_CONTROL] & 0x00000080)
+					{
+						kbs[VK_CONTROL] &= 0x0000007f;
+						ToAscii(wParam, MapVirtualKey(wParam, MAPVK_VK_TO_VSC), kbs, &ch, 0);
+						kbs[VK_CONTROL] |= 0x00000080;
+					}
+					else
+					{
+						ToAscii(wParam, MapVirtualKey(wParam, MAPVK_VK_TO_VSC), kbs, &ch, 0);
+					}
+
 					s_console.handleCharInput((unsigned char)ch);
+				}
 			}
 			break;
 		}
@@ -153,21 +158,6 @@ bool gg::Console::FunctionData::Comparator
 	::operator()(const std::string& a, const std::string& b) const
 {
 	return (gg::strcmpi(a, b) < 0);
-}
-
-gg::Console::SafeRedirect::SafeRedirect(gg::Console& console, std::ostream& output) :
-	m_console(console)
-{
-	std::lock_guard<decltype(m_console.m_mutex)> guard(m_console.m_mutex);
-	/*std::ostream* ptr = (&output == &console) ? nullptr : &output;
-	m_console.m_redirect_stack[std::this_thread::get_id()].push_back(ptr);*/
-	m_console.m_redirect_stack[std::this_thread::get_id()].push_back(&output);
-}
-
-gg::Console::SafeRedirect::~SafeRedirect()
-{
-	std::lock_guard<decltype(m_console.m_mutex)> guard(m_console.m_mutex);
-	m_console.m_redirect_stack[std::this_thread::get_id()].pop_back();
 }
 
 gg::Console::OutputData::OutputData(gg::Console& console, std::string&& str, OutputType type) :
@@ -231,28 +221,20 @@ unsigned gg::Console::complete(std::string& expression, unsigned cursor_start) c
 	return std::distance(expression.begin(), pos);
 }
 
-bool gg::Console::exec(const std::string& expression, gg::Var* rval, std::ostream* output) const
+bool gg::Console::exec(const std::string& expression, gg::Var* val) const
 {
 	std::stringstream tmp_output;
-
-	if (output == nullptr)
-		output = const_cast<Console*>(this);
 
 	try
 	{
 		Var v;
-		SafeRedirect(const_cast<Console&>(*this), tmp_output);
 		Expression e(expression);
-
-		bool result = evaluate(e, (rval == nullptr) ? v : *rval);
-		*output << tmp_output.rdbuf();
-
-		return result;
+		return evaluate(e, (val == nullptr) ? v : *val);
 	}
 	catch (ExpressionError& err)
 	{
-		if (rval != nullptr)
-			rval->construct<std::string>(err.what());
+		if (val != nullptr)
+			val->construct<std::string>(err.what());
 	}
 
 	return false;
@@ -266,29 +248,17 @@ void gg::Console::clear()
 
 void gg::Console::write(const std::string& str, OutputType type)
 {
-	if (str.empty()) return;
-
 	std::string str_copy(str);
 	write(std::move(str_copy), type);
 }
 
 void gg::Console::write(std::string&& str, OutputType type)
 {
+	while (!str.empty() && str.back() == '\n') str.pop_back();
 	if (str.empty()) return;
 
 	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
-	auto& output_stack = m_redirect_stack[std::this_thread::get_id()];
-
-	if (output_stack.empty()/* || output_stack.back() == nullptr*/)
-	{
-		m_output.emplace_back(*this, std::move(str), type);
-		std::string& s = m_output.back().text;
-		if (s.back() == '\n') s.pop_back();
-	}
-	else
-	{
-		output_stack.back()->write(str.c_str(), str.length());
-	}
+	m_output.emplace_back(*this, std::move(str), type);
 }
 
 void gg::Console::render(gg::IRenderer* renderer)
@@ -323,9 +293,6 @@ void gg::Console::render(gg::IRenderer* renderer)
 			{
 			case OutputType::NORMAL:
 				color = 0xffeeeeee;
-				break;
-			case OutputType::FUNCTION_OUTPUT:
-				color = 0xffddddff;
 				break;
 			case OutputType::FUNCTION_SUCCESS:
 				color = 0xffddffdd;
@@ -394,7 +361,6 @@ void gg::Console::handleSpecialKeyInput(gg::Console::SpecialKey key)
 			if (m_cmd.empty()) break;
 
 			std::string tmp_cmd;
-			std::stringstream tmp_output;
 
 			try
 			{
@@ -405,15 +371,16 @@ void gg::Console::handleSpecialKeyInput(gg::Console::SpecialKey key)
 
 				// command evaluation
 				Var v;
-				SafeRedirect(*this, tmp_output);
 				Expression e(tmp_cmd);
+				flush();
 				bool result = evaluate(e, v);
+				flush();
 
 				// saving command to history
 				m_cmd_history.emplace_back(tmp_cmd);
 				m_cmd_history_pos = m_cmd_history.end();
 				
-				// printing the results
+				// printing the expression with success or fail coloring
 				if (result)
 				{
 					if (!v.isEmpty())
@@ -429,10 +396,6 @@ void gg::Console::handleSpecialKeyInput(gg::Console::SpecialKey key)
 				{
 					write(std::move(tmp_cmd), OutputType::FUNCTION_FAIL);
 				}
-				if (tmp_output.rdbuf()->in_avail())
-				{
-					write(tmp_output.str(), OutputType::FUNCTION_OUTPUT);
-				}
 			}
 			catch (ExpressionError& err)
 			{
@@ -446,7 +409,7 @@ void gg::Console::handleSpecialKeyInput(gg::Console::SpecialKey key)
 			catch (std::exception& e)
 			{
 				std::string err = typeid(e).name();
-				err += ":";
+				err += " : ";
 				err += e.what();
 				write(std::move(err), OutputType::FUNCTION_FAIL);
 			}
@@ -522,6 +485,14 @@ void gg::Console::handleSpecialKeyInput(gg::Console::SpecialKey key)
 			jumpToNextArg(m_cmd, m_cmd_pos);
 			m_cmd_dirty = true;
 		}
+		else if (!m_cmd.empty())
+		{
+			m_cmd_history.emplace_back(std::move(m_cmd));
+			m_cmd_history_pos = m_cmd_history.end();
+			m_cmd.clear();
+			m_cmd_pos = m_cmd.begin();
+			m_cmd_dirty = true;
+		}
 		break;
 	}
 }
@@ -560,7 +531,8 @@ int gg::Console::overflow(int c)
 
 int gg::Console::sync()
 {
-	if (thread_buffer != nullptr)
+	if (thread_buffer != nullptr &&
+		!thread_buffer->empty())
 	{
 		write(std::move(*thread_buffer));
 		thread_buffer->clear();

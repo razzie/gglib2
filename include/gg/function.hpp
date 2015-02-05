@@ -142,7 +142,8 @@ namespace gg
 				throw std::runtime_error("not enough parameters");
 
 			Param0 param0;
-			va[skipParams].convert<Param0>(param0);
+			if (!va[skipParams].convert<Param0>(param0))
+				throw std::runtime_error("failed parameter conversion");
 
 			std::function<R(Params...)> lambda =
 				[&](Params... params) -> R { return func(param0, params...); };

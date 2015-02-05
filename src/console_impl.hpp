@@ -29,7 +29,6 @@ namespace gg
 		enum OutputType
 		{
 			NORMAL,
-			FUNCTION_OUTPUT,
 			FUNCTION_SUCCESS,
 			FUNCTION_FAIL
 		};
@@ -55,7 +54,7 @@ namespace gg
 		virtual bool init();
 		virtual bool addFunction(const std::string& fname, Function func, VarArray&& defaults);
 		virtual unsigned complete(std::string& expression, unsigned cursor_start = 0) const;
-		virtual bool exec(const std::string& expression, Var* rval = nullptr, std::ostream* output = nullptr) const;
+		virtual bool exec(const std::string& expression, Var* val = nullptr) const;
 		virtual void clear();
 		void write(const std::string&, OutputType = OutputType::NORMAL);
 		void write(std::string&&, OutputType = OutputType::NORMAL);
@@ -95,16 +94,6 @@ namespace gg
 			~OutputData();
 		};
 
-		class SafeRedirect
-		{
-		public:
-			SafeRedirect(Console&, std::ostream&);
-			~SafeRedirect();
-
-		private:
-			Console& m_console;
-		};
-
 		mutable std::recursive_mutex m_mutex;
 		std::map<std::string, FunctionData, FunctionData::Comparator> m_functions;
 		std::string m_cmd;
@@ -113,7 +102,6 @@ namespace gg
 		std::vector<std::string>::iterator m_cmd_history_pos;
 		ITextObject* m_cmd_textobj;
 		bool m_cmd_dirty;
-		std::map<std::thread::id, std::vector<std::ostream*>> m_redirect_stack;
 		std::map<std::thread::id, std::string> m_buffer;
 		std::list<OutputData> m_output;
 		unsigned m_output_counter;
