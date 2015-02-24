@@ -9,13 +9,15 @@
 #ifndef GG_BUFFER_HPP_INCLUDED
 #define GG_BUFFER_HPP_INCLUDED
 
-#include <deque>
+//#include <deque>
 #include <iomanip>
 #include <mutex>
 #include "gg/serializer.hpp"
 
 namespace gg
 {
+	template<template<class, class> class Container,
+			 template<class> class Allocator = std::allocator>
 	class Buffer : public IBuffer
 	{
 	public:
@@ -125,7 +127,7 @@ namespace gg
 
 	protected:
 		mutable std::mutex m_mutex;
-		std::deque<char> m_data;
+		Container<char, Allocator<char>> m_data;
 	};
 };
 

@@ -8,6 +8,7 @@
 
 #include <map>
 #include <typeindex>
+#include <vector>
 #include "gg/fastmutex.hpp"
 #include "buffer.hpp"
 #include "safebuffer.hpp"
@@ -108,7 +109,7 @@ bool gg::addSerializableType(const std::type_info& type, size_t size, gg::Serial
 
 bool gg::serialize(const gg::ISerializable& s, gg::IBuffer& buf)
 {
-	gg::Buffer tmp_buf;
+	gg::Buffer<std::vector> tmp_buf;
 	bool result = s.serialize(tmp_buf);
 	if (result) buf.copyFrom(tmp_buf);
 	return result;
@@ -121,7 +122,7 @@ bool gg::serialize(const gg::Var& var, gg::IBuffer& buf)
 
 bool gg::serialize(const gg::VarArray& va, gg::IBuffer& buf)
 {
-	gg::Buffer tmp_buf;
+	gg::Buffer<std::vector> tmp_buf;
 
 	for (const gg::Var& v : va)
 	{
@@ -135,7 +136,7 @@ bool gg::serialize(const gg::VarArray& va, gg::IBuffer& buf)
 
 bool gg::serialize(const gg::IStorage& st, gg::IBuffer& buf)
 {
-	gg::Buffer tmp_buf;
+	gg::Buffer<std::vector> tmp_buf;
 
 	for (unsigned i = 0, n = st.size(); i < n; ++i)
 	{
@@ -160,7 +161,7 @@ bool gg::serialize(const std::type_info& type, const void* ptr, gg::IBuffer& buf
 			data = &it->second;
 	}
 
-	gg::Buffer tmp_buf;
+	gg::Buffer<std::vector> tmp_buf;
 	bool result = data->save_func(ptr, tmp_buf);
 
 	if (result) buf.copyFrom(tmp_buf);
