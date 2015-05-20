@@ -12,7 +12,7 @@
 #include <functional>
 #include <type_traits>
 #include <stdexcept>
-#include "gg/var.hpp"
+#include "gg/any.hpp"
 
 namespace gg
 {
@@ -97,13 +97,13 @@ namespace gg
 			return *this;
 		}
 
-		Var operator()(const VarArray& va) const
+		Any operator()(const Any::Array& ar) const
 		{
-			return m_func(va);
+			return m_func(ar);
 		}
 
 		template<class... Params>
-		Var operator()(Params... params) const
+		Any operator()(Params... params) const
 		{
 			return m_func({ std::forward<Params>(params)... });
 		}
@@ -115,63 +115,63 @@ namespace gg
 	
 	private:
 		template<class R>
-		static R call(std::function<R()> func, const gg::VarArray& va, unsigned skipParams = 0)
+		static R call(std::function<R()> func, const gg::Any::Array& ar, unsigned skipParams = 0)
 		{
-			if (va.size() > skipParams)
+			if (ar.size() > skipParams)
 				throw std::runtime_error("too many parameters");
 
 			return func();
 		}
 
 		template<class R, class Param>
-		static R call(std::function<R(Param)> func, const gg::VarArray& va, unsigned skipParams = 0)
+		static R call(std::function<R(Param)> func, const gg::Any::Array& ar, unsigned skipParams = 0)
 		{
-			if (va.size() > skipParams + 1)
+			if (ar.size() > skipParams + 1)
 				throw std::runtime_error("too many parameters");
 
 			Param param;
-			va[skipParams].convert<Param>(param);
+			ar[skipParams].cast<Param>(param);
 
 			return func(param);
 		}
 
 		template<class R, class Param0, class... Params>
-		static R call(std::function<R(Param0, Params...)> func, const gg::VarArray& va, unsigned skipParams = 0)
+		static R call(std::function<R(Param0, Params...)> func, const gg::Any::Array& ar, unsigned skipParams = 0)
 		{
-			if (va.size() <= skipParams + 1)
+			if (ar.size() <= skipParams + 1)
 				throw std::runtime_error("not enough parameters");
 
 			Param0 param0;
-			if (!va[skipParams].convert<Param0>(param0))
+			if (!ar[skipParams].cast<Param0>(param0))
 				throw std::runtime_error("failed parameter conversion");
 
 			std::function<R(Params...)> lambda =
 				[&](Params... params) -> R { return func(param0, params...); };
 
-			return call(lambda, va, skipParams + 1);
+			return call(lambda, ar, skipParams + 1);
 		}
 
 
 		template<class R, class... Params>
-		static std::function<Var(VarArray)> convert(std::function<R(Params...)> func)
+		static std::function<Any(Any::Array)> convert(std::function<R(Params...)> func)
 		{
-			return ([=](const VarArray& va) -> Var { return call(func, va); });
+			return ([=](const Any::Array& ar) -> Any { return call(func, ar); });
 		}
 
 		template<class... Params>
-		static std::function<Var(VarArray)> convert(std::function<void(Params...)> func)
+		static std::function<Any(Any::Array)> convert(std::function<void(Params...)> func)
 		{
-			return ([=](const VarArray& va) -> Var { call(func, va); return{}; });
+			return ([=](const Any::Array& ar) -> Any { call(func, ar); return{}; });
 		}
 
 		template<class F>
-		static std::function<Var(VarArray)> convert(F func)
+		static std::function<Any(Any::Array)> convert(F func)
 		{
 			return convert(std::function<getLambdaSignature<F>>(func));
 		}
 
 
-		std::function<Var(VarArray)> m_func;
+		std::function<Any(Any::Array)> m_func;
 	};
 };
 

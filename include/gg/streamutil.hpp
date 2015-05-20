@@ -23,8 +23,8 @@ namespace gg
 	public:
 		typedef std::ios&(*Manipulator)(std::ios&, T);
 
-		StreamManipulator(Manipulator m, T v) :
-			m_manip(m), m_value(v)
+		StreamManipulator(Manipulator m, T t) :
+			m_manip(m), m_value(t)
 		{
 		}
 
@@ -44,8 +44,8 @@ namespace gg
 	public:
 		typedef std::istream&(*Manipulator)(std::istream&, T);
 
-		IstreamManipulator(Manipulator m, T v) :
-			m_manip(m), m_value(v)
+		IstreamManipulator(Manipulator m, T t) :
+			m_manip(m), m_value(t)
 		{
 		}
 
@@ -65,8 +65,8 @@ namespace gg
 	public:
 		typedef std::ostream&(*Manipulator)(std::ostream&, T);
 
-		OstreamManipulator(Manipulator m, T v) :
-			m_manip(m), m_value(v)
+		OstreamManipulator(Manipulator m, T t) :
+			m_manip(m), m_value(t)
 		{
 		}
 
@@ -218,9 +218,9 @@ namespace gg
 	}
 
 	template<class T>
-	__HasInsertOp::InsertHelper<T> insert(const T& v)
+	__HasInsertOp::InsertHelper<T> insert(const T& t)
 	{
-		return __HasInsertOp::InsertHelper<T>(v);
+		return __HasInsertOp::InsertHelper<T>(t);
 	}
 
 	namespace __HasExtractOp
@@ -293,9 +293,9 @@ namespace gg
 	}
 
 	template<class T>
-	__HasExtractOp::ExtractHelper<T> extract(T& v)
+	__HasExtractOp::ExtractHelper<T> extract(T& t)
 	{
-		return __HasExtractOp::ExtractHelper<T>(v);
+		return __HasExtractOp::ExtractHelper<T>(t);
 	}
 };
 

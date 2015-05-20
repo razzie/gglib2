@@ -115,18 +115,18 @@ bool gg::serialize(const gg::ISerializable& s, gg::IBuffer& buf)
 	return result;
 }
 
-bool gg::serialize(const gg::Var& var, gg::IBuffer& buf)
+bool gg::serialize(const gg::Any& any, gg::IBuffer& buf)
 {
-	return gg::serialize(var.getType(), var.getPtr(), buf);
+	return gg::serialize(any.getType(), any.getPtr(), buf);
 }
 
-bool gg::serialize(const gg::VarArray& va, gg::IBuffer& buf)
+bool gg::serialize(const gg::Any::Array& ar, gg::IBuffer& buf)
 {
 	gg::Buffer<std::vector> tmp_buf;
 
-	for (const gg::Var& v : va)
+	for (const gg::Any& a : ar)
 	{
-		if (!gg::serialize(v, tmp_buf))
+		if (!gg::serialize(a, tmp_buf))
 			return false;
 	}
 
@@ -176,18 +176,18 @@ bool gg::deserialize(gg::ISerializable& s, gg::IBuffer& buf)
 	return result;
 }
 
-bool gg::deserialize(gg::Var& var, gg::IBuffer& buf)
+bool gg::deserialize(gg::Any& any, gg::IBuffer& buf)
 {
-	return gg::deserialize(var.getType(), var.getPtr(), buf);
+	return gg::deserialize(any.getType(), any.getPtr(), buf);
 }
 
-bool gg::deserialize(gg::VarArray& va, gg::IBuffer& buf)
+bool gg::deserialize(gg::Any::Array& ar, gg::IBuffer& buf)
 {
 	gg::SafeBuffer tmp_buf(buf);
 
-	for (gg::Var& v : va)
+	for (gg::Any& a : ar)
 	{
-		if (!gg::deserialize(v, tmp_buf))
+		if (!gg::deserialize(a, tmp_buf))
 			return false;
 	}
 

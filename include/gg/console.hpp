@@ -13,7 +13,7 @@
 #include <string>
 #include <type_traits>
 #include "gg/config.hpp"
-#include "gg/var.hpp"
+#include "gg/any.hpp"
 #include "gg/function.hpp"
 
 namespace gg
@@ -27,12 +27,12 @@ namespace gg
 		virtual bool init() = 0;
 
 		// add a function which can be used inside the console
-		virtual bool addFunction(const std::string& fname, Function func, VarArray&& defaults) = 0;
+		virtual bool addFunction(const std::string& fname, Function func, Any::Array&& defaults) = 0;
 
 		template<class F>
 		bool addFunction(const std::string& fname, F func)
 		{
-			VarArray va;
+			Any::Array va;
 			SignatureParams<getLambdaSignature<F>>::setDefaults(va);
 			return addFunction(fname, func, std::move(va));
 		}
@@ -42,7 +42,7 @@ namespace gg
 
 		// if returned true: 'expression' was evaluated and its value was copied to 'val'
 		// if returned false: 'val' contains the error message as an 'std::string'
-		virtual bool exec(const std::string& expression, Var* val = nullptr) const = 0;
+		virtual bool exec(const std::string& expression, Any* val = nullptr) const = 0;
 
 		// clears existing output lines
 		virtual void clear() = 0;
@@ -57,29 +57,29 @@ namespace gg
 		class SignatureParams<R(Params...)>
 		{
 		public:
-			static void setDefaults(VarArray& va)
+			static void setDefaults(Any::Array& ar)
 			{
-				setDefaultsImpl<0, Params...>(va);
+				setDefaultsImpl<0, Params...>(ar);
 			}
 
 		private:
 			template<int /* placeholder */, class P0, class... Ps>
-			static void setDefaultsImpl(gg::VarArray& va)
+			static void setDefaultsImpl(gg::Any::Array& ar)
 			{
 				if (std::is_integral<P0>::value)
-					va.push_back(std::string("0"));
+					ar.push_back(std::string("0"));
 				else if (std::is_floating_point<P0>::value)
-					va.push_back(std::string("0.0"));
-				else if (std::is_same<P0, gg::VarArray>::value)
-					va.push_back(std::string("()"));
+					ar.push_back(std::string("0.0"));
+				else if (std::is_same<P0, gg::Any::Array>::value)
+					ar.push_back(std::string("()"));
 				else
-					va.push_back(std::string("\"\""));
+					ar.push_back(std::string("\"\""));
 
-				setDefaultsImpl<0, Ps...>(va);
+				setDefaultsImpl<0, Ps...>(ar);
 			}
 
 			template<int>
-			static void setDefaultsImpl(gg::VarArray&) {}
+			static void setDefaultsImpl(gg::Any::Array&) {}
 		};
 	};
 

@@ -202,7 +202,7 @@ bool gg::Console::init()
 	return true;
 }
 
-bool gg::Console::addFunction(const std::string& fname, gg::Function func, gg::VarArray&& defaults)
+bool gg::Console::addFunction(const std::string& fname, gg::Function func, gg::Any::Array&& defaults)
 {
 	std::stringstream ss;
 	ss << defaults;
@@ -221,20 +221,20 @@ unsigned gg::Console::complete(std::string& expression, unsigned cursor_start) c
 	return std::distance(expression.begin(), pos);
 }
 
-bool gg::Console::exec(const std::string& expression, gg::Var* val) const
+bool gg::Console::exec(const std::string& expression, gg::Any* val) const
 {
 	std::stringstream tmp_output;
 
 	try
 	{
-		Var v;
+		Any a;
 		Expression e(expression);
-		return evaluate(e, (val == nullptr) ? v : *val);
+		return evaluate(e, (val == nullptr) ? a : *val);
 	}
 	catch (ExpressionError& err)
 	{
 		if (val != nullptr)
-			val->construct<std::string>(err.what());
+			val->emplace<std::string>(err.what());
 	}
 
 	return false;
@@ -370,10 +370,10 @@ void gg::Console::handleSpecialKeyInput(gg::Console::SpecialKey key)
 				m_cmd_dirty = true;
 
 				// command evaluation
-				Var v;
+				Any a;
 				Expression e(tmp_cmd);
 				flush();
-				bool result = evaluate(e, v);
+				bool result = evaluate(e, a);
 				flush();
 
 				// saving command to history
@@ -383,10 +383,10 @@ void gg::Console::handleSpecialKeyInput(gg::Console::SpecialKey key)
 				// printing the expression with success or fail coloring
 				if (result)
 				{
-					if (!v.isEmpty())
+					if (!a.isEmpty())
 					{
 						std::string result_str;
-						v.convert<std::string>(result_str);
+						a.emplace<std::string>(result_str);
 						tmp_cmd += " -> ";
 						tmp_cmd += std::move(result_str);
 					}
@@ -696,7 +696,7 @@ void gg::Console::completeExpr(std::string& expr, bool print) const
 	expr = e.getExpression();
 }
 
-bool gg::Console::evaluate(const gg::Expression& expr, gg::Var& rval) const
+bool gg::Console::evaluate(const gg::Expression& expr, gg::Any& rval) const
 {
 	std::string name = expr.getName();
 
@@ -710,11 +710,11 @@ bool gg::Console::evaluate(const gg::Expression& expr, gg::Var& rval) const
 		if (!isValidFunctionName(name) && !name.empty())
 			return false;
 
-		VarArray va;
+		Any::Array va;
 
 		for (const Expression& arg : expr)
 		{
-			Var rval;
+			Any rval;
 			if (evaluate(arg, rval))
 				va.push_back(std::move(rval));
 			else

@@ -6,8 +6,8 @@
  * All rights reserved.
  */
 
-#ifndef GG_VAR_HPP_INCLUDED
-#define GG_VAR_HPP_INCLUDED
+#ifndef GG_ANY_HPP_INCLUDED
+#define GG_ANY_HPP_INCLUDED
 
 #include <algorithm>
 #include <iosfwd>
@@ -18,38 +18,38 @@
 
 namespace gg
 {
-	class Var
+	class Any
 	{
 	public:
-		Var()
+		Any()
 		{
 		}
 
-		Var(const Var& v)
+		Any(const Any& a)
 		{
-			if (v.m_storage != nullptr)
-				m_storage = v.m_storage->clone();
+			if (a.m_storage != nullptr)
+				m_storage = a.m_storage->clone();
 		}
 
-		Var(Var&& v)
+		Any(Any&& a)
 		{
-			std::swap(m_storage, v.m_storage);
+			std::swap(m_storage, a.m_storage);
 		}
 
-		~Var()
+		~Any()
 		{
 			if (m_storage != nullptr)
 				delete m_storage;
 		}
 
 		template<class T>
-		Var(T t) :
+		Any(T t) :
 			m_storage(new Storage<T>(t))
 		{
 		}
 
 		template<class T, class... Args>
-		Var& construct(Args... args)
+		Any& emplace(Args... args)
 		{
 			if (m_storage != nullptr)
 				delete m_storage;
@@ -60,7 +60,7 @@ namespace gg
 		}
 
 		template<class T>
-		Var& operator= (const T& t)
+		Any& operator=(const T& t)
 		{
 			if (m_storage != nullptr)
 				delete m_storage;
@@ -70,7 +70,7 @@ namespace gg
 			return *this;
 		}
 
-		Var& operator= (const Var& v)
+		Any& operator=(const Any& a)
 		{
 			if (m_storage != nullptr)
 			{
@@ -78,15 +78,15 @@ namespace gg
 				m_storage = nullptr;
 			}
 
-			if (v.m_storage != nullptr)
-				m_storage = v.m_storage->clone();
+			if (a.m_storage != nullptr)
+				m_storage = a.m_storage->clone();
 
 			return *this;
 		}
 
-		Var& operator= (Var&& v)
+		Any& operator=(Any&& a)
 		{
-			std::swap(m_storage, v.m_storage);
+			std::swap(m_storage, a.m_storage);
 
 			return *this;
 		}
@@ -154,7 +154,7 @@ namespace gg
 		}
 
 		template<class T>
-		bool convert(T& p) const
+		bool cast(T& p) const
 		{
 			if (m_storage == nullptr)
 				return false;
@@ -172,7 +172,9 @@ namespace gg
 			}
 		}
 
-		friend std::ostream& operator<<(std::ostream&, const Var&);
+		friend std::ostream& operator<<(std::ostream&, const Any&);
+
+		typedef std::vector<Any> Array;
 
 	private:
 		class IStorage
@@ -230,11 +232,9 @@ namespace gg
 	};
 
 
-	typedef std::vector<Var> VarArray;
-
-	inline std::ostream& operator<<(std::ostream& s, const Var& v)
+	inline std::ostream& operator<<(std::ostream& s, const Any& a)
 	{
-		Var::IStorage* storage = v.m_storage;
+		Any::IStorage* storage = a.m_storage;
 
 		if (storage != nullptr)
 			storage->toStream(s);
@@ -242,22 +242,22 @@ namespace gg
 		return s;
 	}
 
-	inline std::ostream& operator<<(std::ostream& s, const VarArray& va)
+	inline std::ostream& operator<<(std::ostream& s, const Any::Array& ar)
 	{
-		if (va.empty())
+		if (ar.empty())
 		{
 			s << "()";
 			return s;
 		}
 
-		auto it = va.begin();
+		auto it = ar.begin();
 
 		s << "(" << insert(*(it++));
-		std::for_each(it, va.end(), [&](const Var& v){ s << ", " << insert(v); });
+		std::for_each(it, ar.end(), [&](const Any& a){ s << ", " << insert(a); });
 		s << ")";
 
 		return s;
 	}
 };
 
-#endif // GG_VAR_HPP_INCLUDED
+#endif // GG_ANY_HPP_INCLUDED

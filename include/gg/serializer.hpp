@@ -16,7 +16,7 @@
 #include <typeinfo>
 #include <type_traits>
 #include "gg/config.hpp"
-#include "gg/var.hpp"
+#include "gg/any.hpp"
 #include "gg/storage.hpp"
 
 namespace gg
@@ -56,8 +56,8 @@ namespace gg
 
 	// overloaded serializer functions
 	bool GG_API serialize(const ISerializable&, IBuffer&);
-	bool GG_API serialize(const Var&, IBuffer&);
-	bool GG_API serialize(const VarArray&, IBuffer&);
+	bool GG_API serialize(const Any&, IBuffer&);
+	bool GG_API serialize(const Any::Array&, IBuffer&);
 	bool GG_API serialize(const IStorage&, IBuffer&);
 	bool GG_API serialize(const std::type_info&, const void*, IBuffer&);
 
@@ -69,8 +69,8 @@ namespace gg
 
 	// overloaded deserializer functions
 	bool GG_API deserialize(ISerializable&, IBuffer&);
-	bool GG_API deserialize(Var&, IBuffer&); // var.construct<T>() should be called previously
-	bool GG_API deserialize(VarArray&, IBuffer&); // all Var entries should be (default) constructed previously
+	bool GG_API deserialize(Any&, IBuffer&); // Any.emplace<T>() should be called previously
+	bool GG_API deserialize(Any::Array&, IBuffer&); // all Any entries should be (default) constructed previously
 	bool GG_API deserialize(IStorage&, IBuffer&);
 	bool GG_API deserialize(const std::type_info&, void*, IBuffer&);
 

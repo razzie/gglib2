@@ -11,6 +11,7 @@
 
 #include "gg/config.hpp" // should be always the first
 
+#include "gg/any.hpp"
 #include "gg/console.hpp"
 #include "gg/fastmutex.hpp"
 #include "gg/function.hpp"
@@ -20,6 +21,5 @@
 #include "gg/storage.hpp"
 #include "gg/streamutil.hpp"
 #include "gg/timer.hpp"
-#include "gg/var.hpp"
 
 #endif // GGLIB_HPP_INCLUDED

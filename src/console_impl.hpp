@@ -52,9 +52,9 @@ namespace gg
 		Console();
 		virtual ~Console();
 		virtual bool init();
-		virtual bool addFunction(const std::string& fname, Function func, VarArray&& defaults);
+		virtual bool addFunction(const std::string& fname, Function func, Any::Array&& defaults);
 		virtual unsigned complete(std::string& expression, unsigned cursor_start = 0) const;
-		virtual bool exec(const std::string& expression, Var* val = nullptr) const;
+		virtual bool exec(const std::string& expression, Any* val = nullptr) const;
 		virtual void clear();
 		void write(const std::string&, OutputType = OutputType::NORMAL);
 		void write(std::string&&, OutputType = OutputType::NORMAL);
@@ -73,7 +73,7 @@ namespace gg
 		struct FunctionData
 		{
 			Function function;
-			VarArray defaults;
+			Any::Array defaults;
 			Expression signature;
 
 			struct Comparator
@@ -112,7 +112,7 @@ namespace gg
 		bool completeFn(std::string&, bool print = false) const;
 		bool completeFn(std::string&, const std::vector<std::string>&, bool print = false) const;
 		void completeExpr(std::string&, bool print = false) const;
-		bool evaluate(const Expression&, Var&) const;
+		bool evaluate(const Expression&, Any&) const;
 		static void jumpToNextArg(const std::string&, std::string::const_iterator& in_out_pos);
 	};
 };

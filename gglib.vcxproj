@@ -426,7 +426,7 @@
     <ClInclude Include="src\serializer_impl.hpp" />
     <ClInclude Include="src\stringutil.hpp" />
     <ClInclude Include="include\gg\timer.hpp" />
-    <ClInclude Include="include\gg\var.hpp" />
+    <ClInclude Include="include\gg\any.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
