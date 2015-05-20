@@ -27,7 +27,7 @@ static bool deserializeFloat(float& f, gg::IBuffer& buf)
 	uint64_t tmp;
 	if (buf.read(reinterpret_cast<char*>(&tmp), sizeof(tmp)) < sizeof(tmp))
 		return false;
-	f = unpack754_32(tmp);
+	f = static_cast<float>(unpack754_32(tmp));
 	return true;
 }
 
@@ -49,7 +49,7 @@ static bool deserializeDouble(double& f, gg::IBuffer& buf)
 
 static bool serializeString(const std::string& str, gg::IBuffer& buf)
 {
-	const uint16_t len = str.length();
+	const uint16_t len = static_cast<uint16_t>(str.length());
 	buf.write(reinterpret_cast<const char*>(&len), sizeof(len));
 	buf.write(str.c_str(), len);
 	return true;

@@ -21,6 +21,9 @@
 #define unpack754_32(i) (unpack754((i), 32, 8))
 #define unpack754_64(i) (unpack754((i), 64, 11))
 
+#pragma warning(push)
+#pragma warning(disable: 4244) // possible loss of data
+
 static uint64_t pack754(long double f, unsigned bits, unsigned expbits)
 {
 	long double fnorm;
@@ -75,5 +78,7 @@ static long double unpack754(uint64_t i, unsigned bits, unsigned expbits)
 
 	return result;
 }
+
+#pragma warning(pop)
 
 #endif // GG_IEEE754_HPP_INCLUDED

@@ -116,11 +116,11 @@ bool packDirectory(std::wstring dir_name, std::wstring archive_name)
 
 		// get file size
 		file.seekg(0, std::ios::end);
-		const uint32_t size = file.tellg();
+		const uint32_t size = static_cast<uint32_t>(file.tellg());
 		file.seekg(0, std::ios::beg);
 
 		// allocate memory for original and compressed data
-		buffer.resize(size + doboz::Compressor::getMaxCompressedSize(size));
+		buffer.resize(size + static_cast<uint32_t>(doboz::Compressor::getMaxCompressedSize(size)));
 
 		// read file data
 		if (!file.read(buffer.data(), size))
@@ -142,7 +142,7 @@ bool packDirectory(std::wstring dir_name, std::wstring archive_name)
 			else
 				name += '?';
 		}
-		const uint16_t name_size = name.size();
+		const uint16_t name_size = static_cast<uint16_t>(name.size());
 
 		// write data to archive
 		ar.write(reinterpret_cast<const char*>(&name_size), sizeof(uint16_t)); // 16bit length of file name

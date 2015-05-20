@@ -40,8 +40,8 @@ namespace gg
 		// completes the missing parts of 'expression' (if possible) and returns cursor position
 		virtual unsigned complete(std::string& expression, unsigned cursor_start = 0) const = 0;
 
-		// if returned true: 'expression' was evaluated and its value was copied to 'rval'
-		// if returned false: 'rval' contains the error message as an 'std::string'
+		// if returned true: 'expression' was evaluated and its value was copied to 'val'
+		// if returned false: 'val' contains the error message as an 'std::string'
 		virtual bool exec(const std::string& expression, Var* val = nullptr) const = 0;
 
 		// clears existing output lines

@@ -22,6 +22,7 @@ namespace gg
 		Expression(std::string expr, bool auto_complete = false);
 		Expression(Expression&& e);
 		~Expression();
+		Expression& operator=(Expression&&);
 		std::string getName() const;
 		std::string getExpression() const;
 		unsigned getChildCount() const;

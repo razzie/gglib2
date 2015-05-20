@@ -232,6 +232,15 @@ gg::Expression::~Expression()
 {
 }
 
+gg::Expression& gg::Expression::operator=(gg::Expression&& expr)
+{
+	std::swap(m_name, expr.m_name);
+	std::swap(m_children, expr.m_children);
+	std::swap(m_expr, expr.m_expr);
+	std::swap(m_root, expr.m_root);
+	return *this;
+}
+
 std::string gg::Expression::getName() const
 {
 	return m_name;
