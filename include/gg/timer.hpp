@@ -6,8 +6,7 @@
  * All rights reserved.
  */
 
-#ifndef GG_TIMER_HPP_INCLUDED
-#define GG_TIMER_HPP_INCLUDED
+#pragma once
 
 #include <chrono>
 #include <cstdint>
@@ -61,5 +60,3 @@ namespace gg
 		uint64_t m_last_elapsed;
 	};
 };
-
-#endif // GG_TIMER_HPP_INCLUDED

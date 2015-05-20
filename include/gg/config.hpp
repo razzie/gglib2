@@ -6,8 +6,7 @@
  * All rights reserved.
  */
 
-#ifndef GG_CONFIG_IMPL_HPP_INCLUDED
-#define GG_CONFIG_IMPL_HPP_INCLUDED
+#pragma once
 
 #if defined GG_STATIC
 #	define GG_API
@@ -16,5 +15,3 @@
 #else
 #	define GG_API __declspec(dllimport)
 #endif
-
-#endif // GG_CONFIG_IMPL_HPP_INCLUDED

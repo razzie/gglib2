@@ -6,8 +6,7 @@
  * All rights reserved.
  */
 
-#ifndef GG_EXPRESSION_HPP_INCLUDED
-#define GG_EXPRESSION_HPP_INCLUDED
+#pragma once
 
 #include <vector>
 
@@ -69,5 +68,3 @@ namespace gg
 		std::string m_error;
 	};
 };
-
-#endif // GG_EXPRESSION_HPP_INCLUDED

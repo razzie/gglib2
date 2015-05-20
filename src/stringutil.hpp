@@ -6,8 +6,7 @@
  * All rights reserved.
  */
 
-#ifndef GG_STRINGUTIL_HPP_INCLUDED
-#define GG_STRINGUTIL_HPP_INCLUDED
+#pragma once
 
 #include <cassert>
 #include <string>
@@ -173,5 +172,3 @@ namespace gg
         return false;
     }
 };
-
-#endif // GG_STRINGUTIL_HPP_INCLUDED

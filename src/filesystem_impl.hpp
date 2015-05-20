@@ -6,8 +6,7 @@
  * All rights reserved.
  */
 
-#ifndef GG_FILESYSTEM_IMPL_HPP_INCLUDED
-#define GG_FILESYSTEM_IMPL_HPP_INCLUDED
+#pragma once
 
 #include <fstream>
 #include <map>
@@ -142,5 +141,3 @@ namespace gg
 		VirtualDirectory* m_vdir;
 	};
 };
-
-#endif // GG_FILESYSTEM_IMPL_HPP_INCLUDED

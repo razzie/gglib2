@@ -6,8 +6,7 @@
  * All rights reserved.
  */
 
-#ifndef GG_STREAMOPS_HPP_INCLUDED
-#define GG_STREAMOPS_HPP_INCLUDED
+#pragma once
 
 #include <iosfwd>
 #include <locale>
@@ -298,5 +297,3 @@ namespace gg
 		return __HasExtractOp::ExtractHelper<T>(t);
 	}
 };
-
-#endif // GG_STREAMOPS_HPP_INCLUDED

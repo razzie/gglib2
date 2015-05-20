@@ -6,8 +6,7 @@
  * All rights reserved.
  */
 
-#ifndef GG_FONT_HPP_INCLUDED
-#define GG_FONT_HPP_INCLUDED
+#pragma once
 
 namespace gg
 {
@@ -40,5 +39,3 @@ namespace gg
 	const Font* getNormalFont();
 	const Font* getLargeFont();
 };
-
-#endif // GG_FONT_HPP_INCLUDED

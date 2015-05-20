@@ -6,8 +6,7 @@
  * All rights reserved.
  */
 
-#ifndef GG_SAFEBUFFER_HPP_INCLUDED
-#define GG_SAFEBUFFER_HPP_INCLUDED
+#pragma once
 
 #include "gg/serializer.hpp"
 
@@ -77,5 +76,3 @@ namespace gg
 		size_t m_pos;
 	};
 };
-
-#endif // GG_SAFEBUFFER_HPP_INCLUDED

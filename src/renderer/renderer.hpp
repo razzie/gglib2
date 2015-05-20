@@ -6,8 +6,7 @@
  * All rights reserved.
  */
 
-#ifndef GG_RENDERER_HPP_INCLUDED
-#define GG_RENDERER_HPP_INCLUDED
+#pragma once
 
 #include <cstdint>
 #include <functional>
@@ -72,5 +71,3 @@ namespace gg
 		virtual IRenderer::Backend getBackend() const = 0;
 	};
 };
-
-#endif // GG_RENDERER_HPP_INCLUDED

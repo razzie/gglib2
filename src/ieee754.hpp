@@ -11,8 +11,7 @@
  * http://beej.us/guide/bgnet/examples/ieee754.c
  */
 
-#ifndef GG_IEEE754_HPP_INCLUDED
-#define GG_IEEE754_HPP_INCLUDED
+#pragma once
 
 #include <cstdint>
 
@@ -80,5 +79,3 @@ static long double unpack754(uint64_t i, unsigned bits, unsigned expbits)
 }
 
 #pragma warning(pop)
-
-#endif // GG_IEEE754_HPP_INCLUDED

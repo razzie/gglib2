@@ -6,8 +6,7 @@
  * All rights reserved.
  */
 
-#ifndef GG_OPENGL_RENDERER_HPP_INCLUDED
-#define GG_OPENGL_RENDERER_HPP_INCLUDED
+#pragma once
 #ifdef _WIN32
 
 #include <vector>
@@ -83,4 +82,3 @@ namespace gg
 };
 
 #endif // _WIN32
-#endif // GG_OPENGL_RENDERER_HPP_INCLUDED

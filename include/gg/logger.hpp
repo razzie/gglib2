@@ -12,8 +12,7 @@
  * other output, like a file.
  */
 
-#ifndef GG_LOGGER_HPP_INCLUDED
-#define GG_LOGGER_HPP_INCLUDED
+#pragma once
 
 #include <iostream>
 #include <memory>
@@ -48,5 +47,3 @@ namespace gg
 		std::cout.rdbuf(log.rdbuf());
 	}
 };
-
-#endif // GG_LOGGER_HPP_INCLUDED

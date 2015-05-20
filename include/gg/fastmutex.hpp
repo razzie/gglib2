@@ -6,8 +6,7 @@
  * All rights reserved.
  */
 
-#ifndef GG_FASTMUTEX_HPP_INCLUDED
-#define GG_FASTMUTEX_HPP_INCLUDED
+#pragma once
 
 #include <atomic>
 #include <mutex>
@@ -43,5 +42,3 @@ namespace gg
 		std::atomic_flag m_lock;
 	};
 };
-
-#endif // GG_FASTMUTEX_HPP_INCLUDED

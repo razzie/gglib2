@@ -6,13 +6,10 @@
  * All rights reserved.
  */
 
-#ifndef GG_SERIALIZER_IMPL_HPP_INCLUDED
-#define GG_SERIALIZER_IMPL_HPP_INCLUDED
+#pragma once
 
 #include "gg/serializer.hpp"
 
 namespace gg
 {
 }
-
-#endif // GG_SERIALIZER_IMPL_HPP_INCLUDED

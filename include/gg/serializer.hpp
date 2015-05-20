@@ -6,8 +6,7 @@
  * All rights reserved.
  */
 
-#ifndef GG_SERIALIZER_HPP_INCLUDED
-#define GG_SERIALIZER_HPP_INCLUDED
+#pragma once
 
 #include <cstdint>
 #include <functional>
@@ -144,5 +143,3 @@ namespace gg
 		return addSerializableType(typeid(T), sizeof(T), save_func, init_func);
 	}
 };
-
-#endif // GG_SERIALIZER_HPP_INCLUDED

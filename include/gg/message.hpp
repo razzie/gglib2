@@ -27,8 +27,7 @@
  * 'gg::addMessageType<int, float, std::string>(123)'
  */
 
-#ifndef GG_MESSAGE_HPP_INCLUDED
-#define GG_MESSAGE_HPP_INCLUDED
+#pragma once
 
 #include <cstdint>
 #include <functional>
@@ -224,5 +223,3 @@ namespace gg
 		static void GG_API unregisterInstance(MessageReceiverID);
 	};
 };
-
-#endif // GG_MESSAGE_HPP_INCLUDED

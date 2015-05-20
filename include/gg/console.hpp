@@ -6,8 +6,7 @@
  * All rights reserved.
  */
 
-#ifndef GG_CONSOLE_HPP_INCLUDED
-#define GG_CONSOLE_HPP_INCLUDED
+#pragma once
 
 #include <iostream>
 #include <string>
@@ -85,5 +84,3 @@ namespace gg
 
 	extern GG_API IConsole& console;
 };
-
-#endif // GG_CONSOLE_HPP_INCLUDED

@@ -6,8 +6,7 @@
  * All rights reserved.
  */
 
-#ifndef GG_D3D11_RENDERER_HPP_INCLUDED
-#define GG_D3D11_RENDERER_HPP_INCLUDED
+#pragma once
 #ifdef _WIN32
 
 #include <vector>
@@ -80,4 +79,3 @@ namespace gg
 };
 
 #endif // _WIN32
-#endif // GG_D3D11_RENDERER_HPP_INCLUDED

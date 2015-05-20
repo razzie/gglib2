@@ -6,8 +6,7 @@
  * All rights reserved.
  */
 
-#ifndef GG_FUNCTION_HPP_INCLUDED
-#define GG_FUNCTION_HPP_INCLUDED
+#pragma once
 
 #include <functional>
 #include <type_traits>
@@ -174,5 +173,3 @@ namespace gg
 		std::function<Any(Any::Array)> m_func;
 	};
 };
-
-#endif // GG_FUNCTION_HPP_INCLUDED

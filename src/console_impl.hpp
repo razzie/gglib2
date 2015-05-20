@@ -6,8 +6,7 @@
  * All rights reserved.
  */
 
-#ifndef GG_CONSOLE_IMPL_HPP_INCLUDED
-#define GG_CONSOLE_IMPL_HPP_INCLUDED
+#pragma once
 
 #include <list>
 #include <map>
@@ -116,5 +115,3 @@ namespace gg
 		static void jumpToNextArg(const std::string&, std::string::const_iterator& in_out_pos);
 	};
 };
-
-#endif // GG_CONSOLE_IMPL_HPP_INCLUDED

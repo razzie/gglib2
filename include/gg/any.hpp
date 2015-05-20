@@ -6,8 +6,7 @@
  * All rights reserved.
  */
 
-#ifndef GG_ANY_HPP_INCLUDED
-#define GG_ANY_HPP_INCLUDED
+#pragma once
 
 #include <algorithm>
 #include <iosfwd>
@@ -259,5 +258,3 @@ namespace gg
 		return s;
 	}
 };
-
-#endif // GG_ANY_HPP_INCLUDED

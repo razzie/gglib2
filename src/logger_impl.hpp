@@ -6,8 +6,7 @@
  * All rights reserved.
  */
 
-#ifndef GG_LOGGER_IMPL_HPP_INCLUDED
-#define GG_LOGGER_IMPL_HPP_INCLUDED
+#pragma once
 
 #include <map>
 #include <thread>
@@ -42,5 +41,3 @@ namespace gg
 		Timer m_timer;
 	};
 };
-
-#endif // GG_LOGGER_IMPL_HPP_INCLUDED

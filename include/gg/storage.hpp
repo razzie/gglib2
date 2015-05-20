@@ -6,8 +6,7 @@
  * All rights reserved.
  */
 
-#ifndef GG_STORAGE_HPP_INCLUDED
-#define GG_STORAGE_HPP_INCLUDED
+#pragma once
 
 #include <stdexcept>
 #include <typeinfo>
@@ -134,5 +133,3 @@ namespace gg
 		const std::type_info* m_types[sm_size];
 	};
 };
-
-#endif // GG_STORAGE_HPP_INCLUDED

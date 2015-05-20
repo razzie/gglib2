@@ -6,10 +6,8 @@
  * All rights reserved.
  */
 
-#ifndef GG_BUFFER_HPP_INCLUDED
-#define GG_BUFFER_HPP_INCLUDED
+#pragma once
 
-//#include <deque>
 #include <iomanip>
 #include <mutex>
 #include "gg/serializer.hpp"
@@ -130,5 +128,3 @@ namespace gg
 		Container<char, Allocator<char>> m_data;
 	};
 };
-
-#endif // GG_BUFFER_HPP_INCLUDED

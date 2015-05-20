@@ -6,8 +6,7 @@
  * All rights reserved.
  */
 
-#ifndef GG_MESSAGE_IMPL_HPP_INCLUDED
-#define GG_MESSAGE_IMPL_HPP_INCLUDED
+#pragma once
 
 #include "gg/message.hpp"
 
@@ -41,5 +40,3 @@ namespace gg
 		IMessageReceiver* m_handler;
 	};
 };
-
-#endif // GG_MESSAGE_IMPL_HPP_INCLUDED
