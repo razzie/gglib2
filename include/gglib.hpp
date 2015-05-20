@@ -21,5 +21,6 @@
 #include "gg/storage.hpp"
 #include "gg/streamutil.hpp"
 #include "gg/timer.hpp"
+#include "gg/optional.hpp"
 
 #endif // GGLIB_HPP_INCLUDED

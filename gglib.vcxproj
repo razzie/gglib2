@@ -390,6 +390,7 @@
     <ClInclude Include="include\gg\fastmutex.hpp" />
     <ClInclude Include="include\gg\logger.hpp" />
     <ClInclude Include="include\gg\message.hpp" />
+    <ClInclude Include="include\gg\optional.hpp" />
     <ClInclude Include="include\gg\storage.hpp" />
     <ClInclude Include="src\buffer.hpp" />
     <ClInclude Include="include\gg\filesystem.hpp" />
