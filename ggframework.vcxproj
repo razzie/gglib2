@@ -103,6 +103,7 @@
     <ClInclude Include="include\gg\any.hpp" />
     <ClInclude Include="include\gg\config.hpp" />
     <ClInclude Include="include\gg\framework\message.hpp" />
+    <ClInclude Include="include\gg\framework\network.hpp" />
     <ClInclude Include="include\gg\framework\serializer.hpp" />
     <ClInclude Include="include\gg\function.hpp" />
     <ClInclude Include="include\gg\storage.hpp" />
