@@ -179,7 +179,7 @@ namespace gg
 		class IStorage
 		{
 		public:
-			virtual ~IStorage() {}
+			virtual ~IStorage() = default;
 			virtual IStorage* clone() const = 0;
 			virtual void* getPtr() = 0;
 			virtual const void* getPtr() const = 0;

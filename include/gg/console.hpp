@@ -8,10 +8,15 @@
 
 #pragma once
 
+#if defined GG_BUILD
+#	define GG_API __declspec(dllexport)
+#else
+#	define GG_API __declspec(dllimport)
+#endif
+
 #include <iostream>
 #include <string>
 #include <type_traits>
-#include "gg/config.hpp"
 #include "gg/any.hpp"
 #include "gg/function.hpp"
 
@@ -20,7 +25,7 @@ namespace gg
 	class IConsole : public virtual std::ostream
 	{
 	public:
-		virtual ~IConsole() {}
+		virtual ~IConsole() = default;
 
 		// should be called BEFORE initializing OpenGL or Direct3D context
 		virtual bool init() = 0;

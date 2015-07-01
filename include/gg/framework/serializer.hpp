@@ -8,13 +8,18 @@
 
 #pragma once
 
+#if defined GG_BUILD
+#	define GG_API __declspec(dllexport)
+#else
+#	define GG_API __declspec(dllimport)
+#endif
+
 #include <cstdint>
 #include <functional>
 #include <memory>
 #include <string>
 #include <typeinfo>
 #include <type_traits>
-#include "gg/config.hpp"
 #include "gg/any.hpp"
 #include "gg/storage.hpp"
 

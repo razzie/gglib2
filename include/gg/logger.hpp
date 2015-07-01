@@ -14,9 +14,15 @@
 
 #pragma once
 
+#if defined GG_BUILD
+#	define GG_API __declspec(dllexport)
+#else
+#	define GG_API __declspec(dllimport)
+#endif
+
 #include <iostream>
 #include <memory>
-#include "gg/config.hpp"
+#include "gg/streamutil.hpp"
 
 namespace gg
 {
@@ -41,6 +47,8 @@ namespace gg
 	};
 
 	extern GG_API ILogger& log;
+
+	OstreamManipulator<const char*> GG_API format(const char*);
 
 	inline void hookStdCout()
 	{

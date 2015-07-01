@@ -7,17 +7,123 @@
  */
 
 #include <cstdint>
+#include <iostream>
 #include <set>
+#include "Doboz/Compressor.h"
 #include "Doboz/Decompressor.h"
 #include "filesystem_impl.hpp"
+#include "stringutil.hpp"
 
-struct GlobalsFS
+static gg::FileSystem s_fs;
+gg::IFileSystem& gg::fs = s_fs;
+
+
+#ifdef _WIN32
+#include <Windows.h>
+
+static bool collectFiles(std::wstring dir_name, std::vector<std::wstring>& files)
 {
-	std::mutex vdirs_mutex;
-	std::map<std::string, gg::VirtualDirectory*> vdirs;
-};
+	if (files.size() > 1000)
+		return false;
 
-static GlobalsFS globals;
+	if (dir_name.back() != L'\\')
+		dir_name += L'\\';
+
+	HANDLE handle;
+	WIN32_FIND_DATA find_data;
+
+	handle = FindFirstFile((dir_name + L'*').c_str(), &find_data);
+	if (handle == INVALID_HANDLE_VALUE)
+		return false;
+
+	do
+	{
+		if (find_data.cFileName[0] == L'.')
+			continue;
+
+		if (find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+		{
+			if (!collectFiles(dir_name + find_data.cFileName, files))
+				return false;
+		}
+		else
+		{
+			files.push_back(dir_name + find_data.cFileName);
+		}
+	} while (FindNextFile(handle, &find_data));
+
+	FindClose(handle);
+
+	return true;
+}
+#endif // _WIN32
+
+static bool packDirectory(std::wstring dir_name, std::wstring archive_name)
+{
+	std::vector<std::wstring> files;
+	if (!collectFiles(dir_name, files))
+		return false;
+
+	std::ofstream ar(archive_name, std::ios::out | std::ios::binary);
+	if (!ar.is_open())
+		return false;
+
+	std::vector<char> buffer;
+
+	for (auto& f : files)
+	{
+		// open file and get size
+		std::ifstream file(f, std::ios::binary | std::ios::in);
+		if (!file.is_open())
+			return false;
+
+		// get file size
+		file.seekg(0, std::ios::end);
+		const uint32_t size = static_cast<uint32_t>(file.tellg());
+		file.seekg(0, std::ios::beg);
+
+		// allocate memory for original and compressed data
+		buffer.resize(size + static_cast<uint32_t>(doboz::Compressor::getMaxCompressedSize(size)));
+
+		// read file data
+		if (!file.read(buffer.data(), size))
+			return false;
+		file.close();
+
+		// compress data
+		uint32_t compressed_size;
+		doboz::Compressor().compress(&buffer[0], size, &buffer[size], buffer.size() - size, compressed_size);
+
+		// get relative name of file
+		std::wstring wname = f.substr(dir_name.size() + 1);
+		std::string name;
+		for (wchar_t& wc : wname)
+		{
+			if (wc == L'\\') wc = L'/';
+			if ((unsigned)wc <= 255)
+				name += (char)wc;
+			else
+				name += '?';
+		}
+		const uint16_t name_size = static_cast<uint16_t>(name.size());
+
+		// write data to archive
+		ar.write(reinterpret_cast<const char*>(&name_size), sizeof(uint16_t)); // 16bit length of file name
+		ar.write(name.c_str(), name.size()); // file name (not zero terminated)
+		ar.write(reinterpret_cast<const char*>(&size), sizeof(uint32_t)); // 32bit original size
+		ar.write(reinterpret_cast<const char*>(&compressed_size), sizeof(uint32_t)); // 32bit compressed size
+		ar.write(&buffer[size], compressed_size); // actual compressed data
+		ar.flush();
+
+#ifdef _DEBUG
+		std::cout << "File added: " << name << std::endl;
+#endif
+	}
+
+	ar.close();
+
+	return true;
+}
 
 static std::string getPathRoot(const std::string& path)
 {
@@ -40,14 +146,44 @@ static std::string getPathEnd(const std::string& path)
 }*/
 
 
-bool gg::addVirtualDirectory(const std::string& vdir_path)
+gg::FileSystem::FileSystem()
+{
+}
+
+gg::FileSystem::~FileSystem()
+{
+}
+
+bool gg::FileSystem::createVirtualDirectoryFile(const std::string& dir_path) const
+{
+#ifdef _WIN32
+	std::wstring dir = convertString<char, wchar_t>(dir_path);
+	if (dir.back() == '/') dir.pop_back();
+	return packDirectory(dir, dir + L".pak");
+#else
+	return false;
+#endif // _WIN32
+}
+
+bool gg::FileSystem::createVirtualDirectoryFile(const std::wstring& dir_path) const
+{
+#ifdef _WIN32
+	std::wstring dir = dir_path;
+	if (dir.back() == '/') dir.pop_back();
+	return packDirectory(dir, dir + L".pak");
+#else
+	return false;
+#endif // _WIN32
+}
+
+bool gg::FileSystem::addVirtualDirectory(const std::string& vdir_path)
 {
 	VirtualDirectory* vdir = new VirtualDirectory(vdir_path);
 
 	if (vdir->init())
 	{
-		std::lock_guard<decltype(globals.vdirs_mutex)> guard(globals.vdirs_mutex);
-		globals.vdirs.emplace(getPathEnd(vdir_path), vdir);
+		std::lock_guard<decltype(m_vdirs_mutex)> guard(m_vdirs_mutex);
+		m_vdirs.emplace(getPathEnd(vdir_path), vdir);
 		return true;
 	}
 	else
@@ -56,12 +192,14 @@ bool gg::addVirtualDirectory(const std::string& vdir_path)
 	}
 }
 
-std::shared_ptr<gg::IDirectory> gg::openDirectory(const std::string& dir_name)
+std::shared_ptr<gg::IDirectory> gg::FileSystem::openDirectory(const std::string& dir_name)
 {
 	std::string vdir_name = getPathRoot(dir_name);
 
-	auto it = globals.vdirs.find(vdir_name);
-	if (it != globals.vdirs.end())
+	//std::lock_guard<decltype(m_vdirs_mutex)> guard(m_vdirs_mutex);
+
+	auto it = m_vdirs.find(vdir_name);
+	if (it != m_vdirs.end())
 	{
 		return it->second->getDirectory(dir_name.substr(dir_name.find('/') + 1));
 	}
@@ -71,12 +209,14 @@ std::shared_ptr<gg::IDirectory> gg::openDirectory(const std::string& dir_name)
 	}
 }
 
-std::shared_ptr<gg::IFile> gg::openFile(const std::string& file_name)
+std::shared_ptr<gg::IFile> gg::FileSystem::openFile(const std::string& file_name)
 {
 	std::string vdir_name = getPathRoot(file_name);
 
-	auto it = globals.vdirs.find(vdir_name);
-	if (it != globals.vdirs.end())
+	//std::lock_guard<decltype(m_vdirs_mutex)> guard(m_vdirs_mutex);
+
+	auto it = m_vdirs.find(vdir_name);
+	if (it != m_vdirs.end())
 	{
 		return it->second->getFile(file_name.substr(file_name.find('/') + 1));
 	}

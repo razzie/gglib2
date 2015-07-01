@@ -14,11 +14,11 @@
  * It contains 3 files: 'ground.png', 'water.png' and 'sky.png'.
  *
  * 1st step:
- * Add the virtual directory by calling 'gg::addVirtualDirectory("media/textures.pak")'.
+ * Add the virtual directory by calling 'gg::fs.addVirtualDirectory("media/textures.pak")'.
  *
  * 2nd step:
  * Let's assume the program needs to open 'sky.png', which is a part of 'textures.pak'
- * virtual directory. It can be done by calling: 'auto file = gg::openFile("textures.pak/sky.png")'
+ * virtual directory. It can be done by calling: 'auto file = gg::fs.openFile("textures.pak/sky.png")'
  *
  * Important:
  * Do NOT use backslash '\' characters in a file path. Always use slash '/' instead.
@@ -26,19 +26,32 @@
 
 #pragma once
 
+#if defined GG_BUILD
+#	define GG_API __declspec(dllexport)
+#else
+#	define GG_API __declspec(dllimport)
+#endif
+
 #include <memory>
 #include <string>
 #include <vector>
-#include "gg/config.hpp"
 
 namespace gg
 {
 	class IDirectory;
 	class IFile;
 
-	bool GG_API addVirtualDirectory(const std::string& vdir_path);
-	std::shared_ptr<IDirectory> GG_API openDirectory(const std::string& dir_name);
-	std::shared_ptr<IFile> GG_API openFile(const std::string& file_name);
+	class IFileSystem
+	{
+	public:
+		virtual ~IFileSystem() = default;
+		virtual bool createVirtualDirectoryFile(const std::string& dir_path) const = 0;
+		virtual bool addVirtualDirectory(const std::string& vdir_path) = 0;
+		virtual std::shared_ptr<IDirectory> openDirectory(const std::string& dir_name) = 0;
+		virtual std::shared_ptr<IFile> openFile(const std::string& file_name) = 0;
+	};
+
+	extern GG_API IFileSystem& fs;
 
 	class IDirectory
 	{
@@ -59,7 +72,7 @@ namespace gg
 		typedef std::vector<FileOrDirectory>::iterator Iterator;
 		typedef std::vector<FileOrDirectory>::const_iterator ConstIterator;
 
-		virtual ~IDirectory() {}
+		virtual ~IDirectory() = default;
 		virtual const std::string& getName() const = 0;
 		virtual Iterator begin() = 0;
 		virtual Iterator end() = 0;
@@ -70,7 +83,7 @@ namespace gg
 	class IFile
 	{
 	public:
-		virtual ~IFile() {}
+		virtual ~IFile() = default;
 		virtual const std::string& getName() const = 0;
 		virtual const char* getData() const = 0;
 		virtual size_t getSize() const = 0;
@@ -81,7 +94,7 @@ namespace gg
 	{
 	public:
 		FileStream(const std::string& file_name) :
-			std::istream(this), m_file(openFile(file_name)),
+			std::istream(this), m_file(fs.openFile(file_name)),
 			m_pos(0)
 		{
 		}

@@ -41,7 +41,7 @@ namespace gg
 		// the only way to obtain a pointer to an IRenderer instance is trough the callback
 		static void setRenderCallback(RenderCallback);
 
-		virtual ~IRenderer() {}
+		virtual ~IRenderer() = default;
 		virtual Backend getBackend() const = 0;
 		virtual void* getBackendHandle() const = 0;
 		virtual bool getWindowDimensions(unsigned*, unsigned*) const = 0;
@@ -64,7 +64,7 @@ namespace gg
 	class ITextObject
 	{
 	public:
-		virtual ~ITextObject() {}
+		virtual ~ITextObject() = default;
 		virtual bool setText(const std::string&, unsigned line_spacing = 2, const Font* = nullptr) = 0;
 		virtual bool setColor(Color) = 0;
 		virtual unsigned getHeight() const = 0;

@@ -8,11 +8,16 @@
 
 #pragma once
 
+#if defined GG_BUILD
+#	define GG_API __declspec(dllexport)
+#else
+#	define GG_API __declspec(dllimport)
+#endif
+
 #include <iosfwd>
 #include <locale>
 #include <stdexcept>
 #include <string>
-#include "gg/config.hpp"
 
 namespace gg
 {
@@ -80,8 +85,6 @@ namespace gg
 	};
 
 
-	OstreamManipulator<const char*> GG_API format(const char*);
-
 	inline IstreamManipulator<char> delimiter(char d)
 	{
 		struct CustomLocale : std::ctype<char>
@@ -117,7 +120,10 @@ namespace gg
 		IstreamManipulator<char>::Manipulator m =
 			[](std::istream& i, char d) -> std::istream&
 			{
+#pragma push_macro("max")
+#undef max
 				i.ignore(std::numeric_limits<std::streamsize>::max(), d);
+#pragma pop_macro("max")
 				return i;
 			};
 

@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "gg/message.hpp"
+#include "gg/framework/message.hpp"
 
 namespace gg
 {

@@ -16,7 +16,7 @@ namespace gg
 	class IStorage
 	{
 	public:
-		virtual ~IStorage() {}
+		virtual ~IStorage() = default;
 		virtual unsigned size() const = 0; // number of elements
 		virtual char* getPtr(unsigned) = 0;
 		virtual const char* getPtr(unsigned) const = 0;

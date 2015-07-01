@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "gg/serializer.hpp"
+#include "gg/framework/serializer.hpp"
 
 namespace gg
 {

@@ -43,6 +43,22 @@ namespace gg
 		std::map<std::string, FileData> m_files;
 	};
 
+	class FileSystem : public IFileSystem
+	{
+	public:
+		FileSystem();
+		virtual ~FileSystem();
+		virtual bool createVirtualDirectoryFile(const std::string& dir_path) const;
+		virtual bool createVirtualDirectoryFile(const std::wstring& dir_path) const;
+		virtual bool addVirtualDirectory(const std::string& vdir_path);
+		virtual std::shared_ptr<IDirectory> openDirectory(const std::string& dir_name);
+		virtual std::shared_ptr<IFile> openFile(const std::string& file_name);
+
+	private:
+		mutable std::mutex m_vdirs_mutex;
+		std::map<std::string, VirtualDirectory*> m_vdirs;
+	};
+
 	class Directory : public IDirectory
 	{
 	public:

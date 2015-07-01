@@ -6,21 +6,17 @@
  * All rights reserved.
  */
 
-#ifndef GGLIB_HPP_INCLUDED
-#define GGLIB_HPP_INCLUDED
-
-#include "gg/config.hpp" // should be always the first
-
 #include "gg/any.hpp"
 #include "gg/console.hpp"
 #include "gg/fastmutex.hpp"
 #include "gg/function.hpp"
 #include "gg/logger.hpp"
-#include "gg/message.hpp"
-#include "gg/serializer.hpp"
 #include "gg/storage.hpp"
 #include "gg/streamutil.hpp"
 #include "gg/timer.hpp"
 #include "gg/optional.hpp"
 
-#endif // GGLIB_HPP_INCLUDED
+int main()
+{
+	return 0;
+}

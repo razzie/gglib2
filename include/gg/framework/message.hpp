@@ -29,6 +29,12 @@
 
 #pragma once
 
+#if defined GG_BUILD
+#	define GG_API __declspec(dllexport)
+#else
+#	define GG_API __declspec(dllimport)
+#endif
+
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -36,9 +42,8 @@
 #include <queue>
 #include <stdexcept>
 #include <typeinfo>
-#include "gg/config.hpp"
 #include "gg/storage.hpp"
-#include "gg/serializer.hpp"
+#include "gg/framework/serializer.hpp"
 
 namespace gg
 {
