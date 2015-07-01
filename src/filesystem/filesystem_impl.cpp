@@ -156,13 +156,8 @@ gg::FileSystem::~FileSystem()
 
 bool gg::FileSystem::createVirtualDirectoryFile(const std::string& dir_path) const
 {
-#ifdef _WIN32
 	std::wstring dir = convertString<char, wchar_t>(dir_path);
-	if (dir.back() == '/') dir.pop_back();
-	return packDirectory(dir, dir + L".pak");
-#else
-	return false;
-#endif // _WIN32
+	return createVirtualDirectoryFile(dir);
 }
 
 bool gg::FileSystem::createVirtualDirectoryFile(const std::wstring& dir_path) const
@@ -182,7 +177,6 @@ bool gg::FileSystem::addVirtualDirectory(const std::string& vdir_path)
 
 	if (vdir->init())
 	{
-		std::lock_guard<decltype(m_vdirs_mutex)> guard(m_vdirs_mutex);
 		m_vdirs.emplace(getPathEnd(vdir_path), vdir);
 		return true;
 	}
@@ -195,8 +189,6 @@ bool gg::FileSystem::addVirtualDirectory(const std::string& vdir_path)
 std::shared_ptr<gg::IDirectory> gg::FileSystem::openDirectory(const std::string& dir_name)
 {
 	std::string vdir_name = getPathRoot(dir_name);
-
-	//std::lock_guard<decltype(m_vdirs_mutex)> guard(m_vdirs_mutex);
 
 	auto it = m_vdirs.find(vdir_name);
 	if (it != m_vdirs.end())
@@ -212,8 +204,6 @@ std::shared_ptr<gg::IDirectory> gg::FileSystem::openDirectory(const std::string&
 std::shared_ptr<gg::IFile> gg::FileSystem::openFile(const std::string& file_name)
 {
 	std::string vdir_name = getPathRoot(file_name);
-
-	//std::lock_guard<decltype(m_vdirs_mutex)> guard(m_vdirs_mutex);
 
 	auto it = m_vdirs.find(vdir_name);
 	if (it != m_vdirs.end())
@@ -249,22 +239,24 @@ bool gg::VirtualDirectory::init()
 
 	while (m_file)
 	{
+		// read file name
+		std::string file_name;
 		uint16_t name_size;
-		FileData fd = {};
+		m_file.read(reinterpret_cast<char*>(&name_size), sizeof(uint16_t));
+		file_name.resize(name_size);
+		m_file.read(&file_name[0], name_size);
+
+		// insert to file list
+		FileData& fd = m_files[file_name];
+		fd.file_name = std::move(file_name);
 
 		// read file data
-		m_file.read(reinterpret_cast<char*>(&name_size), sizeof(uint16_t));
-		fd.file_name.resize(name_size);
-		m_file.read(&fd.file_name[0], name_size);
 		m_file.read(reinterpret_cast<char*>(&fd.original_size), sizeof(uint32_t));
 		m_file.read(reinterpret_cast<char*>(&fd.compressed_size), sizeof(uint32_t));
 		fd.start_pos = m_file.tellg(); // get pointer to compressed content
 
 		// skip compressed content
 		m_file.seekg(fd.compressed_size, std::ios_base::cur);
-
-		// store file data
-		m_files.emplace(fd.file_name, fd);
 
 		if (m_file.tellg() == end_pos)
 			break;
@@ -285,12 +277,11 @@ std::shared_ptr<gg::IDirectory> gg::VirtualDirectory::getDirectory(const std::st
 
 std::shared_ptr<gg::IFile> gg::VirtualDirectory::getFile(const std::string& file_name)
 {
-	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
-
 	auto it = m_files.find(file_name);
 	if (it != m_files.end())
 	{
 		FileData& fd = it->second;
+		std::lock_guard<decltype(fd.ptr_mutex)> guard(fd.ptr_mutex);
 
 		if (!fd.ptr.expired())
 		{
@@ -309,8 +300,6 @@ std::shared_ptr<gg::IFile> gg::VirtualDirectory::getFile(const std::string& file
 
 bool gg::VirtualDirectory::loadDirectoryData(const std::string& dir_name, std::vector<IDirectory::FileOrDirectory>* files)
 {
-	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
-
 	std::set<std::string> directories;
 	const size_t name_begin_pos = dir_name.size();
 
@@ -349,8 +338,6 @@ bool gg::VirtualDirectory::loadDirectoryData(const std::string& dir_name, std::v
 
 bool gg::VirtualDirectory::loadFileData(const std::string& file_name, const char** data, size_t* size)
 {
-	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
-
 	auto it = m_files.find(file_name);
 	if (it != m_files.end())
 	{

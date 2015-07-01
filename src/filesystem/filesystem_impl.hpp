@@ -32,13 +32,13 @@ namespace gg
 		{
 			std::string file_name;
 			size_t start_pos;
-			size_t original_size;
-			size_t compressed_size;
+			size_t original_size = 0;
+			size_t compressed_size = 0;
+			mutable std::mutex ptr_mutex;
 			std::weak_ptr<IFile> ptr;
 		};
 
-		mutable std::mutex m_mutex;
-		mutable std::ifstream m_file;
+		std::ifstream m_file;
 		std::string m_name;
 		std::map<std::string, FileData> m_files;
 	};
@@ -55,7 +55,6 @@ namespace gg
 		virtual std::shared_ptr<IFile> openFile(const std::string& file_name);
 
 	private:
-		mutable std::mutex m_vdirs_mutex;
 		std::map<std::string, VirtualDirectory*> m_vdirs;
 	};
 
@@ -119,20 +118,26 @@ namespace gg
 
 		virtual const char* getData() const
 		{
-			std::lock_guard<decltype(m_mutex)> guard(m_mutex);
-
 			if (m_data == nullptr)
-				m_vdir->loadFileData(m_name.substr(m_name.find('/') + 1), &m_data, &m_size);
+			{
+				std::lock_guard<decltype(m_mutex)> guard(m_mutex);
+
+				if (m_data == nullptr)
+					m_vdir->loadFileData(m_name.substr(m_name.find('/') + 1), &m_data, &m_size);
+			}
 
 			return m_data;
 		}
 
 		virtual size_t getSize() const
 		{
-			std::lock_guard<decltype(m_mutex)> guard(m_mutex);
-
 			if (m_data == nullptr)
-				m_vdir->loadFileData(m_name.substr(m_name.find('/') + 1), &m_data, &m_size);
+			{
+				std::lock_guard<decltype(m_mutex)> guard(m_mutex);
+
+				if (m_data == nullptr)
+					m_vdir->loadFileData(m_name.substr(m_name.find('/') + 1), &m_data, &m_size);
+			}
 
 			return m_size;
 		}

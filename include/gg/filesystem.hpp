@@ -21,7 +21,10 @@
  * virtual directory. It can be done by calling: 'auto file = gg::fs.openFile("textures.pak/sky.png")'
  *
  * Important:
- * Do NOT use backslash '\' characters in a file path. Always use slash '/' instead.
+ * - Do NOT add virtual directories concurrently.
+ * - Thread-safe file and directory operations are supported only AFTER finishing the addition of
+ *   virtual directories.
+ * - Do NOT use backslash '\' characters in a file path. Always use slash '/' instead.
  */
 
 #pragma once

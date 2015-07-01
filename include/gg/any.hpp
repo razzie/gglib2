@@ -115,7 +115,7 @@ namespace gg
 		void* getPtr()
 		{
 			if (m_storage != nullptr)
-				return static_cast<void*>(m_storage->getPtr());
+				return m_storage->getPtr();
 			else
 				return nullptr;
 		}
@@ -123,7 +123,7 @@ namespace gg
 		const void* getPtr() const
 		{
 			if (m_storage != nullptr)
-				return static_cast<const void*>(m_storage->getPtr());
+				return m_storage->getPtr();
 			else
 				return nullptr;
 		}
@@ -138,12 +138,18 @@ namespace gg
 		}
 
 		template<class T>
-		const T& get()
+		const T& get() const
 		{
 			if (m_storage == nullptr || m_storage->get_type() != typeid(T))
 				throw std::bad_cast();
 
 			return *static_cast<const T*>(m_storage->get_ptr());
+		}
+
+		template<class T>
+		operator T()
+		{
+			return get<T>();
 		}
 
 		template<class T>
@@ -252,7 +258,7 @@ namespace gg
 		auto it = ar.begin();
 
 		s << "(" << insert(*(it++));
-		std::for_each(it, ar.end(), [&](const Any& a){ s << ", " << insert(a); });
+		std::for_each(it, ar.end(), [&](const Any& a){ s << ", " << a; });
 		s << ")";
 
 		return s;

@@ -36,7 +36,7 @@ namespace gg
 			NONE
 		};
 
-		virtual ~ILogger() {}
+		virtual ~ILogger() = default;
 		virtual void setTimestamp(Timestamp) = 0;
 		virtual void redirect(std::ostream& = std::cout) = 0;
 		virtual void redirect(std::shared_ptr<std::ostream>) = 0;
