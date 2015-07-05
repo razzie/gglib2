@@ -111,11 +111,13 @@
     <ClInclude Include="src\framework\buffer.hpp" />
     <ClInclude Include="src\framework\ieee754.hpp" />
     <ClInclude Include="src\framework\message_impl.hpp" />
+    <ClInclude Include="src\framework\network_impl.hpp" />
     <ClInclude Include="src\framework\safebuffer.hpp" />
     <ClInclude Include="src\framework\serializer_impl.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\framework\message_impl.cpp" />
+    <ClCompile Include="src\framework\network_impl.cpp" />
     <ClCompile Include="src\framework\serializer_impl.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -9,8 +9,9 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <string>
-#include "gg/any.hpp"
+#include <typeinfo>
 #include "gg/storage.hpp"
 
 namespace gg
@@ -41,8 +42,11 @@ namespace gg
 		virtual ~ISerializer() = default;
 		virtual Mode getMode() const = 0;
 		virtual void setMode(Mode) = 0;
-		virtual void setFailBit(bool = true) = 0;
+		virtual std::shared_ptr<IBuffer> getBuffer() const = 0;
+		virtual void setBuffer(std::shared_ptr<IBuffer>) = 0;
 		virtual operator bool() const = 0;
+		virtual void setFailBit(bool = true) = 0;
+
 		virtual ISerializer& operator& (int8_t&) = 0;
 		virtual ISerializer& operator& (int16_t&) = 0;
 		virtual ISerializer& operator& (int32_t&) = 0;
@@ -54,9 +58,6 @@ namespace gg
 		virtual ISerializer& operator& (float&) = 0;
 		virtual ISerializer& operator& (double&) = 0;
 		virtual ISerializer& operator& (std::string&) = 0;
-		virtual ISerializer& operator& (Any&) = 0;
-		virtual ISerializer& operator& (Any::Array&) = 0;
-		virtual ISerializer& operator& (IStorage&) = 0;
 		virtual ISerializer& operator& (ISerializable&) = 0;
 
 		template<class T>
@@ -76,16 +77,30 @@ namespace gg
 		virtual bool serialize(ISerializer&) = 0;
 	};
 
-	// generic serializer for STL containers
-	template<class Container, class T>
-	bool serialize(ISerializer& serializer, Container<T>& container)
+
+	namespace __SerializeStorage
 	{
-		for (auto it = container.begin(), end = container.end(); it != end; ++it)
+		template<size_t N>
+		bool serialize(ISerializer& serializer, IStorage& storage)
 		{
-			if ( !(serializer & *it) )
+			return true;
+		}
+
+		template<size_t N, class Type0, class... Types>
+		bool serialize(ISerializer& serializer, IStorage& storage)
+		{
+			serializer & storage.get<Type0>(N);
+			if (serializer)
+				return serialize<N + 1, Types...>(serializer, storage);
+			else
 				return false;
 		}
-		return true;
+	}
+
+	template<class... Types>
+	bool serialize(ISerializer& serializer, Storage<Types...>& storage)
+	{
+		return __SerializeStorage::serialize<0, Types...>(serializer, storage);
 	}
 
 
