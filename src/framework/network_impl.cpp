@@ -8,10 +8,10 @@
 
 #include "network_impl.hpp"
 
-/*static void test()
+static void test()
 {
-	gg::Storage<int, int, float> st = { 1, 2, 3.0f };
+	gg::Storage<int, int, float> s = { 1, 2, 3.0f };
 
-	gg::ISerializer* s = nullptr;
-	gg::serialize(*s, st);
-}*/
+	gg::IPacket* p = nullptr;
+	gg::serialize(*p, s);
+}

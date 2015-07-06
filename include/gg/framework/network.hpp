@@ -99,6 +99,7 @@ namespace gg
 		virtual ~IConnection() = default;
 		virtual bool connect(const std::string& address, uint16_t port) = 0;
 		virtual void disconnect() = 0;
+		virtual bool packetAvailable() const = 0;
 		virtual std::shared_ptr<IReadModePacket> getNextPacket() = 0;
 		virtual std::shared_ptr<IReadModePacket> waitForNextPacket() = 0;
 		virtual std::shared_ptr<IWriteModePacket> createPacket() = 0;
@@ -125,6 +126,7 @@ namespace gg
 		template<size_t N, class Type0, class... Types>
 		void serialize(IPacket& packet, IStorage& storage)
 		{
+			packet & storage.get<Type0>(N);
 			serialize<N + 1, Types...>(packet, storage);
 		}
 	}
