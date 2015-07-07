@@ -29,7 +29,7 @@
 
 #pragma once
 
-#if defined GG_BUILD
+#if defined GGFILESYSTEM_BUILD
 #	define GG_API __declspec(dllexport)
 #else
 #	define GG_API __declspec(dllimport)

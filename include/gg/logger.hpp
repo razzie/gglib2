@@ -14,7 +14,7 @@
 
 #pragma once
 
-#if defined GG_BUILD
+#if defined GGLOGGER_BUILD
 #	define GG_API __declspec(dllexport)
 #else
 #	define GG_API __declspec(dllimport)

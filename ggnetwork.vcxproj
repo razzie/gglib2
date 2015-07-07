@@ -15,6 +15,7 @@
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>gglibvs</RootNamespace>
     <TargetPlatformVersion>8.1</TargetPlatformVersion>
+    <ProjectName>ggnetwork</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug DLL|Win32'" Label="Configuration">
@@ -61,7 +62,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>GG_BUILD;WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GGNETWORK_BUILD;WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>include;src;src/framework;(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -84,7 +85,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>GG_BUILD;WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GGNETWORK_BUILD;WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>include;src;src/framework;(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -100,25 +101,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="include\gg\any.hpp" />
     <ClInclude Include="include\gg\config.hpp" />
-    <ClInclude Include="include\gg\framework\message.hpp" />
-    <ClInclude Include="include\gg\framework\network.hpp" />
-    <ClInclude Include="include\gg\framework\serializer.hpp" />
-    <ClInclude Include="include\gg\function.hpp" />
+    <ClInclude Include="include\gg\network.hpp" />
     <ClInclude Include="include\gg\storage.hpp" />
-    <ClInclude Include="include\gg\streamutil.hpp" />
-    <ClInclude Include="src\framework\buffer.hpp" />
-    <ClInclude Include="src\framework\ieee754.hpp" />
-    <ClInclude Include="src\framework\message_impl.hpp" />
-    <ClInclude Include="src\framework\network_impl.hpp" />
-    <ClInclude Include="src\framework\safebuffer.hpp" />
-    <ClInclude Include="src\framework\serializer_impl.hpp" />
+    <ClInclude Include="src\network\ieee754.hpp" />
+    <ClInclude Include="src\network\network_impl.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\framework\message_impl.cpp" />
-    <ClCompile Include="src\framework\network_impl.cpp" />
-    <ClCompile Include="src\framework\serializer_impl.cpp" />
+    <ClCompile Include="src\network\network_impl.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

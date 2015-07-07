@@ -8,4 +8,4 @@
 
 #pragma once
 
-#include "gg/framework/network.hpp"
+#include "gg/network.hpp"

@@ -8,12 +8,6 @@
 
 #pragma once
 
-#if defined GG_BUILD
-#	define GG_API __declspec(dllexport)
-#else
-#	define GG_API __declspec(dllimport)
-#endif
-
 #include <iosfwd>
 #include <locale>
 #include <stdexcept>

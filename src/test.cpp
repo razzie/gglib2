@@ -11,6 +11,7 @@
 #include "gg/fastmutex.hpp"
 #include "gg/function.hpp"
 #include "gg/logger.hpp"
+#include "gg/network.hpp"
 #include "gg/storage.hpp"
 #include "gg/streamutil.hpp"
 #include "gg/timer.hpp"

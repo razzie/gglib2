@@ -6,9 +6,15 @@
  * All rights reserved.
  */
 
+/**
+ * HOW TO USE:
+ * -----------
+ *
+ */
+
 #pragma once
 
-#if defined GG_BUILD
+#if defined GGNETWORK_BUILD
 #	define GG_API __declspec(dllexport)
 #else
 #	define GG_API __declspec(dllimport)
@@ -86,8 +92,9 @@ namespace gg
 		virtual ~IConnectionBackend() = default;
 		virtual bool connect(const std::string& address, uint16_t port) = 0;
 		virtual void disconnect() = 0;
+		virtual const std::string& getDescription() const = 0;
 		virtual size_t available() const = 0;
-		virtual size_t waitForAvailable() const = 0;
+		virtual size_t waitForAvailable(uint32_t timeoutMs = 0) const = 0;
 		virtual size_t peek(char* ptr, size_t len) const = 0;
 		virtual size_t read(char* ptr, size_t len) = 0;
 		virtual void write(const char* ptr, size_t len) = 0;
@@ -99,9 +106,10 @@ namespace gg
 		virtual ~IConnection() = default;
 		virtual bool connect(const std::string& address, uint16_t port) = 0;
 		virtual void disconnect() = 0;
+		virtual const std::string& getDescription() const = 0;
 		virtual bool packetAvailable() const = 0;
 		virtual std::shared_ptr<IReadModePacket> getNextPacket() = 0;
-		virtual std::shared_ptr<IReadModePacket> waitForNextPacket() = 0;
+		virtual std::shared_ptr<IReadModePacket> waitForNextPacket(uint32_t timeoutMs = 0) = 0;
 		virtual std::shared_ptr<IWriteModePacket> createPacket() = 0;
 	};
 
