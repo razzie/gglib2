@@ -14,8 +14,13 @@
 
 #define SERIALIZATION_ERROR "Serialization error"
 
-gg::Packet::Packet(gg::IPacket::Mode mode) :
+static gg::NetworkManager s_net;
+gg::INetworkManager& gg::net = s_net;
+
+
+gg::Packet::Packet(gg::IPacket::Mode mode, gg::IPacket::Type type) :
 	m_mode(mode),
+	m_type(type),
 	m_data_len(0),
 	m_data_pos(0)
 {
@@ -28,6 +33,21 @@ gg::Packet::~Packet()
 gg::IPacket::Mode gg::Packet::getMode() const
 {
 	return m_mode;
+}
+
+gg::IPacket::Type gg::Packet::getType() const
+{
+	return m_type;
+}
+
+const char* gg::Packet::getData() const
+{
+	return m_data;
+}
+
+size_t gg::Packet::getDataLen() const
+{
+	return m_data_len;
 }
 
 gg::Packet& gg::Packet::operator&(int8_t& i)
@@ -257,4 +277,114 @@ size_t gg::Packet::read(char* ptr, size_t len)
 	std::memcpy(ptr, &m_data[m_data_pos], len);
 	m_data_pos += len;
 	return len;
+}
+
+
+gg::Connection::Connection(std::unique_ptr<gg::IConnectionBackend>&& backend) :
+	m_backend(std::move(backend))
+{
+}
+
+gg::Connection::~Connection()
+{
+	disconnect();
+}
+
+bool gg::Connection::connect(const std::string& args)
+{
+	return m_backend->connect(args);
+}
+
+void gg::Connection::disconnect()
+{
+	m_backend->disconnect();
+}
+
+const std::string & gg::Connection::getDescription() const
+{
+	return m_backend->getDescription();
+}
+
+bool gg::Connection::packetAvailable() const
+{
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
+
+	uint16_t packet_size;
+	if (m_backend->peek(reinterpret_cast<char*>(&packet_size), sizeof(uint16_t)) < sizeof(uint16_t))
+		return false;
+
+	return (m_backend->available() >= packet_size + sizeof(uint16_t));
+}
+
+std::shared_ptr<gg::IPacket> gg::Connection::getNextPacket()
+{
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
+
+	struct
+	{
+		uint16_t packet_size;
+		IPacket::Type packet_type;
+	} packet_head;
+
+	if (m_backend->peek(reinterpret_cast<char*>(&packet_head), sizeof(packet_head)) < sizeof(packet_head))
+		return false;
+
+	if (m_backend->available() < packet_head.packet_size + sizeof(packet_head))
+		return false;
+
+	if (packet_head.packet_size > Packet::BUF_SIZE)
+		throw std::runtime_error("Too large packet in network buffer");
+
+	// now that we have the full packet, let's skip the first heading bytes..
+	m_backend->read(reinterpret_cast<char*>(&packet_head), sizeof(packet_head));
+
+	// ..create a packet..
+	std::shared_ptr<IPacket> packet(new Packet(IPacket::Mode::READ, packet_head.packet_type));
+
+	// ..and read the data to the packet's buffer
+	m_backend->read(const_cast<char*>(packet->getData()), packet_head.packet_size);
+
+	return packet;
+}
+
+std::shared_ptr<gg::IPacket> gg::Connection::waitForNextPacket(uint32_t timeoutMs)
+{
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex); // necessary??
+	m_backend->waitForAvailable(timeoutMs);
+	return getNextPacket();
+}
+
+std::shared_ptr<gg::IPacket> gg::Connection::createPacket(gg::IPacket::Type type) const
+{
+	return std::shared_ptr<IPacket>(new Packet(IPacket::Mode::WRITE, type));
+}
+
+bool gg::Connection::send(std::shared_ptr<gg::IPacket> packet)
+{
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
+	return (m_backend->write(packet->getData(), packet->getDataLen()) == packet->getDataLen());
+}
+
+
+gg::NetworkManager::NetworkManager()
+{
+}
+
+gg::NetworkManager::~NetworkManager()
+{
+}
+
+std::shared_ptr<gg::IPacket> gg::NetworkManager::createPacket(gg::IPacket::Type type) const
+{
+	return std::shared_ptr<IPacket>(new Packet(IPacket::Mode::WRITE, type));
+}
+
+std::shared_ptr<gg::IConnection> gg::NetworkManager::createConnection() const
+{
+	return std::shared_ptr<IConnection>(new Connection(nullptr));
+}
+
+std::shared_ptr<gg::IConnection> gg::NetworkManager::createConnection(std::unique_ptr<gg::IConnectionBackend>&& backend) const
+{
+	return std::shared_ptr<IConnection>(new Connection(std::move(backend)));
 }

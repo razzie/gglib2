@@ -43,6 +43,9 @@ namespace gg
 
 		virtual ~IPacket() = default;
 		virtual Mode getMode() const = 0;
+		virtual Type getType() const = 0;
+		virtual const char* getData() const = 0;
+		virtual size_t getDataLen() const = 0;
 
 		virtual IPacket& operator& (int8_t&) = 0;
 		virtual IPacket& operator& (int16_t&) = 0;
@@ -64,20 +67,6 @@ namespace gg
 		}
 	};
 
-	class IReadModePacket : public IPacket
-	{
-	public:
-		virtual ~IReadModePacket() = default;
-		virtual IPacket::Type getType() const = 0;
-	};
-
-	class IWriteModePacket : public IPacket
-	{
-	public:
-		virtual ~IWriteModePacket() = default;
-		virtual void sendAs(IPacket::Type) const = 0;
-	};
-
 	class ISerializable
 	{
 	public:
@@ -90,38 +79,41 @@ namespace gg
 	{
 	public:
 		virtual ~IConnectionBackend() = default;
-		virtual bool connect(const std::string& address, uint16_t port) = 0;
+		virtual bool connect(const std::string& args) = 0;
 		virtual void disconnect() = 0;
 		virtual const std::string& getDescription() const = 0;
 		virtual size_t available() const = 0;
-		virtual size_t waitForAvailable(uint32_t timeoutMs = 0) const = 0;
+		virtual size_t waitForAvailable(uint32_t timeoutMs = 0) const = 0; // 0: infinite
 		virtual size_t peek(char* ptr, size_t len) const = 0;
 		virtual size_t read(char* ptr, size_t len) = 0;
-		virtual void write(const char* ptr, size_t len) = 0;
+		virtual size_t write(const char* ptr, size_t len) = 0;
 	};
 
 	class IConnection
 	{
 	public:
 		virtual ~IConnection() = default;
-		virtual bool connect(const std::string& address, uint16_t port) = 0;
+		virtual bool connect(const std::string& args) = 0;
 		virtual void disconnect() = 0;
 		virtual const std::string& getDescription() const = 0;
 		virtual bool packetAvailable() const = 0;
-		virtual std::shared_ptr<IReadModePacket> getNextPacket() = 0;
-		virtual std::shared_ptr<IReadModePacket> waitForNextPacket(uint32_t timeoutMs = 0) = 0;
-		virtual std::shared_ptr<IWriteModePacket> createPacket() = 0;
+		virtual std::shared_ptr<IPacket> getNextPacket() = 0;
+		virtual std::shared_ptr<IPacket> waitForNextPacket(uint32_t timeoutMs = 0) = 0; // 0: infinite
+		virtual std::shared_ptr<IPacket> createPacket(IPacket::Type) const = 0;
+		virtual bool send(std::shared_ptr<IPacket>) = 0;
 	};
+
 
 	class INetworkManager
 	{
 	public:
 		virtual ~INetworkManager() = default;
-		virtual std::shared_ptr<IConnection> createConnection() = 0;
-		virtual std::shared_ptr<IConnection> createConnection(std::shared_ptr<IConnectionBackend>) = 0;
+		virtual std::shared_ptr<IPacket> createPacket(IPacket::Type) const = 0;
+		virtual std::shared_ptr<IConnection> createConnection() const = 0;
+		virtual std::shared_ptr<IConnection> createConnection(std::unique_ptr<IConnectionBackend>&&) const = 0;
 	};
 
-	//extern GG_API INetworkManager& net;
+	extern GG_API INetworkManager& net;
 
 
 	namespace __SerializeStorage

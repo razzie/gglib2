@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <mutex>
 #include "gg/network.hpp"
 
 namespace gg
@@ -15,9 +16,14 @@ namespace gg
 	class Packet : public IPacket
 	{
 	public:
-		Packet(Mode);
+		static const size_t BUF_SIZE = 1024;
+
+		Packet(Mode, Type);
 		virtual ~Packet();
 		virtual Mode getMode() const;
+		virtual Type getType() const;
+		virtual const char* getData() const;
+		virtual size_t getDataLen() const;
 
 		virtual Packet& operator& (int8_t&);
 		virtual Packet& operator& (int16_t&);
@@ -33,9 +39,8 @@ namespace gg
 		virtual Packet& operator& (ISerializable&);
 
 	protected:
-		static const size_t BUF_SIZE = 1024;
-
 		Mode m_mode;
+		Type m_type;
 		char m_data[BUF_SIZE];
 		size_t m_data_len;
 		size_t m_data_pos;
@@ -45,4 +50,33 @@ namespace gg
 	};
 
 
+	class Connection : public IConnection
+	{
+	public:
+		Connection(std::unique_ptr<IConnectionBackend>&&);
+		virtual ~Connection();
+		virtual bool connect(const std::string& args);
+		virtual void disconnect();
+		virtual const std::string& getDescription() const;
+		virtual bool packetAvailable() const;
+		virtual std::shared_ptr<IPacket> getNextPacket();
+		virtual std::shared_ptr<IPacket> waitForNextPacket(uint32_t timeoutMs = 0);
+		virtual std::shared_ptr<IPacket> createPacket(IPacket::Type) const;
+		virtual bool send(std::shared_ptr<IPacket>);
+
+	private:
+		mutable std::recursive_mutex m_mutex;
+		std::unique_ptr<IConnectionBackend> m_backend;
+	};
+
+
+	class NetworkManager : public INetworkManager
+	{
+	public:
+		NetworkManager();
+		virtual ~NetworkManager();
+		virtual std::shared_ptr<IPacket> createPacket(IPacket::Type) const;
+		virtual std::shared_ptr<IConnection> createConnection() const;
+		virtual std::shared_ptr<IConnection> createConnection(std::unique_ptr<IConnectionBackend>&&) const;
+	};
 };
