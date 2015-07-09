@@ -320,29 +320,25 @@ std::shared_ptr<gg::IPacket> gg::Connection::getNextPacket()
 {
 	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 
-	struct
-	{
-		uint16_t packet_size;
-		IPacket::Type packet_type;
-	} packet_head;
+	PacketHeader head;
 
-	if (m_backend->peek(reinterpret_cast<char*>(&packet_head), sizeof(packet_head)) < sizeof(packet_head))
+	if (m_backend->peek(reinterpret_cast<char*>(&head), sizeof(PacketHeader)) < sizeof(PacketHeader))
 		return false;
 
-	if (m_backend->available() < packet_head.packet_size + sizeof(packet_head))
+	if (m_backend->available() < head.packet_size + sizeof(PacketHeader))
 		return false;
 
-	if (packet_head.packet_size > Packet::BUF_SIZE)
+	if (head.packet_size > Packet::BUF_SIZE)
 		throw std::runtime_error("Too large packet in network buffer");
 
 	// now that we have the full packet, let's skip the first heading bytes..
-	m_backend->read(reinterpret_cast<char*>(&packet_head), sizeof(packet_head));
+	m_backend->read(reinterpret_cast<char*>(&head), sizeof(PacketHeader));
 
 	// ..create a packet..
-	std::shared_ptr<IPacket> packet(new Packet(IPacket::Mode::READ, packet_head.packet_type));
+	std::shared_ptr<IPacket> packet(new Packet(IPacket::Mode::READ, head.packet_type));
 
 	// ..and read the data to the packet's buffer
-	m_backend->read(const_cast<char*>(packet->getData()), packet_head.packet_size);
+	m_backend->read(const_cast<char*>(packet->getData()), head.packet_size);
 
 	return packet;
 }
@@ -362,7 +358,16 @@ std::shared_ptr<gg::IPacket> gg::Connection::createPacket(gg::IPacket::Type type
 bool gg::Connection::send(std::shared_ptr<gg::IPacket> packet)
 {
 	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
-	return (m_backend->write(packet->getData(), packet->getDataLen()) == packet->getDataLen());
+
+	PacketHeader head;
+	head.packet_size = static_cast<uint16_t>(packet->getDataLen());
+	head.packet_type = packet->getType();
+
+	size_t bytes_written = 0;
+	bytes_written += m_backend->write(reinterpret_cast<const char*>(&head), sizeof(PacketHeader));
+	bytes_written += m_backend->write(packet->getData(), head.packet_size);
+
+	return (bytes_written == head.packet_size + sizeof(PacketHeader));
 }
 
 

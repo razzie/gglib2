@@ -65,6 +65,12 @@ namespace gg
 		virtual bool send(std::shared_ptr<IPacket>);
 
 	private:
+		struct PacketHeader
+		{
+			uint16_t packet_size;
+			IPacket::Type packet_type;
+		};
+
 		mutable std::recursive_mutex m_mutex;
 		std::unique_ptr<IConnectionBackend> m_backend;
 	};
