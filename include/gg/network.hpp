@@ -21,6 +21,7 @@
 #endif
 
 #include <cstdint>
+#include <exception>
 #include <memory>
 #include <string>
 #include <typeinfo>
@@ -42,10 +43,10 @@ namespace gg
 		};
 
 		virtual ~IPacket() = default;
-		virtual Mode getMode() const = 0;
-		virtual Type getType() const = 0;
-		virtual const char* getData() const = 0;
-		virtual size_t getDataLen() const = 0;
+		virtual Mode mode() const = 0;
+		virtual Type type() const = 0;
+		virtual const char* data() const = 0;
+		virtual size_t length() const = 0;
 
 		virtual IPacket& operator& (int8_t&) = 0;
 		virtual IPacket& operator& (int16_t&) = 0;
@@ -67,6 +68,13 @@ namespace gg
 		}
 	};
 
+	class IPacketException : public std::exception
+	{
+	public:
+		virtual ~IPacketException() = default;
+		virtual const char* what() const = 0;
+	};
+
 	class ISerializable
 	{
 	public:
@@ -79,11 +87,10 @@ namespace gg
 	{
 	public:
 		virtual ~IConnectionBackend() = default;
-		virtual bool connect(const std::string& args) = 0;
+		virtual bool connect(void* user_data = nullptr) = 0;
 		virtual void disconnect() = 0;
-		virtual const std::string& getDescription() const = 0;
-		virtual size_t available() const = 0;
-		virtual size_t waitForAvailable(uint32_t timeoutMs = 0) const = 0; // 0: infinite
+		virtual size_t availableData() const = 0;
+		virtual size_t waitForData(size_t len, uint32_t timeoutMs = 0) const = 0; // 0: non-blocking
 		virtual size_t peek(char* ptr, size_t len) const = 0;
 		virtual size_t read(char* ptr, size_t len) = 0;
 		virtual size_t write(const char* ptr, size_t len) = 0;
@@ -93,24 +100,40 @@ namespace gg
 	{
 	public:
 		virtual ~IConnection() = default;
-		virtual bool connect(const std::string& args) = 0;
+		virtual bool connect(void* user_data = nullptr) = 0;
 		virtual void disconnect() = 0;
-		virtual const std::string& getDescription() const = 0;
-		virtual bool packetAvailable() const = 0;
-		virtual std::shared_ptr<IPacket> getNextPacket() = 0;
-		virtual std::shared_ptr<IPacket> waitForNextPacket(uint32_t timeoutMs = 0) = 0; // 0: infinite
+		virtual std::shared_ptr<IPacket> getNextPacket(uint32_t timeoutMs = 0) = 0; // 0: non-blocking
 		virtual std::shared_ptr<IPacket> createPacket(IPacket::Type) const = 0;
 		virtual bool send(std::shared_ptr<IPacket>) = 0;
 	};
 
+	class IServerBackend // adaption to external APIs like Steam
+	{
+	public:
+		virtual ~IServerBackend() = default;
+		virtual bool start(void* user_data = nullptr) = 0;
+		virtual void stop() = 0;
+		virtual std::unique_ptr<IConnectionBackend>&& getNextConnection(uint32_t timeoutMs = 0) = 0; // 0: non-blocking
+	};
+
+	class IServer
+	{
+	public:
+		virtual ~IServer() = default;
+		virtual bool start(void* user_data = nullptr) = 0;
+		virtual void stop() = 0;
+		virtual std::shared_ptr<IConnection> getNextConnection(uint32_t timeoutMs = 0) = 0; // 0: non-blocking
+	};
 
 	class INetworkManager
 	{
 	public:
 		virtual ~INetworkManager() = default;
 		virtual std::shared_ptr<IPacket> createPacket(IPacket::Type) const = 0;
-		virtual std::shared_ptr<IConnection> createConnection() const = 0;
+		virtual std::shared_ptr<IConnection> createConnection(const std::string& address, uint16_t port) const = 0;
 		virtual std::shared_ptr<IConnection> createConnection(std::unique_ptr<IConnectionBackend>&&) const = 0;
+		virtual std::shared_ptr<IServer> createServer(uint16_t port) const = 0;
+		virtual std::shared_ptr<IServer> createServer(std::unique_ptr<IServerBackend>&&) const = 0;
 	};
 
 	extern GG_API INetworkManager& net;

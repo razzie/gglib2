@@ -30,22 +30,27 @@ gg::Packet::~Packet()
 {
 }
 
-gg::IPacket::Mode gg::Packet::getMode() const
+gg::IPacket::Mode gg::Packet::mode() const
 {
 	return m_mode;
 }
 
-gg::IPacket::Type gg::Packet::getType() const
+gg::IPacket::Type gg::Packet::type() const
 {
 	return m_type;
 }
 
-const char* gg::Packet::getData() const
+char* gg::Packet::data()
 {
 	return m_data;
 }
 
-size_t gg::Packet::getDataLen() const
+const char* gg::Packet::data() const
+{
+	return m_data;
+}
+
+size_t gg::Packet::length() const
 {
 	return m_data_len;
 }
@@ -280,6 +285,21 @@ size_t gg::Packet::read(char* ptr, size_t len)
 }
 
 
+gg::PacketException::PacketException(const char* what) :
+	m_what(what)
+{
+}
+
+gg::PacketException::~PacketException()
+{
+}
+
+const char* gg::PacketException::what() const
+{
+	return m_what;
+}
+
+
 gg::Connection::Connection(std::unique_ptr<gg::IConnectionBackend>&& backend) :
 	m_backend(std::move(backend))
 {
@@ -290,9 +310,9 @@ gg::Connection::~Connection()
 	disconnect();
 }
 
-bool gg::Connection::connect(const std::string& args)
+bool gg::Connection::connect(void* user_data)
 {
-	return m_backend->connect(args);
+	return m_backend->connect(user_data);
 }
 
 void gg::Connection::disconnect()
@@ -300,54 +320,33 @@ void gg::Connection::disconnect()
 	m_backend->disconnect();
 }
 
-const std::string & gg::Connection::getDescription() const
-{
-	return m_backend->getDescription();
-}
-
-bool gg::Connection::packetAvailable() const
-{
-	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
-
-	uint16_t packet_size;
-	if (m_backend->peek(reinterpret_cast<char*>(&packet_size), sizeof(uint16_t)) < sizeof(uint16_t))
-		return false;
-
-	return (m_backend->available() >= packet_size + sizeof(uint16_t));
-}
-
-std::shared_ptr<gg::IPacket> gg::Connection::getNextPacket()
+std::shared_ptr<gg::IPacket> gg::Connection::getNextPacket(uint32_t timeoutMs)
 {
 	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 
 	PacketHeader head;
-
 	if (m_backend->peek(reinterpret_cast<char*>(&head), sizeof(PacketHeader)) < sizeof(PacketHeader))
-		return false;
-
-	if (m_backend->available() < head.packet_size + sizeof(PacketHeader))
-		return false;
+		return {};
 
 	if (head.packet_size > Packet::BUF_SIZE)
-		throw std::runtime_error("Too large packet in network buffer");
+		throw PacketException("Too large packet");
 
-	// now that we have the full packet, let's skip the first heading bytes..
+	size_t expected_size = sizeof(PacketHeader) + head.packet_size + sizeof(PacketTail);
+	if (m_backend->waitForData(expected_size, timeoutMs) < expected_size)
+		return {};
+
+	// now that we have the full packet, let's skip the first heading bytes we already know
 	m_backend->read(reinterpret_cast<char*>(&head), sizeof(PacketHeader));
 
-	// ..create a packet..
-	std::shared_ptr<IPacket> packet(new Packet(IPacket::Mode::READ, head.packet_type));
+	std::shared_ptr<Packet> packet(new Packet(IPacket::Mode::READ, head.packet_type));
+	m_backend->read(packet->data(), head.packet_size);
 
-	// ..and read the data to the packet's buffer
-	m_backend->read(const_cast<char*>(packet->getData()), head.packet_size);
+	PacketTail tail;
+	m_backend->read(reinterpret_cast<char*>(&tail), sizeof(PacketTail));
+	if (!tail.ok())
+		throw PacketException("Corrupted packet");
 
 	return packet;
-}
-
-std::shared_ptr<gg::IPacket> gg::Connection::waitForNextPacket(uint32_t timeoutMs)
-{
-	std::lock_guard<decltype(m_mutex)> guard(m_mutex); // necessary??
-	m_backend->waitForAvailable(timeoutMs);
-	return getNextPacket();
 }
 
 std::shared_ptr<gg::IPacket> gg::Connection::createPacket(gg::IPacket::Type type) const
@@ -360,14 +359,46 @@ bool gg::Connection::send(std::shared_ptr<gg::IPacket> packet)
 	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 
 	PacketHeader head;
-	head.packet_size = static_cast<uint16_t>(packet->getDataLen());
-	head.packet_type = packet->getType();
+	head.packet_size = static_cast<uint16_t>(packet->length());
+	head.packet_type = packet->type();
+
+	PacketTail tail;
 
 	size_t bytes_written = 0;
 	bytes_written += m_backend->write(reinterpret_cast<const char*>(&head), sizeof(PacketHeader));
-	bytes_written += m_backend->write(packet->getData(), head.packet_size);
+	bytes_written += m_backend->write(packet->data(), head.packet_size);
+	bytes_written += m_backend->write(reinterpret_cast<const char*>(&tail), sizeof(PacketTail));
 
-	return (bytes_written == head.packet_size + sizeof(PacketHeader));
+	return (bytes_written == head.packet_size + sizeof(PacketHeader) + sizeof(PacketTail));
+}
+
+
+gg::Server::Server(std::unique_ptr<gg::IServerBackend>&& backend) :
+	m_backend(std::move(backend))
+{
+}
+
+gg::Server::~Server()
+{
+}
+
+bool gg::Server::start(void* user_data)
+{
+	return m_backend->start(user_data);
+}
+
+void gg::Server::stop()
+{
+	m_backend->stop();
+}
+
+std::shared_ptr<gg::IConnection> gg::Server::getNextConnection(uint32_t timeoutMs)
+{
+	auto client = m_backend->getNextConnection(timeoutMs);
+	if (client)
+		return std::shared_ptr<Connection>(new Connection(std::move(client)));
+	else
+		return {};
 }
 
 
@@ -381,15 +412,25 @@ gg::NetworkManager::~NetworkManager()
 
 std::shared_ptr<gg::IPacket> gg::NetworkManager::createPacket(gg::IPacket::Type type) const
 {
-	return std::shared_ptr<IPacket>(new Packet(IPacket::Mode::WRITE, type));
+	return std::shared_ptr<IPacket>( new Packet(IPacket::Mode::WRITE, type) );
 }
 
-std::shared_ptr<gg::IConnection> gg::NetworkManager::createConnection() const
+std::shared_ptr<gg::IConnection> gg::NetworkManager::createConnection(const std::string& address, uint16_t port) const
 {
-	return std::shared_ptr<IConnection>(new Connection(nullptr));
+	return std::shared_ptr<IConnection>( new Connection(nullptr) );
 }
 
 std::shared_ptr<gg::IConnection> gg::NetworkManager::createConnection(std::unique_ptr<gg::IConnectionBackend>&& backend) const
 {
-	return std::shared_ptr<IConnection>(new Connection(std::move(backend)));
+	return std::shared_ptr<IConnection>( new Connection(std::move(backend)) );
+}
+
+std::shared_ptr<gg::IServer> gg::NetworkManager::createServer(uint16_t port) const
+{
+	return std::shared_ptr<IServer>( new Server(nullptr) );
+}
+
+std::shared_ptr<gg::IServer> gg::NetworkManager::createServer(std::unique_ptr<gg::IServerBackend>&& backend) const
+{
+	return std::shared_ptr<IServer>( new Server(std::move(backend)) );
 }

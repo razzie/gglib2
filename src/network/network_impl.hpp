@@ -20,10 +20,11 @@ namespace gg
 
 		Packet(Mode, Type);
 		virtual ~Packet();
-		virtual Mode getMode() const;
-		virtual Type getType() const;
-		virtual const char* getData() const;
-		virtual size_t getDataLen() const;
+		virtual Mode mode() const;
+		virtual Type type() const;
+		char* data(); // for internal use
+		virtual const char* data() const;
+		virtual size_t length() const;
 
 		virtual Packet& operator& (int8_t&);
 		virtual Packet& operator& (int16_t&);
@@ -49,18 +50,26 @@ namespace gg
 		size_t read(char* ptr, size_t len);
 	};
 
+	class PacketException : public IPacketException
+	{
+	public:
+		PacketException(const char* what);
+		virtual ~PacketException();
+		virtual const char* what() const;
+
+	private:
+		const char* m_what;
+	};
+
 
 	class Connection : public IConnection
 	{
 	public:
 		Connection(std::unique_ptr<IConnectionBackend>&&);
 		virtual ~Connection();
-		virtual bool connect(const std::string& args);
+		virtual bool connect(void* user_data = nullptr);
 		virtual void disconnect();
-		virtual const std::string& getDescription() const;
-		virtual bool packetAvailable() const;
-		virtual std::shared_ptr<IPacket> getNextPacket();
-		virtual std::shared_ptr<IPacket> waitForNextPacket(uint32_t timeoutMs = 0);
+		virtual std::shared_ptr<IPacket> getNextPacket(uint32_t timeoutMs = 0); // 0: non-blocking
 		virtual std::shared_ptr<IPacket> createPacket(IPacket::Type) const;
 		virtual bool send(std::shared_ptr<IPacket>);
 
@@ -71,8 +80,27 @@ namespace gg
 			IPacket::Type packet_type;
 		};
 
+		struct PacketTail
+		{
+			uint32_t n = 0;
+			bool ok() { return n == 0; }
+		};
+
 		mutable std::recursive_mutex m_mutex;
 		std::unique_ptr<IConnectionBackend> m_backend;
+	};
+
+	class Server : public IServer
+	{
+	public:
+		Server(std::unique_ptr<IServerBackend>&&);
+		virtual ~Server();
+		virtual bool start(void* user_data = nullptr);
+		virtual void stop();
+		virtual std::shared_ptr<IConnection> getNextConnection(uint32_t timeoutMs = 0); // 0: non-blocking
+
+	private:
+		std::unique_ptr<IServerBackend> m_backend;
 	};
 
 
@@ -82,7 +110,9 @@ namespace gg
 		NetworkManager();
 		virtual ~NetworkManager();
 		virtual std::shared_ptr<IPacket> createPacket(IPacket::Type) const;
-		virtual std::shared_ptr<IConnection> createConnection() const;
+		virtual std::shared_ptr<IConnection> createConnection(const std::string& address, uint16_t port) const;
 		virtual std::shared_ptr<IConnection> createConnection(std::unique_ptr<IConnectionBackend>&&) const;
+		virtual std::shared_ptr<IServer> createServer(uint16_t port) const;
+		virtual std::shared_ptr<IServer> createServer(std::unique_ptr<IServerBackend>&&) const;
 	};
 };
