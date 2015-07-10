@@ -70,7 +70,7 @@ namespace gg
 		virtual ~Connection();
 		virtual bool connect(void* user_data = nullptr);
 		virtual void disconnect();
-		virtual std::shared_ptr<IPacket> getNextPacket(uint32_t timeoutMs = 0); // 0: non-blocking
+		virtual std::shared_ptr<IPacket> getNextPacket(uint32_t timeoutMs = 0);
 		virtual std::shared_ptr<IPacket> createPacket(IPacket::Type) const;
 		virtual bool send(std::shared_ptr<IPacket>);
 
@@ -98,7 +98,7 @@ namespace gg
 		virtual ~Server();
 		virtual bool start(void* user_data = nullptr);
 		virtual void stop();
-		virtual std::shared_ptr<IConnection> getNextConnection(uint32_t timeoutMs = 0); // 0: non-blocking
+		virtual std::shared_ptr<IConnection> getNextConnection(uint32_t timeoutMs = 0);
 
 	private:
 		std::unique_ptr<IServerBackend> m_backend;

@@ -10,12 +10,25 @@
 #include <cstring>
 #include <stdexcept>
 #include "network_impl.hpp"
+#include "backend_impl.hpp"
 #include "ieee754.hpp"
 
 #define SERIALIZATION_ERROR "Serialization error"
 
-static gg::NetworkManager s_net;
-gg::INetworkManager& gg::net = s_net;
+static gg::NetworkManager s_netmgr;
+gg::INetworkManager& gg::net = s_netmgr;
+
+
+/*static bool isBigEndian()
+{
+	union
+	{
+		uint32_t i;
+		char c[4];
+	} chk = { 0x01020304 };
+
+	return (chk.c[0] == 1);
+}*/
 
 
 gg::Packet::Packet(gg::IPacket::Mode mode, gg::IPacket::Type type) :
@@ -424,10 +437,17 @@ std::shared_ptr<gg::IConnection> gg::Server::getNextConnection(uint32_t timeoutM
 
 gg::NetworkManager::NetworkManager()
 {
+#ifdef _WIN32
+	WSADATA wsaData;
+	WSAStartup(MAKEWORD(2, 2), &wsaData);
+#endif
 }
 
 gg::NetworkManager::~NetworkManager()
 {
+#ifdef _WIN32
+	WSACleanup();
+#endif
 }
 
 std::shared_ptr<gg::IPacket> gg::NetworkManager::createPacket(gg::IPacket::Type type) const
@@ -437,7 +457,8 @@ std::shared_ptr<gg::IPacket> gg::NetworkManager::createPacket(gg::IPacket::Type 
 
 std::shared_ptr<gg::IConnection> gg::NetworkManager::createConnection(const std::string& address, uint16_t port) const
 {
-	return std::shared_ptr<IConnection>( new Connection(nullptr) );
+	std::unique_ptr<gg::IConnectionBackend> backend(new ConnectionBackend(address, port));
+	return std::shared_ptr<IConnection>( new Connection(std::move(backend)) );
 }
 
 std::shared_ptr<gg::IConnection> gg::NetworkManager::createConnection(std::unique_ptr<gg::IConnectionBackend>&& backend) const
@@ -447,7 +468,8 @@ std::shared_ptr<gg::IConnection> gg::NetworkManager::createConnection(std::uniqu
 
 std::shared_ptr<gg::IServer> gg::NetworkManager::createServer(uint16_t port) const
 {
-	return std::shared_ptr<IServer>( new Server(nullptr) );
+	std::unique_ptr<gg::IServerBackend> backend(new ServerBackend(port));
+	return std::shared_ptr<IServer>( new Server(std::move(backend)) );
 }
 
 std::shared_ptr<gg::IServer> gg::NetworkManager::createServer(std::unique_ptr<gg::IServerBackend>&& backend) const
