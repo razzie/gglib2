@@ -254,6 +254,26 @@ gg::Packet& gg::Packet::operator&(std::string& str)
 	return *this;
 }
 
+gg::Packet& gg::Packet::operator&(gg::IBlob& blob)
+{
+	if (m_mode == Mode::WRITE)
+	{
+		uint16_t len = static_cast<uint16_t>(blob.length());
+		*this & len;
+		if (write(blob.data(), len) < len)
+			throw std::runtime_error(SERIALIZATION_ERROR);
+	}
+	else
+	{
+		uint16_t len;
+		*this & len;
+		if (blob.length() != len || read(blob.data(), len) < len)
+			throw std::runtime_error(SERIALIZATION_ERROR);
+	}
+
+	return *this;
+}
+
 gg::Packet& gg::Packet::operator&(ISerializable& serializable)
 {
 	serializable.serialize(*this);

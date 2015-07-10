@@ -29,6 +29,7 @@
 
 namespace gg
 {
+	class IBlob;
 	class ISerializable;
 
 	class IPacket
@@ -59,6 +60,7 @@ namespace gg
 		virtual IPacket& operator& (float&) = 0;
 		virtual IPacket& operator& (double&) = 0;
 		virtual IPacket& operator& (std::string&) = 0;
+		virtual IPacket& operator& (IBlob&) = 0;
 		virtual IPacket& operator& (ISerializable&) = 0;
 
 		template<class T>
@@ -73,6 +75,30 @@ namespace gg
 	public:
 		virtual ~IPacketException() = default;
 		virtual const char* what() const = 0;
+	};
+
+
+	class IBlob
+	{
+	public:
+		virtual ~IBlob() = default;
+		virtual char* data() = 0;
+		virtual const char* data() const = 0;
+		virtual size_t length() const = 0;
+	};
+
+	template<size_t SIZE>
+	class Blob : public IBlob
+	{
+	public:
+		Blob() = default;
+		virtual ~Blob() = default;
+		virtual char* data() { return m_data; }
+		virtual const char* data() const { return m_data; }
+		virtual size_t length() const { return SIZE; }
+
+	private:
+		char m_data[SIZE];
 	};
 
 	class ISerializable

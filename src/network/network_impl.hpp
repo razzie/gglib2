@@ -37,6 +37,7 @@ namespace gg
 		virtual Packet& operator& (float&);
 		virtual Packet& operator& (double&);
 		virtual Packet& operator& (std::string&);
+		virtual Packet& operator& (IBlob&);
 		virtual Packet& operator& (ISerializable&);
 
 	protected:
