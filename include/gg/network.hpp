@@ -115,9 +115,11 @@ namespace gg
 		virtual ~IConnectionBackend() = default;
 		virtual bool connect(void* user_data = nullptr) = 0;
 		virtual void disconnect() = 0;
-		virtual size_t availableData() const = 0;
-		virtual size_t waitForData(size_t len, uint32_t timeoutMs = 0) const = 0; // 0: non-blocking
-		virtual size_t peek(char* ptr, size_t len) const = 0;
+		virtual bool alive() const = 0;
+		virtual const std::string& getAddress() const = 0;
+		virtual size_t availableData() = 0;
+		virtual size_t waitForData(size_t len, uint32_t timeoutMs = 0) = 0; // 0: non-blocking
+		virtual size_t peek(char* ptr, size_t len) = 0;
 		virtual size_t read(char* ptr, size_t len) = 0;
 		virtual size_t write(const char* ptr, size_t len) = 0;
 	};
@@ -128,9 +130,18 @@ namespace gg
 		virtual ~IConnection() = default;
 		virtual bool connect(void* user_data = nullptr) = 0;
 		virtual void disconnect() = 0;
+		virtual bool alive() const = 0;
+		virtual const std::string& getAddress() const = 0;
 		virtual std::shared_ptr<IPacket> getNextPacket(uint32_t timeoutMs = 0) = 0; // 0: non-blocking
 		virtual std::shared_ptr<IPacket> createPacket(IPacket::Type) const = 0;
 		virtual bool send(std::shared_ptr<IPacket>) = 0;
+	};
+
+	class IConnectionException : public std::exception
+	{
+	public:
+		virtual ~IConnectionException() = default;
+		virtual const char* what() const = 0;
 	};
 
 	class IServerBackend // adaption to external APIs like Steam
@@ -139,6 +150,7 @@ namespace gg
 		virtual ~IServerBackend() = default;
 		virtual bool start(void* user_data = nullptr) = 0;
 		virtual void stop() = 0;
+		virtual bool alive() const = 0;
 		virtual std::unique_ptr<IConnectionBackend>&& getNextConnection(uint32_t timeoutMs = 0) = 0; // 0: non-blocking
 	};
 
@@ -148,7 +160,16 @@ namespace gg
 		virtual ~IServer() = default;
 		virtual bool start(void* user_data = nullptr) = 0;
 		virtual void stop() = 0;
+		virtual bool alive() const = 0;
 		virtual std::shared_ptr<IConnection> getNextConnection(uint32_t timeoutMs = 0) = 0; // 0: non-blocking
+		virtual void closeConnections() = 0;
+	};
+
+	class IServerException : public std::exception
+	{
+	public:
+		virtual ~IServerException() = default;
+		virtual const char* what() const = 0;
 	};
 
 	class INetworkManager
@@ -156,7 +177,7 @@ namespace gg
 	public:
 		virtual ~INetworkManager() = default;
 		virtual std::shared_ptr<IPacket> createPacket(IPacket::Type) const = 0;
-		virtual std::shared_ptr<IConnection> createConnection(const std::string& address, uint16_t port) const = 0;
+		virtual std::shared_ptr<IConnection> createConnection(const std::string& host, uint16_t port) const = 0;
 		virtual std::shared_ptr<IConnection> createConnection(std::unique_ptr<IConnectionBackend>&&) const = 0;
 		virtual std::shared_ptr<IServer> createServer(uint16_t port) const = 0;
 		virtual std::shared_ptr<IServer> createServer(std::unique_ptr<IServerBackend>&&) const = 0;

@@ -9,6 +9,7 @@
 #pragma once
 
 #include <mutex>
+#include <vector>
 #include "gg/network.hpp"
 
 namespace gg
@@ -16,7 +17,7 @@ namespace gg
 	class Packet : public IPacket
 	{
 	public:
-		static const size_t BUF_SIZE = 1024;
+		static const size_t BUF_SIZE = 2048;
 
 		Packet(Mode, Type);
 		virtual ~Packet();
@@ -70,6 +71,8 @@ namespace gg
 		virtual ~Connection();
 		virtual bool connect(void* user_data = nullptr);
 		virtual void disconnect();
+		virtual bool alive() const;
+		virtual const std::string& getAddress() const;
 		virtual std::shared_ptr<IPacket> getNextPacket(uint32_t timeoutMs = 0);
 		virtual std::shared_ptr<IPacket> createPacket(IPacket::Type) const;
 		virtual bool send(std::shared_ptr<IPacket>);
@@ -91,6 +94,17 @@ namespace gg
 		std::unique_ptr<IConnectionBackend> m_backend;
 	};
 
+	class ConnectionException : public IConnectionException
+	{
+	public:
+		ConnectionException(const char* what);
+		virtual ~ConnectionException();
+		virtual const char* what() const;
+
+	private:
+		const char* m_what;
+	};
+
 	class Server : public IServer
 	{
 	public:
@@ -98,10 +112,25 @@ namespace gg
 		virtual ~Server();
 		virtual bool start(void* user_data = nullptr);
 		virtual void stop();
+		virtual bool alive() const;
 		virtual std::shared_ptr<IConnection> getNextConnection(uint32_t timeoutMs = 0);
+		virtual void closeConnections();
 
 	private:
+		mutable std::recursive_mutex m_mutex;
 		std::unique_ptr<IServerBackend> m_backend;
+		std::vector<std::weak_ptr<IConnection>> m_clients;
+	};
+
+	class ServerException : public IServerException
+	{
+	public:
+		ServerException(const char* what);
+		virtual ~ServerException();
+		virtual const char* what() const;
+
+	private:
+		const char* m_what;
 	};
 
 
@@ -111,7 +140,7 @@ namespace gg
 		NetworkManager();
 		virtual ~NetworkManager();
 		virtual std::shared_ptr<IPacket> createPacket(IPacket::Type) const;
-		virtual std::shared_ptr<IConnection> createConnection(const std::string& address, uint16_t port) const;
+		virtual std::shared_ptr<IConnection> createConnection(const std::string& host, uint16_t port) const;
 		virtual std::shared_ptr<IConnection> createConnection(std::unique_ptr<IConnectionBackend>&&) const;
 		virtual std::shared_ptr<IServer> createServer(uint16_t port) const;
 		virtual std::shared_ptr<IServer> createServer(std::unique_ptr<IServerBackend>&&) const;

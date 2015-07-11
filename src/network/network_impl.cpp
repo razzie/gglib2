@@ -345,12 +345,26 @@ gg::Connection::~Connection()
 
 bool gg::Connection::connect(void* user_data)
 {
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 	return m_backend->connect(user_data);
 }
 
 void gg::Connection::disconnect()
 {
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 	m_backend->disconnect();
+}
+
+bool gg::Connection::alive() const
+{
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
+	return m_backend->alive();
+}
+
+const std::string& gg::Connection::getAddress() const
+{
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
+	return m_backend->getAddress();
 }
 
 std::shared_ptr<gg::IPacket> gg::Connection::getNextPacket(uint32_t timeoutMs)
@@ -406,6 +420,21 @@ bool gg::Connection::send(std::shared_ptr<gg::IPacket> packet)
 }
 
 
+gg::ConnectionException::ConnectionException(const char* what) :
+	m_what(what)
+{
+}
+
+gg::ConnectionException::~ConnectionException()
+{
+}
+
+const char* gg::ConnectionException::what() const
+{
+	return m_what;
+}
+
+
 gg::Server::Server(std::unique_ptr<gg::IServerBackend>&& backend) :
 	m_backend(std::move(backend))
 {
@@ -413,25 +442,98 @@ gg::Server::Server(std::unique_ptr<gg::IServerBackend>&& backend) :
 
 gg::Server::~Server()
 {
+	stop();
 }
 
 bool gg::Server::start(void* user_data)
 {
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 	return m_backend->start(user_data);
 }
 
 void gg::Server::stop()
 {
-	m_backend->stop();
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
+
+	try
+	{
+		m_backend->stop();
+	}
+	catch (IServerException&)
+	{
+		closeConnections();
+		throw;
+	}
+
+	closeConnections();
+}
+
+bool gg::Server::alive() const
+{
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
+	return m_backend->alive();
 }
 
 std::shared_ptr<gg::IConnection> gg::Server::getNextConnection(uint32_t timeoutMs)
 {
-	auto client = m_backend->getNextConnection(timeoutMs);
-	if (client)
-		return std::shared_ptr<Connection>(new Connection(std::move(client)));
-	else
-		return {};
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
+
+	try
+	{
+		auto client_backend = m_backend->getNextConnection(timeoutMs);
+		if (client_backend)
+		{
+			std::shared_ptr<Connection> client(new Connection(std::move(client_backend)));
+			m_clients.push_back(client);
+			return client;
+		}
+		else
+		{
+			return {};
+		}
+	}
+	catch (IServerException&)
+	{
+		stop();
+		throw;
+	}
+}
+
+void gg::Server::closeConnections()
+{
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
+
+	for (auto& client : m_clients)
+	{
+		auto client_ptr = client.lock();
+		if (client_ptr)
+		{
+			try
+			{
+				client_ptr->disconnect();
+			}
+			catch (IConnectionException&)
+			{
+			}
+		}
+	}
+
+	m_clients.clear();
+}
+
+
+gg::ServerException::ServerException(const char* what) :
+	m_what(what)
+{
+}
+
+gg::ServerException::~ServerException()
+{
+}
+
+const char* gg::ServerException::what() const
+{
+	return m_what;
 }
 
 
@@ -455,9 +557,9 @@ std::shared_ptr<gg::IPacket> gg::NetworkManager::createPacket(gg::IPacket::Type 
 	return std::shared_ptr<IPacket>( new Packet(IPacket::Mode::WRITE, type) );
 }
 
-std::shared_ptr<gg::IConnection> gg::NetworkManager::createConnection(const std::string& address, uint16_t port) const
+std::shared_ptr<gg::IConnection> gg::NetworkManager::createConnection(const std::string& host, uint16_t port) const
 {
-	std::unique_ptr<gg::IConnectionBackend> backend(new ConnectionBackend(address, port));
+	std::unique_ptr<gg::IConnectionBackend> backend(new ConnectionBackend(host, port));
 	return std::shared_ptr<IConnection>( new Connection(std::move(backend)) );
 }
 
