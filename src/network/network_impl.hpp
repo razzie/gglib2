@@ -26,6 +26,7 @@ namespace gg
 		char* data(); // for internal use
 		virtual const char* data() const;
 		virtual size_t length() const;
+		size_t& length();
 
 		virtual Packet& operator& (int8_t&);
 		virtual Packet& operator& (int16_t&);

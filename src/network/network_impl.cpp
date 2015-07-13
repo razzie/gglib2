@@ -68,6 +68,11 @@ size_t gg::Packet::length() const
 	return m_data_len;
 }
 
+size_t& gg::Packet::length()
+{
+	return m_data_len;
+}
+
 gg::Packet& gg::Packet::operator&(int8_t& i)
 {
 	if (m_mode == Mode::WRITE)
@@ -387,6 +392,7 @@ std::shared_ptr<gg::IPacket> gg::Connection::getNextPacket(uint32_t timeoutMs)
 
 	std::shared_ptr<Packet> packet(new Packet(IPacket::Mode::READ, head.packet_type));
 	m_backend->read(packet->data(), head.packet_size);
+	packet->length() = head.packet_size;
 
 	PacketTail tail;
 	m_backend->read(reinterpret_cast<char*>(&tail), sizeof(PacketTail));

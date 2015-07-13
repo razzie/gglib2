@@ -51,28 +51,38 @@ void serverThread()
 
 	std::vector<std::shared_ptr<gg::IConnection>> connections;
 
-	bool quit = false;
-	while (server->alive() && !quit)
+	try
 	{
-		//std::cout << "check.." << std::endl;
-
-		auto newConn = server->getNextConnection(10);
-		if (newConn)
-			connections.push_back(newConn);
-
-		for (auto& conn : connections)
+		bool quit = false;
+		while (server->alive() && !quit)
 		{
-			auto packet = conn->getNextPacket(10);
-			if (packet && packet->type() == 1)
+			auto newConn = server->getNextConnection(10);
+			if (newConn)
 			{
-				Foo foo;
-				packet & foo;
-				std::cout << foo << std::endl;
+				std::cout << "connection: " << newConn->getAddress() << std::endl;
+				connections.push_back(newConn);
+			}
 
-				if (foo.a == 1)
-					quit = true;
+			for (auto& conn : connections)
+			{
+				auto packet = conn->getNextPacket(10);
+				if (packet && packet->type() == 1)
+				{
+					std::cout << "packet: length=" << packet->length() << ", type=" << packet->type() << std::endl;
+
+					Foo foo;
+					packet & foo;
+					std::cout << foo << std::endl;
+
+					if (foo.a == 1)
+						quit = true;
+				}
 			}
 		}
+	}
+	catch (std::exception& e)
+	{
+		std::cout << "exception: " << e.what() << std::endl;
 	}
 
 	std::cout << "server thread exit" << std::endl;
@@ -85,7 +95,7 @@ int main()
 
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-	auto connection = gg::net.createConnection("::1", 12345);
+	auto connection = gg::net.createConnection("localhost", 12345);
 	if (!connection->connect())
 	{
 		std::cout << "Can't connect" << std::endl;
@@ -98,10 +108,8 @@ int main()
 	packet & foo;
 	connection->send(packet);
 
-	std::this_thread::sleep_for(std::chrono::milliseconds(100000));
+	std::this_thread::sleep_for(std::chrono::milliseconds(10000));
 	server.join();
-
-	//serverThread();
 
 	return 0;
 }

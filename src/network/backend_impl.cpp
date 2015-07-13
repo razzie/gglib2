@@ -77,7 +77,7 @@ bool gg::ConnectionBackend::connect(void*)
 	hints.ai_protocol = m_tcp ? IPPROTO_TCP : IPPROTO_UDP;
 	hints.ai_flags = AI_PASSIVE;
 
-	// Resolve the local address and port to be used by the server
+	// resolve the local address and port to be used by the server
 	if (getaddrinfo(m_host.c_str(), port.c_str(), &hints, &result) != 0)
 	{
 		return false;
@@ -85,10 +85,9 @@ bool gg::ConnectionBackend::connect(void*)
 
 	m_socket = INVALID_SOCKET;
 
-	// Attempt to connect to the first address returned by the call to getaddrinfo
+	// attempt to connect to the first possible address in the list returned by getaddrinfo
 	for (ptr = result; ptr != NULL; ptr = ptr->ai_next)
 	{
-		// Create a SOCKET for connecting to server
 		m_socket = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
 		if (m_socket == INVALID_SOCKET)
 		{
@@ -97,7 +96,6 @@ bool gg::ConnectionBackend::connect(void*)
 
 		if (m_tcp)
 		{
-			// Connect to server.
 			if (::connect(m_socket, ptr->ai_addr, (int)ptr->ai_addrlen) == SOCKET_ERROR)
 			{
 				closesocket(m_socket);
@@ -532,7 +530,7 @@ bool gg::ServerBackend::start(void*)
 	hints.ai_protocol = m_tcp ? IPPROTO_TCP : IPPROTO_UDP;
 	hints.ai_flags = AI_PASSIVE;
 
-	// Resolve the local address and port to be used by the server
+	// resolve the local address and port to be used by the server
 	if (getaddrinfo(NULL, port.c_str(), &hints, &result) != 0)
 	{
 		return false;
@@ -540,7 +538,7 @@ bool gg::ServerBackend::start(void*)
 
 	m_socket = INVALID_SOCKET;
 
-	// Attempt to connect to the first address returned by the call to getaddrinfo
+	// attempt to connect to the first possible address in the list returned by getaddrinfo
 	for (ptr = result; ptr != NULL; ptr = ptr->ai_next)
 	{
 		m_socket = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
@@ -549,12 +547,9 @@ bool gg::ServerBackend::start(void*)
 			continue;
 		}
 
-		if (setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, (const char*)ptr->ai_addr, (int)ptr->ai_addrlen) == SOCKET_ERROR)
-		{
-			closesocket(m_socket);
-			m_socket = INVALID_SOCKET;
-			continue;
-		}
+		int no = 0;
+		setsockopt(m_socket, IPPROTO_IPV6, IPV6_V6ONLY, (const char*)&no, sizeof(no));
+		setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, (const char*)ptr->ai_addr, (int)ptr->ai_addrlen);
 
 		if (bind(m_socket, ptr->ai_addr, (int)ptr->ai_addrlen) == SOCKET_ERROR)
 		{
