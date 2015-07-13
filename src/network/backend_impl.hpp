@@ -94,7 +94,7 @@ namespace gg
 		virtual bool start(void* user_data = nullptr);
 		virtual void stop();
 		virtual bool alive() const;
-		virtual std::unique_ptr<IConnectionBackend>&& getNextConnection(uint32_t timeoutMs = 0);
+		virtual std::unique_ptr<IConnectionBackend> getNextConnection(uint32_t timeoutMs = 0);
 
 	private:
 		SOCKET m_socket;

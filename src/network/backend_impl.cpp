@@ -15,9 +15,9 @@ static uint16_t getPortFromSockaddr(SOCKADDR_STORAGE* sockaddr)
 	switch (sockaddr->ss_family)
 	{
 	case AF_INET:
-		return reinterpret_cast<SOCKADDR_IN*>(sockaddr)->sin_port;
+		return ntohs(reinterpret_cast<SOCKADDR_IN*>(sockaddr)->sin_port);
 	case AF_INET6:
-		return reinterpret_cast<SOCKADDR_IN6*>(sockaddr)->sin6_port;
+		return ntohs(reinterpret_cast<SOCKADDR_IN6*>(sockaddr)->sin6_port);
 	default:
 		return 0;
 	}
@@ -78,7 +78,7 @@ bool gg::ConnectionBackend::connect(void*)
 	hints.ai_flags = AI_PASSIVE;
 
 	// Resolve the local address and port to be used by the server
-	if (getaddrinfo(NULL, port.c_str(), &hints, &result) != 0)
+	if (getaddrinfo(m_host.c_str(), port.c_str(), &hints, &result) != 0)
 	{
 		return false;
 	}
@@ -114,6 +114,9 @@ bool gg::ConnectionBackend::connect(void*)
 				continue;
 			}
 		}
+
+		// everything is OK if we get here
+		break;
 	}
 
 	freeaddrinfo(result);
@@ -131,8 +134,9 @@ void gg::ConnectionBackend::disconnect()
 {
 	if (m_connected)
 	{
-		m_socket = INVALID_SOCKET;
 		closesocket(m_socket);
+		m_socket = INVALID_SOCKET;
+		m_connected = false;
 	}
 }
 
@@ -276,6 +280,7 @@ gg::ClientBackendTCP::ClientBackendTCP(SOCKET socket, SOCKADDR_STORAGE& sockaddr
 	m_sockaddr(sockaddr),
 	m_connected(true)
 {
+	m_address = getHostFromSockaddr(&sockaddr) + ":" + std::to_string(getPortFromSockaddr(&sockaddr));
 }
 
 gg::ClientBackendTCP::~ClientBackendTCP()
@@ -292,8 +297,9 @@ void gg::ClientBackendTCP::disconnect()
 {
 	if (m_connected)
 	{
-		m_connected = false;
 		closesocket(m_socket);
+		m_socket = INVALID_SOCKET;
+		m_connected = false;
 	}
 }
 
@@ -500,6 +506,7 @@ size_t gg::ClientBackendUDP::write(const char* ptr, size_t len)
 
 gg::ServerBackend::ServerBackend(uint16_t port, bool tcp) :
 	m_socket(INVALID_SOCKET),
+	m_port(port),
 	m_tcp(tcp),
 	m_started(false)
 {
@@ -542,6 +549,13 @@ bool gg::ServerBackend::start(void*)
 			continue;
 		}
 
+		if (setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, (const char*)ptr->ai_addr, (int)ptr->ai_addrlen) == SOCKET_ERROR)
+		{
+			closesocket(m_socket);
+			m_socket = INVALID_SOCKET;
+			continue;
+		}
+
 		if (bind(m_socket, ptr->ai_addr, (int)ptr->ai_addrlen) == SOCKET_ERROR)
 		{
 			closesocket(m_socket);
@@ -555,6 +569,9 @@ bool gg::ServerBackend::start(void*)
 			m_socket = INVALID_SOCKET;
 			continue;
 		}
+
+		// everything is OK if we get here
+		break;
 	}
 
 	freeaddrinfo(result);
@@ -580,12 +597,12 @@ bool gg::ServerBackend::alive() const
 	return m_started;
 }
 
-std::unique_ptr<gg::IConnectionBackend>&& gg::ServerBackend::getNextConnection(uint32_t timeoutMs)
+std::unique_ptr<gg::IConnectionBackend> gg::ServerBackend::getNextConnection(uint32_t timeoutMs)
 {
 	std::unique_ptr<IConnectionBackend> client;
 
 	if (!m_started)
-		return std::move(client);
+		return {};
 
 	SOCKADDR_STORAGE addr;
 	int addrlen = sizeof(SOCKADDR_STORAGE);
@@ -602,7 +619,6 @@ std::unique_ptr<gg::IConnectionBackend>&& gg::ServerBackend::getNextConnection(u
 	if (rc == SOCKET_ERROR)
 	{
 		stop();
-		return std::move(client);
 	}
 	else if (rc > 0)
 	{
@@ -612,7 +628,7 @@ std::unique_ptr<gg::IConnectionBackend>&& gg::ServerBackend::getNextConnection(u
 			if (sock == INVALID_SOCKET)
 			{
 				stop();
-				return std::move(client);
+				return {};
 			}
 
 			client.reset(new ClientBackendTCP(sock, addr));

@@ -67,8 +67,17 @@ namespace gg
 		IPacket& operator& (T& t)
 		{
 			serialize(*this, t);
+			return *this;
 		}
 	};
+
+	template<class T>
+	IPacket& operator& (std::shared_ptr<IPacket> packet_ptr, T& t)
+	{
+		IPacket& packet = *packet_ptr.get();
+		packet & t;
+		return packet;
+	}
 
 	class IPacketException : public std::exception
 	{
@@ -151,7 +160,7 @@ namespace gg
 		virtual bool start(void* user_data = nullptr) = 0;
 		virtual void stop() = 0;
 		virtual bool alive() const = 0;
-		virtual std::unique_ptr<IConnectionBackend>&& getNextConnection(uint32_t timeoutMs = 0) = 0; // 0: non-blocking
+		virtual std::unique_ptr<IConnectionBackend> getNextConnection(uint32_t timeoutMs = 0) = 0; // 0: non-blocking
 	};
 
 	class IServer
