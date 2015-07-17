@@ -14,18 +14,18 @@
 
 #pragma once
 
-#if defined GGNETWORK_BUILD
-#	define GG_API __declspec(dllexport)
-#else
-#	define GG_API __declspec(dllimport)
-#endif
-
 #include <cstdint>
 #include <exception>
 #include <memory>
 #include <string>
 #include <typeinfo>
 #include "gg/storage.hpp"
+
+#if defined GGNETWORK_BUILD
+#	define GG_API __declspec(dllexport)
+#else
+#	define GG_API __declspec(dllimport)
+#endif
 
 namespace gg
 {

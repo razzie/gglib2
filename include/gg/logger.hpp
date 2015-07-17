@@ -14,15 +14,15 @@
 
 #pragma once
 
+#include <iostream>
+#include <memory>
+#include "gg/streamutil.hpp"
+
 #if defined GGLOGGER_BUILD
 #	define GG_API __declspec(dllexport)
 #else
 #	define GG_API __declspec(dllimport)
 #endif
-
-#include <iostream>
-#include <memory>
-#include "gg/streamutil.hpp"
 
 namespace gg
 {

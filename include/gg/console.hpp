@@ -8,17 +8,17 @@
 
 #pragma once
 
-#if defined GGCONSOLE_BUILD
-#	define GG_API __declspec(dllexport)
-#else
-#	define GG_API __declspec(dllimport)
-#endif
-
 #include <iostream>
 #include <string>
 #include <type_traits>
 #include "gg/any.hpp"
 #include "gg/function.hpp"
+
+#if defined GGCONSOLE_BUILD
+#	define GG_API __declspec(dllexport)
+#else
+#	define GG_API __declspec(dllimport)
+#endif
 
 namespace gg
 {

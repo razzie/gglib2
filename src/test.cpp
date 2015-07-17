@@ -9,6 +9,7 @@
 #include "gg/any.hpp"
 #include "gg/console.hpp"
 #include "gg/fastmutex.hpp"
+#include "gg/framework.hpp"
 #include "gg/function.hpp"
 #include "gg/logger.hpp"
 #include "gg/network.hpp"

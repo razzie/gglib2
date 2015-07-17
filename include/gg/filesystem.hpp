@@ -29,15 +29,15 @@
 
 #pragma once
 
+#include <memory>
+#include <string>
+#include <vector>
+
 #if defined GGFILESYSTEM_BUILD
 #	define GG_API __declspec(dllexport)
 #else
 #	define GG_API __declspec(dllimport)
 #endif
-
-#include <memory>
-#include <string>
-#include <vector>
 
 namespace gg
 {
