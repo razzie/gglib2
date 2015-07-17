@@ -110,6 +110,7 @@
     <ClInclude Include="include\gg\logger.hpp" />
     <ClInclude Include="include\gg\network.hpp" />
     <ClInclude Include="include\gg\optional.hpp" />
+    <ClInclude Include="include\gg\rwmutex.hpp" />
     <ClInclude Include="include\gg\storage.hpp" />
     <ClInclude Include="include\gg\streamutil.hpp" />
     <ClInclude Include="include\gg\timer.hpp" />
