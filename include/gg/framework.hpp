@@ -35,6 +35,25 @@ namespace gg
 		{
 			return args()->get<T>(n);
 		}
+
+		template<class... Args>
+		static std::shared_ptr<IEvent> getNextFromConnection(std::shared_ptr<IConnection> conn, uint32_t timeoutMs = 0)
+		{
+			auto packet = conn->getNextPacket(timeoutMs);
+			if (!packet)
+				return {};
+
+			std::shared_ptr<IEvent> event(new Event<Args...>(packet->type()));
+			packet & event;
+			return event;
+		}
+
+		bool sendToConnection(std::shared_ptr<IConnection> conn)
+		{
+			auto packet = conn->createPacket(type());
+			serialize(*packet);
+			return conn->send(packet);
+		}
 	};
 
 	template<class... Args>
@@ -58,20 +77,7 @@ namespace gg
 
 		static std::shared_ptr<IEvent> getNextFromConnection(std::shared_ptr<IConnection> conn, uint32_t timeoutMs = 0)
 		{
-			auto packet = conn->getNextPacket(timeoutMs);
-			if (!packet)
-				return {};
-
-			std::shared_ptr<IEvent> event( new Event<Args...>(static_cast<Type>(packet->type())) );
-			packet & event;
-			return event;
-		}
-
-		bool sendToConnection(std::shared_ptr<IConnection> conn)
-		{
-			auto packet = conn->createPacket(static_cast<IPacket::Type>(m_type));
-			packet & *this;
-			return conn->send(packet);
+			return IEvent::getNextFromConnection<Args...>(conn, timeoutMs);
 		}
 
 	private:

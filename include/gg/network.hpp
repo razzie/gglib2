@@ -74,7 +74,7 @@ namespace gg
 	template<class T>
 	IPacket& operator& (std::shared_ptr<IPacket> packet_ptr, T& t)
 	{
-		IPacket& packet = *packet_ptr.get();
+		IPacket& packet = *packet_ptr;
 		packet & t;
 		return packet;
 	}
