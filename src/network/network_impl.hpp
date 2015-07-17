@@ -53,15 +53,12 @@ namespace gg
 		size_t read(char* ptr, size_t len);
 	};
 
-	class PacketException : public IPacketException
+	class SerializationError : public ISerializationError
 	{
 	public:
-		PacketException(const char* what);
-		virtual ~PacketException();
+		SerializationError() = default;
+		virtual ~SerializationError() = default;
 		virtual const char* what() const;
-
-	private:
-		const char* m_what;
 	};
 
 
@@ -95,17 +92,6 @@ namespace gg
 		std::unique_ptr<IConnectionBackend> m_backend;
 	};
 
-	class ConnectionException : public IConnectionException
-	{
-	public:
-		ConnectionException(const char* what);
-		virtual ~ConnectionException();
-		virtual const char* what() const;
-
-	private:
-		const char* m_what;
-	};
-
 	class Server : public IServer
 	{
 	public:
@@ -123,11 +109,11 @@ namespace gg
 		std::vector<std::weak_ptr<IConnection>> m_clients;
 	};
 
-	class ServerException : public IServerException
+	class NetworkException : public INetworkException
 	{
 	public:
-		ServerException(const char* what);
-		virtual ~ServerException();
+		NetworkException(const char* what);
+		virtual ~NetworkException();
 		virtual const char* what() const;
 
 	private:

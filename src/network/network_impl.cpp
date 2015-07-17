@@ -13,8 +13,6 @@
 #include "backend_impl.hpp"
 #include "ieee754.hpp"
 
-#define SERIALIZATION_ERROR "Serialization error"
-
 static gg::NetworkManager s_netmgr;
 gg::INetworkManager& gg::net = s_netmgr;
 
@@ -78,13 +76,13 @@ gg::Packet& gg::Packet::operator&(int8_t& i)
 	if (m_mode == Mode::WRITE)
 	{
 		if (write(reinterpret_cast<const char*>(&i), sizeof(int8_t)) < sizeof(int8_t))
-			throw std::runtime_error(SERIALIZATION_ERROR);
+			throw SerializationError();
 	}
 	else
 	{
 		int8_t tmp;
 		if (read(reinterpret_cast<char*>(&tmp), sizeof(int8_t)) < sizeof(int8_t))
-			throw std::runtime_error(SERIALIZATION_ERROR);
+			throw SerializationError();
 		i = tmp;
 	}
 
@@ -96,13 +94,13 @@ gg::Packet& gg::Packet::operator&(int16_t& i)
 	if (m_mode == Mode::WRITE)
 	{
 		if (write(reinterpret_cast<const char*>(&i), sizeof(int16_t)) < sizeof(int16_t))
-			throw std::runtime_error(SERIALIZATION_ERROR);
+			throw SerializationError();
 	}
 	else
 	{
 		int16_t tmp;
 		if (read(reinterpret_cast<char*>(&tmp), sizeof(int16_t)) < sizeof(int16_t))
-			throw std::runtime_error(SERIALIZATION_ERROR);
+			throw SerializationError();
 		i = tmp;
 	}
 
@@ -114,13 +112,13 @@ gg::Packet& gg::Packet::operator&(int32_t& i)
 	if (m_mode == Mode::WRITE)
 	{
 		if (write(reinterpret_cast<const char*>(&i), sizeof(int32_t)) < sizeof(int32_t))
-			throw std::runtime_error(SERIALIZATION_ERROR);
+			throw SerializationError();
 	}
 	else
 	{
 		int32_t tmp;
 		if (read(reinterpret_cast<char*>(&tmp), sizeof(int32_t)) < sizeof(int32_t))
-			throw std::runtime_error(SERIALIZATION_ERROR);
+			throw SerializationError();
 		i = tmp;
 	}
 
@@ -132,13 +130,13 @@ gg::Packet& gg::Packet::operator&(int64_t& i)
 	if (m_mode == Mode::WRITE)
 	{
 		if (write(reinterpret_cast<const char*>(&i), sizeof(int64_t)) < sizeof(int64_t))
-			throw std::runtime_error(SERIALIZATION_ERROR);
+			throw SerializationError();
 	}
 	else
 	{
 		int64_t tmp;
 		if (read(reinterpret_cast<char*>(&tmp), sizeof(int64_t)) < sizeof(int64_t))
-			throw std::runtime_error(SERIALIZATION_ERROR);
+			throw SerializationError();
 		i = tmp;
 	}
 
@@ -150,13 +148,13 @@ gg::Packet& gg::Packet::operator&(uint8_t& u)
 	if (m_mode == Mode::WRITE)
 	{
 		if (write(reinterpret_cast<const char*>(&u), sizeof(uint8_t)) < sizeof(uint8_t))
-			throw std::runtime_error(SERIALIZATION_ERROR);
+			throw SerializationError();
 	}
 	else
 	{
 		int8_t tmp;
 		if (read(reinterpret_cast<char*>(&tmp), sizeof(uint8_t)) < sizeof(uint8_t))
-			throw std::runtime_error(SERIALIZATION_ERROR);
+			throw SerializationError();
 		u = tmp;
 	}
 
@@ -168,13 +166,13 @@ gg::Packet& gg::Packet::operator&(uint16_t& u)
 	if (m_mode == Mode::WRITE)
 	{
 		if (write(reinterpret_cast<const char*>(&u), sizeof(uint16_t)) < sizeof(uint16_t))
-			throw std::runtime_error(SERIALIZATION_ERROR);
+			throw SerializationError();
 	}
 	else
 	{
 		int16_t tmp;
 		if (read(reinterpret_cast<char*>(&tmp), sizeof(uint16_t)) < sizeof(uint16_t))
-			throw std::runtime_error(SERIALIZATION_ERROR);
+			throw SerializationError();
 		u = tmp;
 	}
 
@@ -186,13 +184,13 @@ gg::Packet& gg::Packet::operator&(uint32_t& u)
 	if (m_mode == Mode::WRITE)
 	{
 		if (write(reinterpret_cast<const char*>(&u), sizeof(uint32_t)) < sizeof(uint32_t))
-			throw std::runtime_error(SERIALIZATION_ERROR);
+			throw SerializationError();
 	}
 	else
 	{
 		int32_t tmp;
 		if (read(reinterpret_cast<char*>(&tmp), sizeof(uint32_t)) < sizeof(uint32_t))
-			throw std::runtime_error(SERIALIZATION_ERROR);
+			throw SerializationError();
 		u = tmp;
 	}
 
@@ -204,13 +202,13 @@ gg::Packet& gg::Packet::operator&(uint64_t& u)
 	if (m_mode == Mode::WRITE)
 	{
 		if (write(reinterpret_cast<const char*>(&u), sizeof(uint64_t)) < sizeof(uint64_t))
-			throw std::runtime_error(SERIALIZATION_ERROR);
+			throw SerializationError();
 	}
 	else
 	{
 		int64_t tmp;
 		if (read(reinterpret_cast<char*>(&tmp), sizeof(uint64_t)) < sizeof(uint64_t))
-			throw std::runtime_error(SERIALIZATION_ERROR);
+			throw SerializationError();
 		u = tmp;
 	}
 
@@ -258,7 +256,7 @@ gg::Packet& gg::Packet::operator&(std::string& str)
 		uint16_t len = static_cast<uint16_t>(str.length());
 		*this & len;
 		if (write(str.c_str(), len) < len)
-			throw std::runtime_error(SERIALIZATION_ERROR);
+			throw SerializationError();
 	}
 	else
 	{
@@ -266,7 +264,7 @@ gg::Packet& gg::Packet::operator&(std::string& str)
 		*this & len;
 		str.resize(len + 1);
 		if (read(&str[0], len) < len)
-			throw std::runtime_error(SERIALIZATION_ERROR);
+			throw SerializationError();
 	}
 
 	return *this;
@@ -279,14 +277,14 @@ gg::Packet& gg::Packet::operator&(gg::IBlob& blob)
 		uint16_t len = static_cast<uint16_t>(blob.length());
 		*this & len;
 		if (write(blob.data(), len) < len)
-			throw std::runtime_error(SERIALIZATION_ERROR);
+			throw SerializationError();
 	}
 	else
 	{
 		uint16_t len;
 		*this & len;
 		if (blob.length() != len || read(blob.data(), len) < len)
-			throw std::runtime_error(SERIALIZATION_ERROR);
+			throw SerializationError();
 	}
 
 	return *this;
@@ -323,18 +321,9 @@ size_t gg::Packet::read(char* ptr, size_t len)
 }
 
 
-gg::PacketException::PacketException(const char* what) :
-	m_what(what)
+const char* gg::SerializationError::what() const
 {
-}
-
-gg::PacketException::~PacketException()
-{
-}
-
-const char* gg::PacketException::what() const
-{
-	return m_what;
+	return "Serialization error";
 }
 
 
@@ -381,7 +370,7 @@ std::shared_ptr<gg::IPacket> gg::Connection::getNextPacket(uint32_t timeoutMs)
 		return {};
 
 	if (head.packet_size > Packet::BUF_SIZE)
-		throw PacketException("Too large packet");
+		throw NetworkException("Too large packet");
 
 	size_t expected_size = sizeof(PacketHeader) + head.packet_size + sizeof(PacketTail);
 	if (m_backend->waitForData(expected_size, timeoutMs) < expected_size)
@@ -397,7 +386,7 @@ std::shared_ptr<gg::IPacket> gg::Connection::getNextPacket(uint32_t timeoutMs)
 	PacketTail tail;
 	m_backend->read(reinterpret_cast<char*>(&tail), sizeof(PacketTail));
 	if (!tail.ok())
-		throw PacketException("Corrupted packet");
+		throw NetworkException("Corrupted packet");
 
 	return packet;
 }
@@ -426,21 +415,6 @@ bool gg::Connection::send(std::shared_ptr<gg::IPacket> packet)
 }
 
 
-gg::ConnectionException::ConnectionException(const char* what) :
-	m_what(what)
-{
-}
-
-gg::ConnectionException::~ConnectionException()
-{
-}
-
-const char* gg::ConnectionException::what() const
-{
-	return m_what;
-}
-
-
 gg::Server::Server(std::unique_ptr<gg::IServerBackend>&& backend) :
 	m_backend(std::move(backend))
 {
@@ -465,7 +439,7 @@ void gg::Server::stop()
 	{
 		m_backend->stop();
 	}
-	catch (IServerException&)
+	catch (INetworkException&)
 	{
 		closeConnections();
 		throw;
@@ -498,7 +472,7 @@ std::shared_ptr<gg::IConnection> gg::Server::getNextConnection(uint32_t timeoutM
 			return {};
 		}
 	}
-	catch (IServerException&)
+	catch (INetworkException&)
 	{
 		stop();
 		throw;
@@ -518,7 +492,7 @@ void gg::Server::closeConnections()
 			{
 				client_ptr->disconnect();
 			}
-			catch (IConnectionException&)
+			catch (INetworkException&)
 			{
 			}
 		}
@@ -528,16 +502,16 @@ void gg::Server::closeConnections()
 }
 
 
-gg::ServerException::ServerException(const char* what) :
+gg::NetworkException::NetworkException(const char* what) :
 	m_what(what)
 {
 }
 
-gg::ServerException::~ServerException()
+gg::NetworkException::~NetworkException()
 {
 }
 
-const char* gg::ServerException::what() const
+const char* gg::NetworkException::what() const
 {
 	return m_what;
 }

@@ -66,16 +66,19 @@ void serverThread()
 			for (auto& conn : connections)
 			{
 				auto packet = conn->getNextPacket(10);
-				if (packet && packet->type() == 1)
+				if (packet)
 				{
 					std::cout << "packet: length=" << packet->length() << ", type=" << packet->type() << std::endl;
 
-					Foo foo;
-					packet & foo;
-					std::cout << foo << std::endl;
+					if (packet->type() == 1)
+					{
+						Foo foo;
+						packet & foo;
+						std::cout << foo << std::endl;
 
-					if (foo.a == 1)
-						quit = true;
+						if (foo.a == 1)
+							quit = true;
+					}
 				}
 			}
 		}

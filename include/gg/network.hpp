@@ -79,42 +79,11 @@ namespace gg
 		return packet;
 	}
 
-	class IPacketException : public std::exception
+	class ISerializationError : public std::exception
 	{
 	public:
-		virtual ~IPacketException() = default;
+		virtual ~ISerializationError() = default;
 		virtual const char* what() const = 0;
-	};
-
-
-	class IBlob
-	{
-	public:
-		virtual ~IBlob() = default;
-		virtual char* data() = 0;
-		virtual const char* data() const = 0;
-		virtual size_t length() const = 0;
-	};
-
-	template<size_t SIZE>
-	class Blob : public IBlob
-	{
-	public:
-		Blob() = default;
-		virtual ~Blob() = default;
-		virtual char* data() { return m_data; }
-		virtual const char* data() const { return m_data; }
-		virtual size_t length() const { return SIZE; }
-
-	private:
-		char m_data[SIZE];
-	};
-
-	class ISerializable
-	{
-	public:
-		virtual ~ISerializable() = default;
-		virtual void serialize(IPacket&) = 0;
 	};
 
 
@@ -146,13 +115,6 @@ namespace gg
 		virtual bool send(std::shared_ptr<IPacket>) = 0;
 	};
 
-	class IConnectionException : public std::exception
-	{
-	public:
-		virtual ~IConnectionException() = default;
-		virtual const char* what() const = 0;
-	};
-
 	class IServerBackend // adaption to external APIs like Steam
 	{
 	public:
@@ -174,10 +136,10 @@ namespace gg
 		virtual void closeConnections() = 0;
 	};
 
-	class IServerException : public std::exception
+	class INetworkException : public std::exception
 	{
 	public:
-		virtual ~IServerException() = default;
+		virtual ~INetworkException() = default;
 		virtual const char* what() const = 0;
 	};
 
@@ -193,6 +155,37 @@ namespace gg
 	};
 
 	extern GG_API INetworkManager& net;
+
+
+	class ISerializable
+	{
+	public:
+		virtual ~ISerializable() = default;
+		virtual void serialize(IPacket&) = 0;
+	};
+
+	class IBlob
+	{
+	public:
+		virtual ~IBlob() = default;
+		virtual char* data() = 0;
+		virtual const char* data() const = 0;
+		virtual size_t length() const = 0;
+	};
+
+	template<size_t SIZE>
+	class Blob : public IBlob
+	{
+	public:
+		Blob() = default;
+		virtual ~Blob() = default;
+		virtual char* data() { return m_data; }
+		virtual const char* data() const { return m_data; }
+		virtual size_t length() const { return SIZE; }
+
+	private:
+		char m_data[SIZE];
+	};
 
 
 	namespace __SerializeStorage
