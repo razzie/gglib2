@@ -187,25 +187,26 @@ namespace gg
 		char m_data[SIZE];
 	};
 
-
-	namespace __SerializeStorage
+	template<class... Types>
+	class SerializableStorage : public Storage<Types...>, public ISerializable
 	{
+	public:
+		SerializableStorage() = default;
+		SerializableStorage(Types... values) : Storage(std::forward<Types>(values)...) {}
+		virtual ~SerializableStorage() = default;
+		virtual void serialize(IPacket& packet) { serialize<0, Types...>(packet, *this); }
+
+	private:
 		template<size_t N>
-		void serialize(IPacket& packet, IStorage& storage)
+		static void serialize(IPacket& packet, IStorage& storage)
 		{
 		}
 
 		template<size_t N, class Type0, class... Types>
-		void serialize(IPacket& packet, IStorage& storage)
+		static void serialize(IPacket& packet, IStorage& storage)
 		{
 			packet & storage.get<Type0>(N);
 			serialize<N + 1, Types...>(packet, storage);
 		}
-	}
-
-	template<class... Types>
-	void serialize(IPacket& packet, Storage<Types...>& storage)
-	{
-		__SerializeStorage::serialize<0, Types...>(packet, storage);
-	}
+	};
 };

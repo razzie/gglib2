@@ -8,7 +8,6 @@
 
 #include "gg/any.hpp"
 #include "gg/console.hpp"
-#include "gg/fastmutex.hpp"
 #include "gg/framework.hpp"
 #include "gg/function.hpp"
 #include "gg/logger.hpp"
@@ -43,11 +42,11 @@ void serverThread()
 	auto server = gg::net.createServer(12345);
 	if (server->start())
 	{
-		std::cout << "server started" << std::endl;
+		gg::log << "server started" << std::endl;
 	}
 	else
 	{
-		std::cout << "couldn't start server :(" << std::endl;
+		gg::log << "couldn't start server :(" << std::endl;
 		return;
 	}
 
@@ -61,7 +60,7 @@ void serverThread()
 			auto newConn = server->getNextConnection(10);
 			if (newConn)
 			{
-				std::cout << "connection: " << newConn->getAddress() << std::endl;
+				gg::log << "connection: " << newConn->getAddress() << std::endl;
 				connections.push_back(newConn);
 			}
 
@@ -70,13 +69,13 @@ void serverThread()
 				auto packet = conn->getNextPacket(10);
 				if (packet)
 				{
-					std::cout << "packet: length=" << packet->length() << ", type=" << packet->type() << std::endl;
+					gg::log << "packet: length=" << packet->length() << ", type=" << packet->type() << std::endl;
 
 					if (packet->type() == 1)
 					{
 						Foo foo;
 						packet & foo;
-						std::cout << foo << std::endl;
+						gg::log << foo << std::endl;
 
 						if (foo.a == 1)
 							quit = true;
@@ -87,10 +86,10 @@ void serverThread()
 	}
 	catch (std::exception& e)
 	{
-		std::cout << "exception: " << e.what() << std::endl;
+		gg::log << "exception: " << e.what() << std::endl;
 	}
 
-	std::cout << "server thread exit" << std::endl;
+	gg::log << "server thread exit" << std::endl;
 }
 
 
@@ -103,7 +102,7 @@ int main()
 	auto connection = gg::net.createConnection("localhost", 12345);
 	if (!connection->connect())
 	{
-		std::cout << "Can't connect" << std::endl;
+		gg::log << "Can't connect" << std::endl;
 	}
 
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));

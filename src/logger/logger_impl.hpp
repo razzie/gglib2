@@ -9,9 +9,9 @@
 #pragma once
 
 #include <map>
+#include <mutex>
 #include <thread>
 #include <string>
-#include "gg/fastmutex.hpp"
 #include "gg/timer.hpp"
 #include "gg/logger.hpp"
 
@@ -34,7 +34,7 @@ namespace gg
 		int sync();
 
 	private:
-		mutable FastMutex m_mutex;
+		mutable std::mutex m_mutex;
 		std::map<std::thread::id, std::string> m_buffer;
 		std::shared_ptr<std::ostream> m_output;
 		Timestamp m_timestamp;

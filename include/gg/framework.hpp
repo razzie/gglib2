@@ -12,6 +12,10 @@
 #include "gg/storage.hpp"
 #include "gg/network.hpp"
 
+#ifdef GG_API
+#	undef GG_API
+#endif
+
 #if defined GGFRAMEWORK_BUILD
 #	define GG_API __declspec(dllexport)
 #else
@@ -37,22 +41,18 @@ namespace gg
 		}
 
 		template<class... Args>
-		static std::shared_ptr<IEvent> getNextFromConnection(std::shared_ptr<IConnection> conn, uint32_t timeoutMs = 0)
+		static std::shared_ptr<IEvent> getFromPacket(std::shared_ptr<IPacket> packet)
 		{
-			auto packet = conn->getNextPacket(timeoutMs);
-			if (!packet)
-				return {};
-
 			std::shared_ptr<IEvent> event(new Event<Args...>(packet->type()));
 			packet & event;
 			return event;
 		}
 
-		bool sendToConnection(std::shared_ptr<IConnection> conn)
+		std::shared_ptr<IPacket> createPacket()
 		{
-			auto packet = conn->createPacket(type());
+			auto packet = net.createPacket(type());
 			serialize(*packet);
-			return conn->send(packet);
+			return packet;
 		}
 	};
 
@@ -75,44 +75,49 @@ namespace gg
 		virtual const IStorage& args() const { return m_args; }
 		virtual void serialize(IPacket& packet) { packet & m_args; }
 
-		static std::shared_ptr<IEvent> getNextFromConnection(std::shared_ptr<IConnection> conn, uint32_t timeoutMs = 0)
+		static std::shared_ptr<IEvent> getFromPacket(std::shared_ptr<IPacket> packet)
 		{
-			return IEvent::getNextFromConnection<Args...>(conn, timeoutMs);
+			return IEvent::getFromPacket<Args...>(packet);
 		}
 
 	private:
 		Type m_type;
-		Storage<Args...> m_args;
+		SerializableStorage<Args...> m_args;
 	};
 
 
 	class ITask;
 
-	class ITaskPool
+	class IThread
 	{
 	public:
-		class Setup
+		class Options
 		{
 		public:
-			virtual ~Setup() = default;
-			virtual void subscribeToEvent(IEvent::Type) = 0;
+			virtual ~Options() = default;
+			virtual void subscribe(IEvent::Type) = 0;
+			virtual void unsubscribe(IEvent::Type) = 0;
+			virtual void addTask(std::unique_ptr<ITask>&&) = 0;
 			virtual void addChild(std::unique_ptr<ITask>&&) = 0;
-		};
-
-		class Run
-		{
-		public:
-			virtual ~Run() = default;
 			virtual uint32_t getElapsedMs() const = 0;
+			virtual bool hasEvent() const = 0;
+			virtual std::shared_ptr<IEvent> getNextEvent() = 0;
+			virtual void sendEvent(std::shared_ptr<IEvent>) = 0;
 			virtual void finish() = 0;
 		};
 
-		virtual ~ITaskPool() = default;
+		enum Mode
+		{
+			LOCAL, // run in current thread (blocks)
+			REMOTE // creates remote thread
+		};
+
+		virtual ~IThread() = default;
+		virtual void sendEvent(std::shared_ptr<IEvent>) = 0;
 		virtual void addTask(std::unique_ptr<ITask>&&) = 0;
 		virtual void clearTasks() = 0;
-		virtual void startAsThread() = 0;
-		virtual void startLocally() = 0;
-		virtual void stop() = 0;
+		virtual void run(Mode = Mode::REMOTE) = 0;
+		virtual bool alive() const = 0;
 		virtual void join() = 0;
 	};
 
@@ -120,19 +125,36 @@ namespace gg
 	{
 	public:
 		virtual ~ITask() = default;
-
-	protected:
-		virtual void setup(ITaskPool::Setup&) = 0;
-		virtual void run(ITaskPool::Run&) = 0;
+		virtual void setup(IThread::Options&) {};
+		virtual void run(IThread::Options&) = 0;
 	};
+
+	template<class F>
+	std::unique_ptr<ITask> createTask(F func)
+	{
+		class FuncTask : public ITask
+		{
+		public:
+			FuncTask(F func) : m_func(func) {}
+			virtual ~FuncTask() = default;
+			virtual void run(IThread::Options& o) { m_func(o); }
+
+		private:
+			F m_func;
+		};
+
+		std::unique_ptr<ITask> task(new FuncTask(func));
+		return std::move(task);
+	}
 
 
 	class IFramework
 	{
 	public:
 		virtual ~IFramework() = default;
-		virtual std::shared_ptr<ITaskPool> createTaskPool() const = 0;
+		virtual std::shared_ptr<IThread> createThread(const std::string& name) const = 0;
+		virtual std::shared_ptr<IThread> getThread(const std::string& name) const = 0;
 	};
 
-	//extern GG_API IFramework& fw;
+	extern GG_API IFramework& fw;
 };
