@@ -240,12 +240,31 @@ namespace gg
 	public:
 		virtual ~IEventDefinition() = default;
 		virtual IEvent::Type type() const = 0;
-		virtual std::shared_ptr<IEvent> create() = 0;
-		virtual std::shared_ptr<IEvent> create(std::shared_ptr<IPacket>) = 0;
+		virtual std::shared_ptr<IEvent> create() const = 0;
+		virtual std::shared_ptr<IEvent> create(std::shared_ptr<IPacket>) const = 0;
 
-		bool operator< (const IEventDefinition& def)
+		class Wrapper
 		{
-			return type() < def.type();
+		public:
+			Wrapper(const IEventDefinition& def) : m_def(def) {}
+			Wrapper(const Wrapper& wr) : m_def(wr.m_def) {}
+			~Wrapper() = default;
+			IEvent::Type type() const { return m_def.type(); };
+			std::shared_ptr<IEvent> create() const { return m_def.create(); };
+			std::shared_ptr<IEvent> create(std::shared_ptr<IPacket> packet) const { return m_def.create(packet); };
+
+			bool operator< (const Wrapper& wr)
+			{
+				return m_def.type() < wr.m_def.type();
+			}
+
+		private:
+			const IEventDefinition& m_def;
+		};
+
+		operator Wrapper() const
+		{
+			return Wrapper(*this);
 		}
 	};
 
@@ -262,13 +281,13 @@ namespace gg
 			return EventType;
 		}
 
-		virtual std::shared_ptr<IEvent> create()
+		virtual std::shared_ptr<IEvent> create() const
 		{
 			std::shared_ptr<IEvent> event(new Event());
 			return event;
 		}
 
-		virtual std::shared_ptr<IEvent> create(std::shared_ptr<IPacket> packet)
+		virtual std::shared_ptr<IEvent> create(std::shared_ptr<IPacket> packet) const
 		{
 			if (packet->type() != EventType)
 				return{};
@@ -278,7 +297,7 @@ namespace gg
 			return event;
 		}
 
-		std::shared_ptr<IEvent> create(Params... params)
+		std::shared_ptr<IEvent> create(Params... params) const
 		{
 			std::shared_ptr<IEvent> event(new Event(std::forward<Params>(params)...));
 			return event;
