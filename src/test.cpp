@@ -37,6 +37,8 @@ std::ostream& operator<< (std::ostream& o, const Foo& foo)
 	return o;
 }
 
+gg::EventDefinition<1, Foo> foo_event;
+
 void serverThread()
 {
 	auto server = gg::net.createServer(12345);
@@ -107,10 +109,13 @@ int main()
 
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-	Foo foo = { 1, 2, 3 };
+	/*Foo foo = { 1, 2, 3 };
 	auto packet = connection->createPacket(1);
 	packet & foo;
-	connection->send(packet);
+	connection->send(packet);*/
+
+	auto event = foo_event.create({ 1, 2, 3 });
+	connection->send(event->createPacket());
 
 	std::this_thread::sleep_for(std::chrono::milliseconds(10000));
 	server.join();

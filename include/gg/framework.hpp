@@ -31,21 +31,13 @@ namespace gg
 
 		virtual ~IEvent() = default;
 		virtual Type type() const = 0;
-		virtual const IStorage& args() const = 0;
+		virtual const IStorage& params() const = 0;
 		virtual void serialize(IPacket&) = 0;
 
 		template<class T>
 		const T& get(unsigned n) const
 		{
-			return args()->get<T>(n);
-		}
-
-		template<class... Args>
-		static std::shared_ptr<IEvent> getFromPacket(std::shared_ptr<IPacket> packet)
-		{
-			std::shared_ptr<IEvent> event(new Event<Args...>(packet->type()));
-			packet & event;
-			return event;
+			return params()->get<T>(n);
 		}
 
 		std::shared_ptr<IPacket> createPacket()
@@ -56,33 +48,74 @@ namespace gg
 		}
 	};
 
-	template<class... Args>
-	class Event final : public IEvent
+	class IEventDefinition
 	{
 	public:
-		Event(Type type) :
-			m_type(type)
+		virtual ~IEventDefinition() = default;
+		virtual IEvent::Type type() const = 0;
+		virtual std::shared_ptr<IEvent> create() = 0;
+		virtual std::shared_ptr<IEvent> create(std::shared_ptr<IPacket>) = 0;
+
+		bool operator< (const IEventDefinition& def)
 		{
+			return type() < def.type();
+		}
+	};
+
+	template<IEvent::Type EventType, class... Params>
+	class EventDefinition : public IEventDefinition
+	{
+	public:
+		EventDefinition() = default;
+		EventDefinition(const EventDefinition&) = default;
+		virtual ~EventDefinition() = default;
+
+		virtual IEvent::Type type() const
+		{
+			return EventType;
 		}
 
-		Event(Type type, Args... args) :
-			m_type(type), m_args(std::forward<Args>(args)...)
+		virtual std::shared_ptr<IEvent> create()
 		{
+			std::shared_ptr<IEvent> event(new Event());
+			return event;
 		}
 
-		virtual ~Event() = default;
-		virtual Type type() const { return m_type; }
-		virtual const IStorage& args() const { return m_args; }
-		virtual void serialize(IPacket& packet) { packet & m_args; }
-
-		static std::shared_ptr<IEvent> getFromPacket(std::shared_ptr<IPacket> packet)
+		virtual std::shared_ptr<IEvent> create(std::shared_ptr<IPacket> packet)
 		{
-			return IEvent::getFromPacket<Args...>(packet);
+			if (packet->type() != EventType)
+				return {};
+
+			std::shared_ptr<IEvent> event(new Event());
+			event->serialize(*packet);
+			return event;
+		}
+
+		std::shared_ptr<IEvent> create(Params... params)
+		{
+			std::shared_ptr<IEvent> event(new Event(std::forward<Params>(params)...));
+			return event;
 		}
 
 	private:
-		Type m_type;
-		SerializableStorage<Args...> m_args;
+		class Event : public IEvent
+		{
+		public:
+			Event() = default;
+
+			Event(Params... params) :
+				m_params(std::forward<Params>(params)...)
+			{
+			}
+
+			virtual ~Event() = default;
+			virtual Type type() const { return EventType; }
+			virtual const IStorage& params() const { return m_params; }
+			virtual void serialize(IPacket& packet) { m_params.serialize(packet); }
+
+		private:
+			SerializableStorage<Params...> m_params;
+		};
 	};
 
 
@@ -91,10 +124,10 @@ namespace gg
 	class IThread
 	{
 	public:
-		class Options
+		class TaskOptions
 		{
 		public:
-			virtual ~Options() = default;
+			virtual ~TaskOptions() = default;
 			virtual void subscribe(IEvent::Type) = 0;
 			virtual void unsubscribe(IEvent::Type) = 0;
 			virtual void addTask(std::unique_ptr<ITask>&&) = 0;
@@ -125,8 +158,8 @@ namespace gg
 	{
 	public:
 		virtual ~ITask() = default;
-		virtual void setup(IThread::Options&) {};
-		virtual void run(IThread::Options&) = 0;
+		virtual void setup(IThread::TaskOptions&) {};
+		virtual void run(IThread::TaskOptions&) = 0;
 	};
 
 	template<class F>
@@ -137,7 +170,7 @@ namespace gg
 		public:
 			FuncTask(F func) : m_func(func) {}
 			virtual ~FuncTask() = default;
-			virtual void run(IThread::Options& o) { m_func(o); }
+			virtual void run(IThread::TaskOptions& o) { m_func(o); }
 
 		private:
 			F m_func;
