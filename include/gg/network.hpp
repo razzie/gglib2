@@ -209,4 +209,99 @@ namespace gg
 			serialize<N + 1, Types...>(packet, storage);
 		}
 	};
+
+
+	class IEvent : public ISerializable
+	{
+	public:
+		typedef IPacket::Type Type;
+
+		virtual ~IEvent() = default;
+		virtual Type type() const = 0;
+		virtual const IStorage& params() const = 0;
+		virtual void serialize(IPacket&) = 0;
+
+		template<class T>
+		const T& get(unsigned n) const
+		{
+			return params()->get<T>(n);
+		}
+
+		std::shared_ptr<IPacket> createPacket()
+		{
+			auto packet = net.createPacket(type());
+			serialize(*packet);
+			return packet;
+		}
+	};
+
+	class IEventDefinition
+	{
+	public:
+		virtual ~IEventDefinition() = default;
+		virtual IEvent::Type type() const = 0;
+		virtual std::shared_ptr<IEvent> create() = 0;
+		virtual std::shared_ptr<IEvent> create(std::shared_ptr<IPacket>) = 0;
+
+		bool operator< (const IEventDefinition& def)
+		{
+			return type() < def.type();
+		}
+	};
+
+	template<IEvent::Type EventType, class... Params>
+	class EventDefinition : public IEventDefinition
+	{
+	public:
+		EventDefinition() = default;
+		EventDefinition(const EventDefinition&) = default;
+		virtual ~EventDefinition() = default;
+
+		virtual IEvent::Type type() const
+		{
+			return EventType;
+		}
+
+		virtual std::shared_ptr<IEvent> create()
+		{
+			std::shared_ptr<IEvent> event(new Event());
+			return event;
+		}
+
+		virtual std::shared_ptr<IEvent> create(std::shared_ptr<IPacket> packet)
+		{
+			if (packet->type() != EventType)
+				return{};
+
+			std::shared_ptr<IEvent> event(new Event());
+			event->serialize(*packet);
+			return event;
+		}
+
+		std::shared_ptr<IEvent> create(Params... params)
+		{
+			std::shared_ptr<IEvent> event(new Event(std::forward<Params>(params)...));
+			return event;
+		}
+
+	private:
+		class Event : public IEvent
+		{
+		public:
+			Event() = default;
+
+			Event(Params... params) :
+				m_params(std::forward<Params>(params)...)
+			{
+			}
+
+			virtual ~Event() = default;
+			virtual Type type() const { return EventType; }
+			virtual const IStorage& params() const { return m_params; }
+			virtual void serialize(IPacket& packet) { m_params.serialize(packet); }
+
+		private:
+			SerializableStorage<Params...> m_params;
+		};
+	};
 };
