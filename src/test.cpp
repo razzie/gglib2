@@ -115,7 +115,7 @@ int main()
 	connection->send(packet);*/
 
 	auto event = foo_event.create({ 1, 2, 3 });
-	connection->send(event->createPacket());
+	connection->send(connection->createPacket(event));
 
 	std::this_thread::sleep_for(std::chrono::milliseconds(10000));
 	server.join();

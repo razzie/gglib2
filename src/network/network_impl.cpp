@@ -219,7 +219,7 @@ gg::Packet& gg::Packet::operator&(float& f)
 {
 	if (m_mode == Mode::WRITE)
 	{
-		uint32_t tmp = pack754_32(f);
+		uint32_t tmp = static_cast<uint32_t>(pack754_32(f));
 		*this & tmp;
 	}
 	else
@@ -393,7 +393,14 @@ std::shared_ptr<gg::IPacket> gg::Connection::getNextPacket(uint32_t timeoutMs)
 
 std::shared_ptr<gg::IPacket> gg::Connection::createPacket(gg::IPacket::Type type) const
 {
-	return std::shared_ptr<IPacket>(new Packet(IPacket::Mode::WRITE, type));
+	return std::shared_ptr<IPacket>( new Packet(IPacket::Mode::WRITE, type) );
+}
+
+std::shared_ptr<gg::IPacket> gg::Connection::createPacket(std::shared_ptr<gg::IEvent> event) const
+{
+	std::shared_ptr<IPacket> packet( new Packet(IPacket::Mode::WRITE, event->type()) );
+	event->serialize(*packet);
+	return packet;
 }
 
 bool gg::Connection::send(std::shared_ptr<gg::IPacket> packet)
@@ -532,11 +539,6 @@ gg::NetworkManager::~NetworkManager()
 #endif
 }
 
-std::shared_ptr<gg::IPacket> gg::NetworkManager::createPacket(gg::IPacket::Type type) const
-{
-	return std::shared_ptr<IPacket>( new Packet(IPacket::Mode::WRITE, type) );
-}
-
 std::shared_ptr<gg::IConnection> gg::NetworkManager::createConnection(const std::string& host, uint16_t port) const
 {
 	std::unique_ptr<gg::IConnectionBackend> backend(new ConnectionBackend(host, port));
@@ -557,4 +559,16 @@ std::shared_ptr<gg::IServer> gg::NetworkManager::createServer(uint16_t port) con
 std::shared_ptr<gg::IServer> gg::NetworkManager::createServer(std::unique_ptr<gg::IServerBackend>&& backend) const
 {
 	return std::shared_ptr<IServer>( new Server(std::move(backend)) );
+}
+
+std::shared_ptr<gg::IPacket> gg::NetworkManager::createPacket(gg::IPacket::Type type) const
+{
+	return std::shared_ptr<IPacket>( new Packet(IPacket::Mode::WRITE, type) );
+}
+
+std::shared_ptr<gg::IPacket> gg::NetworkManager::createPacket(std::shared_ptr<gg::IEvent> event) const
+{
+	std::shared_ptr<IPacket> packet( new Packet(IPacket::Mode::WRITE, event->type()) );
+	event->serialize(*packet);
+	return packet;
 }

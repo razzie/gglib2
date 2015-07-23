@@ -20,6 +20,7 @@
 #include <string>
 #include <typeinfo>
 #include "gg/storage.hpp"
+#include "gg/event.hpp"
 
 #if defined GGNETWORK_BUILD
 #	define GG_API __declspec(dllexport)
@@ -30,12 +31,11 @@
 namespace gg
 {
 	class IBlob;
-	class ISerializable;
 
 	class IPacket
 	{
 	public:
-		typedef uint16_t Type;
+		typedef IEvent::Type Type;
 
 		enum Mode
 		{
@@ -112,6 +112,7 @@ namespace gg
 		virtual const std::string& getAddress() const = 0;
 		virtual std::shared_ptr<IPacket> getNextPacket(uint32_t timeoutMs = 0) = 0; // 0: non-blocking
 		virtual std::shared_ptr<IPacket> createPacket(IPacket::Type) const = 0;
+		virtual std::shared_ptr<IPacket> createPacket(std::shared_ptr<IEvent>) const = 0;
 		virtual bool send(std::shared_ptr<IPacket>) = 0;
 	};
 
@@ -147,22 +148,16 @@ namespace gg
 	{
 	public:
 		virtual ~INetworkManager() = default;
-		virtual std::shared_ptr<IPacket> createPacket(IPacket::Type) const = 0;
 		virtual std::shared_ptr<IConnection> createConnection(const std::string& host, uint16_t port) const = 0;
 		virtual std::shared_ptr<IConnection> createConnection(std::unique_ptr<IConnectionBackend>&&) const = 0;
 		virtual std::shared_ptr<IServer> createServer(uint16_t port) const = 0;
 		virtual std::shared_ptr<IServer> createServer(std::unique_ptr<IServerBackend>&&) const = 0;
+		virtual std::shared_ptr<IPacket> createPacket(IPacket::Type) const = 0;
+		virtual std::shared_ptr<IPacket> createPacket(std::shared_ptr<IEvent>) const = 0;
 	};
 
 	extern GG_API INetworkManager& net;
 
-
-	class ISerializable
-	{
-	public:
-		virtual ~ISerializable() = default;
-		virtual void serialize(IPacket&) = 0;
-	};
 
 	class IBlob
 	{
@@ -211,63 +206,6 @@ namespace gg
 	};
 
 
-	class IEvent : public ISerializable
-	{
-	public:
-		typedef IPacket::Type Type;
-
-		virtual ~IEvent() = default;
-		virtual Type type() const = 0;
-		virtual const IStorage& params() const = 0;
-		virtual void serialize(IPacket&) = 0;
-
-		template<class T>
-		const T& get(unsigned n) const
-		{
-			return params()->get<T>(n);
-		}
-
-		std::shared_ptr<IPacket> createPacket()
-		{
-			auto packet = net.createPacket(type());
-			serialize(*packet);
-			return packet;
-		}
-	};
-
-	class IEventDefinition
-	{
-	public:
-		virtual ~IEventDefinition() = default;
-		virtual IEvent::Type type() const = 0;
-		virtual std::shared_ptr<IEvent> create() const = 0;
-		virtual std::shared_ptr<IEvent> create(std::shared_ptr<IPacket>) const = 0;
-
-		class Wrapper
-		{
-		public:
-			Wrapper(const IEventDefinition& def) : m_def(def) {}
-			Wrapper(const Wrapper& wr) : m_def(wr.m_def) {}
-			~Wrapper() = default;
-			IEvent::Type type() const { return m_def.type(); };
-			std::shared_ptr<IEvent> create() const { return m_def.create(); };
-			std::shared_ptr<IEvent> create(std::shared_ptr<IPacket> packet) const { return m_def.create(packet); };
-
-			bool operator< (const Wrapper& wr)
-			{
-				return m_def.type() < wr.m_def.type();
-			}
-
-		private:
-			const IEventDefinition& m_def;
-		};
-
-		operator Wrapper() const
-		{
-			return Wrapper(*this);
-		}
-	};
-
 	template<IEvent::Type EventType, class... Params>
 	class EventDefinition : public IEventDefinition
 	{
@@ -287,13 +225,22 @@ namespace gg
 			return event;
 		}
 
-		virtual std::shared_ptr<IEvent> create(std::shared_ptr<IPacket> packet) const
+		virtual std::shared_ptr<IEvent> create(const IStorage& st) const
 		{
-			if (packet->type() != EventType)
-				return{};
+			std::shared_ptr<IEvent> event(new Event());
+			if (static_cast<Event*>(event.get())->setup(st))
+				return event;
+			else
+				return {};
+		}
+
+		virtual std::shared_ptr<IEvent> create(IPacket& packet) const
+		{
+			if (packet.type() != EventType)
+				return {};
 
 			std::shared_ptr<IEvent> event(new Event());
-			event->serialize(*packet);
+			event->serialize(packet);
 			return event;
 		}
 
@@ -318,6 +265,7 @@ namespace gg
 			virtual Type type() const { return EventType; }
 			virtual const IStorage& params() const { return m_params; }
 			virtual void serialize(IPacket& packet) { m_params.serialize(packet); }
+			bool setup(const IStorage& st) { return m_params.copy(st); }
 
 		private:
 			SerializableStorage<Params...> m_params;

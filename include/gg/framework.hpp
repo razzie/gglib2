@@ -9,12 +9,7 @@
 #pragma once
 
 #include <memory>
-#include "gg/storage.hpp"
-#include "gg/network.hpp"
-
-#ifdef GG_API
-#	undef GG_API
-#endif
+#include "gg/event.hpp"
 
 #if defined GGFRAMEWORK_BUILD
 #	define GG_API __declspec(dllexport)

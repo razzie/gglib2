@@ -17,7 +17,8 @@ namespace gg
 	{
 	public:
 		virtual ~IStorage() = default;
-		virtual unsigned size() const = 0; // number of elements
+		virtual bool copy(const IStorage&) = 0;
+		virtual unsigned count() const = 0; // number of elements
 		virtual char* getPtr(unsigned) = 0;
 		virtual const char* getPtr(unsigned) const = 0;
 		virtual const std::type_info& getType(unsigned) const = 0;
@@ -56,26 +57,41 @@ namespace gg
 			destruct<0, Types...>();
 		}
 
-		virtual unsigned size() const
+		virtual bool copy(const IStorage& other)
 		{
-			return sm_size;
+			if (count() != other.count())
+				return false;
+
+			for (unsigned i = 0; i < other.count(); ++i)
+			{
+				if (getType(i) != other.getType(i))
+					return false;
+			}
+
+			copy<0, Types...>(other);
+			return true;
+		}
+
+		virtual unsigned count() const
+		{
+			return COUNT;
 		}
 
 		virtual char* getPtr(unsigned n)
 		{
-			if (n >= sm_size) throw std::out_of_range({});
+			if (n >= COUNT) throw std::out_of_range({});
 			return m_ptrs[n];
 		}
 
 		virtual const char* getPtr(unsigned n) const
 		{
-			if (n >= sm_size) throw std::out_of_range({});
+			if (n >= COUNT) throw std::out_of_range({});
 			return m_ptrs[n];
 		}
 
 		virtual const std::type_info& getType(unsigned n) const
 		{
-			if (n >= sm_size) throw std::out_of_range({});
+			if (n >= COUNT) throw std::out_of_range({});
 			return *m_types[n];
 		}
 
@@ -127,9 +143,19 @@ namespace gg
 			destruct<offset + sizeof(T0), Ts...>();
 		}
 
-		static const unsigned sm_size = sizeof...(Types);
+		template<unsigned N>
+		void copy(const IStorage& other) {}
+
+		template<unsigned N, class Type0, class... Types>
+		void copy(const IStorage& other)
+		{
+			get<Type0>(N) = other.get<Type0>(N);
+			copy<N + 1, Types...>(other);
+		}
+
+		static const unsigned COUNT = sizeof...(Types);
 		char  m_buffer[sum<sizeof(Types)...>::value];
-		char* m_ptrs[sm_size];
-		const std::type_info* m_types[sm_size];
+		char* m_ptrs[COUNT];
+		const std::type_info* m_types[COUNT];
 	};
 };

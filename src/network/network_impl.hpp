@@ -73,6 +73,7 @@ namespace gg
 		virtual const std::string& getAddress() const;
 		virtual std::shared_ptr<IPacket> getNextPacket(uint32_t timeoutMs = 0);
 		virtual std::shared_ptr<IPacket> createPacket(IPacket::Type) const;
+		virtual std::shared_ptr<IPacket> createPacket(std::shared_ptr<IEvent>) const;
 		virtual bool send(std::shared_ptr<IPacket>);
 
 	private:
@@ -126,10 +127,11 @@ namespace gg
 	public:
 		NetworkManager();
 		virtual ~NetworkManager();
-		virtual std::shared_ptr<IPacket> createPacket(IPacket::Type) const;
 		virtual std::shared_ptr<IConnection> createConnection(const std::string& host, uint16_t port) const;
 		virtual std::shared_ptr<IConnection> createConnection(std::unique_ptr<IConnectionBackend>&&) const;
 		virtual std::shared_ptr<IServer> createServer(uint16_t port) const;
 		virtual std::shared_ptr<IServer> createServer(std::unique_ptr<IServerBackend>&&) const;
+		virtual std::shared_ptr<IPacket> createPacket(IPacket::Type) const;
+		virtual std::shared_ptr<IPacket> createPacket(std::shared_ptr<IEvent>) const;
 	};
 };
