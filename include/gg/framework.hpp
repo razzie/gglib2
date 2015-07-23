@@ -35,12 +35,10 @@ namespace gg
 			virtual ~TaskOptions() = default;
 			virtual void subscribe(IEvent::Type) = 0;
 			virtual void unsubscribe(IEvent::Type) = 0;
-			virtual void addTask(std::unique_ptr<ITask>&&) = 0;
 			virtual void addChild(std::unique_ptr<ITask>&&) = 0;
 			virtual uint32_t getElapsedMs() const = 0;
 			virtual bool hasEvent() const = 0;
 			virtual std::shared_ptr<IEvent> getNextEvent() = 0;
-			virtual void sendEvent(std::shared_ptr<IEvent>) = 0;
 			virtual void finish() = 0;
 		};
 
@@ -64,7 +62,7 @@ namespace gg
 	public:
 		virtual ~ITask() = default;
 		virtual void setup(IThread::TaskOptions&) {};
-		virtual void run(IThread::TaskOptions&) = 0;
+		virtual void run(IThread&, IThread::TaskOptions&) = 0;
 	};
 
 	template<class F>
@@ -75,7 +73,7 @@ namespace gg
 		public:
 			FuncTask(F func) : m_func(func) {}
 			virtual ~FuncTask() = default;
-			virtual void run(IThread::TaskOptions& o) { m_func(o); }
+			virtual void run(IThread& t, IThread::TaskOptions& o) { m_func(t, o); }
 
 		private:
 			F m_func;
@@ -90,7 +88,7 @@ namespace gg
 	{
 	public:
 		virtual ~IFramework() = default;
-		virtual std::shared_ptr<IThread> createThread(const std::string& name) const = 0;
+		virtual std::shared_ptr<IThread> createThread(const std::string& name) = 0;
 		virtual std::shared_ptr<IThread> getThread(const std::string& name) const = 0;
 	};
 

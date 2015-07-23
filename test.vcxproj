@@ -106,6 +106,7 @@
     <ClInclude Include="include\gg\config.hpp" />
     <ClInclude Include="include\gg\console.hpp" />
     <ClInclude Include="include\gg\filesystem.hpp" />
+    <ClInclude Include="include\gg\framework.hpp" />
     <ClInclude Include="include\gg\function.hpp" />
     <ClInclude Include="include\gg\logger.hpp" />
     <ClInclude Include="include\gg\network.hpp" />
