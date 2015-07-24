@@ -14,6 +14,7 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include "gg/storage.hpp"
 
 namespace gg
