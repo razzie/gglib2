@@ -152,6 +152,10 @@ gg::Thread::Thread(const std::string& name) :
 	m_running(false),
 	m_clear_tasks(false)
 {
+	m_tasks.reserve(10);
+	m_pending_tasks.reserve(10);
+	m_events.reserve(10);
+	m_pending_events.reserve(10);
 }
 
 gg::Thread::~Thread()
@@ -178,6 +182,22 @@ void gg::Thread::addTask(std::unique_ptr<gg::ITask>&& task)
 	{
 		std::lock_guard<decltype(m_tasks_mutex)> guard(m_tasks_mutex);
 		m_pending_tasks.emplace_back(*this, std::move(task));
+	}
+}
+
+void gg::Thread::addTasks(std::vector<std::unique_ptr<ITask>>& tasks)
+{
+	if (m_thread_id == std::this_thread::get_id()
+		&& (m_tasks.capacity() - m_tasks.size()) > tasks.size())
+	{
+		for (auto& task : tasks)
+			m_tasks.emplace_back(*this, std::move(task));
+	}
+	else
+	{
+		std::lock_guard<decltype(m_tasks_mutex)> guard(m_tasks_mutex);
+		for (auto& task : tasks)
+			m_pending_tasks.emplace_back(*this, std::move(task));
 	}
 }
 
@@ -245,8 +265,7 @@ void gg::Thread::thread()
 			// if task is finished, add its children to task list and remove it..
 			if (it->finished())
 			{
-				for (auto& child : it->children())
-					m_tasks.emplace_back(*this, std::move(child));
+				addTasks(it->children());
 				it = m_tasks.erase(it);
 				continue;
 			}

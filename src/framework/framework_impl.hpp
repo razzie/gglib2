@@ -56,6 +56,7 @@ namespace gg
 		virtual ~Thread();
 		virtual void sendEvent(std::shared_ptr<IEvent>);
 		virtual void addTask(std::unique_ptr<ITask>&&);
+		void addTasks(std::vector<std::unique_ptr<ITask>>&);
 		virtual void clearTasks();
 		virtual bool run(Mode = Mode::REMOTE);
 		virtual bool alive() const;
