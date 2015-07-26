@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <map>
 #include <mutex>
 #include <queue>
@@ -20,10 +21,12 @@ namespace gg
 	class TaskData : public IThread::TaskOptions
 	{
 	public:
-		TaskData(IThread&, std::shared_ptr<ITask>);
+		TaskData(IThread&, std::unique_ptr<ITask>);
 		TaskData(TaskData&&);
 		virtual ~TaskData();
-		void getEvents(const std::vector<std::shared_ptr<IEvent>>&);
+		TaskData& operator=(TaskData&&);
+		void pushEvents(const std::vector<std::shared_ptr<IEvent>>&);
+		std::vector<std::unique_ptr<ITask>>& children();
 		bool finished() const;
 		void run();
 
@@ -38,7 +41,7 @@ namespace gg
 
 	private:
 		IThread& m_thread;
-		std::shared_ptr<ITask> m_task;
+		std::unique_ptr<ITask> m_task;
 		std::vector<IEvent::Type> m_subscriptions;
 		std::vector<std::unique_ptr<ITask>> m_children;
 		Timer m_timer;
@@ -54,19 +57,24 @@ namespace gg
 		virtual void sendEvent(std::shared_ptr<IEvent>);
 		virtual void addTask(std::unique_ptr<ITask>&&);
 		virtual void clearTasks();
-		virtual void run(Mode = Mode::REMOTE);
+		virtual bool run(Mode = Mode::REMOTE);
 		virtual bool alive() const;
 		virtual void join();
 
 	private:
-		std::mutex m_mutex;
 		std::string m_name;
+		std::mutex m_tasks_mutex;
 		std::vector<TaskData> m_tasks;
 		std::vector<TaskData> m_pending_tasks;
+		std::mutex m_events_mutex;
 		std::vector<std::shared_ptr<IEvent>> m_events;
 		std::vector<std::shared_ptr<IEvent>> m_pending_events;
 		std::thread m_thread;
-		bool m_running;
+		std::thread::id m_thread_id;
+		std::atomic<bool> m_running;
+		volatile bool m_clear_tasks;
+
+		void thread();
 	};
 
 	class Framework : public IFramework

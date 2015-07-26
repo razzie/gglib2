@@ -46,10 +46,17 @@ namespace gg
 		virtual ~IThread() = default;
 		virtual void sendEvent(std::shared_ptr<IEvent>) = 0;
 		virtual void addTask(std::unique_ptr<ITask>&&) = 0;
-		virtual void clearTasks() = 0;
-		virtual void run(Mode = Mode::REMOTE) = 0;
+		virtual void clearTasks() = 0; // thread stops if there is no task to run
+		virtual bool run(Mode = Mode::REMOTE) = 0;
 		virtual bool alive() const = 0;
 		virtual void join() = 0;
+
+		template<class Task, class... Params>
+		void addTask(Params... params)
+		{
+			std::unique_ptr<ITask> task(new Task(std::forward<Params>(params)...));
+			addTask(std::move(task));
+		}
 	};
 
 	class ITask

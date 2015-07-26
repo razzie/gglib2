@@ -271,7 +271,7 @@ namespace gg
 			}
 			catch (std::exception&)
 			{
-				return{};
+				return {};
 			}
 		}
 

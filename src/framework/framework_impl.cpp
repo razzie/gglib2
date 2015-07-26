@@ -12,17 +12,24 @@ static gg::Framework s_fw;
 gg::IFramework& gg::fw = s_fw;
 
 
-gg::TaskData::TaskData(gg::IThread& thread, std::shared_ptr<ITask> task) :
+gg::TaskData::TaskData(gg::IThread& thread, std::unique_ptr<ITask> task) :
 	m_thread(thread),
-	m_task(task),
+	m_task(std::move(task)),
 	m_finished(false)
 {
-	m_task->setup(*this);
+	try
+	{
+		m_task->setup(*this);
+	}
+	catch (...)
+	{
+		m_finished = true;
+	}
 }
 
 gg::TaskData::TaskData(gg::TaskData&& taskdata) :
 	m_thread(taskdata.m_thread),
-	m_task(taskdata.m_task),
+	m_task(std::move(taskdata.m_task)),
 	m_subscriptions(std::move(taskdata.m_subscriptions)),
 	m_children(std::move(taskdata.m_children)),
 	m_events(std::move(taskdata.m_events)),
@@ -34,7 +41,18 @@ gg::TaskData::~TaskData()
 {
 }
 
-void gg::TaskData::getEvents(const std::vector<std::shared_ptr<gg::IEvent>>& events)
+gg::TaskData& gg::TaskData::operator=(TaskData&& taskdata)
+{
+	m_thread = taskdata.m_thread;
+	m_task = std::move(taskdata.m_task);
+	m_subscriptions = std::move(taskdata.m_subscriptions);
+	m_children = std::move(taskdata.m_children);
+	m_events = std::move(taskdata.m_events);
+	m_finished = false;
+	return *this;
+}
+
+void gg::TaskData::pushEvents(const std::vector<std::shared_ptr<gg::IEvent>>& events)
 {
 	for (auto& event : events)
 	{
@@ -46,6 +64,11 @@ void gg::TaskData::getEvents(const std::vector<std::shared_ptr<gg::IEvent>>& eve
 	}
 }
 
+std::vector<std::unique_ptr<gg::ITask>>& gg::TaskData::children()
+{
+	return m_children;
+}
+
 bool gg::TaskData::finished() const
 {
 	return m_finished;
@@ -53,7 +76,15 @@ bool gg::TaskData::finished() const
 
 void gg::TaskData::run()
 {
-	m_task->run(m_thread, *this);
+	try
+	{
+		m_task->run(m_thread, *this);
+	}
+	catch (...)
+	{
+		m_finished = true;
+	}
+
 	m_timer.reset();
 }
 
@@ -87,7 +118,7 @@ void gg::TaskData::addChild(std::unique_ptr<ITask>&& task)
 
 uint32_t gg::TaskData::getElapsedMs() const
 {
-	return m_timer.peekElapsed();
+	return static_cast<uint32_t>(m_timer.peekElapsed());
 }
 
 bool gg::TaskData::hasEvent() const
@@ -115,12 +146,21 @@ void gg::TaskData::finish()
 }
 
 
-gg::Thread::Thread(const std::string& name)
+gg::Thread::Thread(const std::string& name) :
+	m_name(name),
+	m_thread_id(std::this_thread::get_id()),
+	m_running(false),
+	m_clear_tasks(false)
 {
 }
 
 gg::Thread::~Thread()
 {
+	if (m_running && m_thread.joinable())
+	{
+		clearTasks();
+		m_thread.join();
+	}
 }
 
 void gg::Thread::sendEvent(std::shared_ptr<gg::IEvent> event)
@@ -129,23 +169,114 @@ void gg::Thread::sendEvent(std::shared_ptr<gg::IEvent> event)
 
 void gg::Thread::addTask(std::unique_ptr<gg::ITask>&& task)
 {
+	if (m_thread_id == std::this_thread::get_id()
+		&& m_tasks.capacity() > m_tasks.size())
+	{
+		m_tasks.emplace_back(*this, std::move(task));
+	}
+	else
+	{
+		std::lock_guard<decltype(m_tasks_mutex)> guard(m_tasks_mutex);
+		m_pending_tasks.emplace_back(*this, std::move(task));
+	}
 }
 
 void gg::Thread::clearTasks()
 {
+	m_clear_tasks = true;
 }
 
-void gg::Thread::run(Mode mode)
+bool gg::Thread::run(Mode mode)
 {
+	if (m_running.exchange(true))
+		return false;
+
+	switch (mode)
+	{
+	case Mode::LOCAL:
+		m_thread_id = std::this_thread::get_id();
+		thread();
+		return true;
+
+	case Mode::REMOTE:
+		m_thread = std::move(std::thread(&Thread::thread, this));
+		m_thread_id = m_thread.get_id();
+		return true;
+
+	default:
+		return false;
+	}
+}
+
+void gg::Thread::thread()
+{
+	do
+	{
+		// add pending tasks to task list
+		if (m_tasks_mutex.try_lock())
+		{
+			m_tasks.insert(m_tasks.end(),
+				std::make_move_iterator(m_pending_tasks.begin()),
+				std::make_move_iterator(m_pending_tasks.end()));
+			m_pending_tasks.clear();
+			m_tasks_mutex.unlock();
+		}
+
+		// add pending events to event list
+		if (m_events_mutex.try_lock())
+		{
+			m_events.insert(m_events.end(),
+				std::make_move_iterator(m_pending_events.begin()),
+				std::make_move_iterator(m_pending_events.end()));
+			m_pending_tasks.clear();
+			m_events_mutex.unlock();
+		}
+
+		// assign events to subscribed tasks
+		for (auto& task : m_tasks)
+			task.pushEvents(m_events);
+		m_events.clear();
+
+		// run tasks
+		for (auto it = m_tasks.begin(); it != m_tasks.end(); )
+		{
+			it->run(); // exceptions are already catched here
+
+			// if task is finished, add its children to task list and remove it..
+			if (it->finished())
+			{
+				for (auto& child : it->children())
+					m_tasks.emplace_back(*this, std::move(child));
+				it = m_tasks.erase(it);
+				continue;
+			}
+			// ..otherwise go to next task
+			else
+			{
+				++it;
+			}
+		}
+
+		// clear tasks if it was requested
+		if (m_clear_tasks)
+		{
+			m_clear_tasks = false;
+			m_tasks.clear();
+		}
+	} while (!m_tasks.empty());
+
+	m_running.store(false);
 }
 
 bool gg::Thread::alive() const
 {
-	return false;
+	return m_running;
 }
 
 void gg::Thread::join()
 {
+	if (m_thread.joinable())
+		m_thread.join();
 }
 
 

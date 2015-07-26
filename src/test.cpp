@@ -17,108 +17,122 @@
 #include "gg/streamutil.hpp"
 #include "gg/timer.hpp"
 #include "gg/optional.hpp"
-#include <thread>
 
-struct Foo
+
+gg::EventDefinition<1, int, float> foo_event;
+
+class ConnectionTask : public gg::ITask
 {
-	int a;
-	int b;
-	int c;
-};
-
-void serialize(gg::IPacket& packet, Foo& foo)
-{
-	packet & foo.a & foo.b & foo.c;
-}
-
-std::ostream& operator<< (std::ostream& o, const Foo& foo)
-{
-	o << foo.a << ", " << foo.b << ", " << foo.c;
-	return o;
-}
-
-gg::EventDefinition<1, Foo> foo_event;
-
-void serverThread()
-{
-	auto server = gg::net.createServer(12345);
-	if (server->start())
+public:
+	ConnectionTask(std::shared_ptr<gg::IConnection> connection) :
+		m_connection(connection)
 	{
-		gg::log << "server started" << std::endl;
-	}
-	else
-	{
-		gg::log << "couldn't start server :(" << std::endl;
-		return;
 	}
 
-	std::vector<std::shared_ptr<gg::IConnection>> connections;
+	virtual ~ConnectionTask() = default;
 
-	try
+	virtual void run(gg::IThread& thread, gg::IThread::TaskOptions& options)
 	{
-		bool quit = false;
-		while (server->alive() && !quit)
+		try
 		{
-			auto newConn = server->getNextConnection(10);
-			if (newConn)
+			if (m_connection->alive())
 			{
-				gg::log << "connection: " << newConn->getAddress() << std::endl;
-				connections.push_back(newConn);
-			}
-
-			for (auto& conn : connections)
-			{
-				auto packet = conn->getNextPacket(10);
+				auto packet = m_connection->getNextPacket(10);
 				if (packet)
 				{
 					gg::log << "packet: length=" << packet->length() << ", type=" << packet->type() << std::endl;
 
-					if (packet->type() == 1)
+					auto event = foo_event.create(*packet);
+					if (event)
 					{
-						Foo foo;
-						packet & foo;
-						gg::log << foo << std::endl;
-
-						if (foo.a == 1)
-							quit = true;
+						gg::log << "foo_event: " << event->params().get<int>(0) << ", " << event->params().get<float>(1) << std::endl;
 					}
 				}
 			}
+			else
+			{
+				options.finish();
+			}
+		}
+		catch (std::exception& e)
+		{
+			gg::log << "exception: " << e.what() << std::endl;
 		}
 	}
-	catch (std::exception& e)
+
+private:
+	std::shared_ptr<gg::IConnection> m_connection;
+};
+
+class ServerTask : public gg::ITask
+{
+public:
+	ServerTask()
 	{
-		gg::log << "exception: " << e.what() << std::endl;
+		m_server = gg::net.createServer(12345);
+
+		if (m_server->start())
+			gg::log << "server started" << std::endl;
+		else
+			gg::log << "couldn't start server :(" << std::endl;
 	}
 
-	gg::log << "server thread exit" << std::endl;
-}
+	virtual ~ServerTask() = default;
+
+	virtual void run(gg::IThread& thread, gg::IThread::TaskOptions& options)
+	{
+		try
+		{
+			if (m_server->alive())
+			{
+				auto connection = m_server->getNextConnection(10);
+				if (connection)
+				{
+					gg::log << "connection: " << connection->getAddress() << std::endl;
+					thread.addTask<ConnectionTask>(connection);
+				}
+			}
+			else
+			{
+				options.finish();
+			}
+		}
+		catch (std::exception& e)
+		{
+			gg::log << "exception: " << e.what() << std::endl;
+		}
+	}
+
+private:
+	std::shared_ptr<gg::IServer> m_server;
+};
 
 
 int main()
 {
-	std::thread server(serverThread);
-
-	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	auto server = gg::fw.createThread("server thread");
+	server->addTask<ServerTask>();
+	server->run();
 
 	auto connection = gg::net.createConnection("localhost", 12345);
 	if (!connection->connect())
 	{
-		gg::log << "Can't connect" << std::endl;
+		gg::log << "Can't connect :(" << std::endl;
+		server->clearTasks();
+		server->join();
+		return 1;
 	}
 
-	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	for (int i = 0; i < 5; ++i)
+	{
+		auto event = foo_event.create(1, 2.34f);
+		auto packet = gg::net.createPacket(event);
+		connection->send(packet);
 
-	/*Foo foo = { 1, 2, 3 };
-	auto packet = connection->createPacket(1);
-	packet & foo;
-	connection->send(packet);*/
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+	}
 
-	auto event = foo_event.create({ 1, 2, 3 });
-	connection->send(connection->createPacket(event));
-
-	std::this_thread::sleep_for(std::chrono::milliseconds(10000));
-	server.join();
-
+	server->clearTasks();
+	server->join();
 	return 0;
 }
