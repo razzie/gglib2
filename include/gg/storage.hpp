@@ -17,7 +17,6 @@ namespace gg
 	{
 	public:
 		virtual ~IStorage() = default;
-		virtual bool copy(const IStorage&) = 0;
 		virtual unsigned count() const = 0; // number of elements
 		virtual char* getPtr(unsigned) = 0;
 		virtual const char* getPtr(unsigned) const = 0;
@@ -55,21 +54,6 @@ namespace gg
 		virtual ~Storage()
 		{
 			destruct<0, Types...>();
-		}
-
-		virtual bool copy(const IStorage& other)
-		{
-			if (count() != other.count())
-				return false;
-
-			for (unsigned i = 0; i < other.count(); ++i)
-			{
-				if (getType(i) != other.getType(i))
-					return false;
-			}
-
-			copy<0, Types...>(other);
-			return true;
 		}
 
 		virtual unsigned count() const
@@ -141,16 +125,6 @@ namespace gg
 		{
 			reinterpret_cast<T0*>(m_buffer + offset)->~T0();
 			destruct<offset + sizeof(T0), Ts...>();
-		}
-
-		template<unsigned N>
-		void copy(const IStorage& other) {}
-
-		template<unsigned N, class Type0, class... Types>
-		void copy(const IStorage& other)
-		{
-			get<Type0>(N) = other.get<Type0>(N);
-			copy<N + 1, Types...>(other);
 		}
 
 		static const unsigned COUNT = sizeof...(Types);
