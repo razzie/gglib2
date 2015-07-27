@@ -8,13 +8,13 @@
 
 #include "gg/any.hpp"
 #include "gg/console.hpp"
-#include "gg/framework.hpp"
 #include "gg/function.hpp"
 #include "gg/logger.hpp"
 #include "gg/network.hpp"
 #include "gg/rwmutex.hpp"
 #include "gg/storage.hpp"
 #include "gg/streamutil.hpp"
+#include "gg/thread.hpp"
 #include "gg/timer.hpp"
 #include "gg/optional.hpp"
 
@@ -110,7 +110,7 @@ private:
 
 int main()
 {
-	auto server = gg::fw.createThread("server thread");
+	auto server = gg::thread.createThread("server thread");
 	server->addTask<ServerTask>();
 	server->run();
 

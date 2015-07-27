@@ -74,7 +74,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(IntDir)$(TargetName).pdb</ProgramDatabaseFile>
       <ImportLibrary>$(OutDir)$(TargetName).lib</ImportLibrary>
-      <AdditionalDependencies>bin/gglogger_d.lib;bin/ggfilesystem_d.lib;bin/ggnetwork_d.lib;bin/ggframework_d.lib;bin/ggconsole_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>bin/gglogger_d.lib;bin/ggfilesystem_d.lib;bin/ggnetwork_d.lib;bin/ggthread_d.lib;bin/ggconsole_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -98,7 +98,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <ProgramDatabaseFile>$(IntDir)$(TargetName).pdb</ProgramDatabaseFile>
       <ImportLibrary>$(OutDir)$(TargetName).lib</ImportLibrary>
-      <AdditionalDependencies>bin/gglogger.lib;bin/ggfilesystem.lib;bin/ggnetwork.lib;bin/ggframework.lib;bin/ggconsole.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>bin/gglogger.lib;bin/ggfilesystem.lib;bin/ggnetwork.lib;bin/ggthread.lib;bin/ggconsole.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

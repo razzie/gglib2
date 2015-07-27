@@ -13,7 +13,7 @@
 #include <mutex>
 #include <queue>
 #include <vector>
-#include "gg/framework.hpp"
+#include "gg/thread.hpp"
 #include "gg/timer.hpp"
 
 namespace gg
@@ -78,13 +78,18 @@ namespace gg
 		void thread();
 	};
 
-	class Framework : public IFramework
+	class ThreadManager : public IThreadManager
 	{
 	public:
-		Framework();
-		virtual ~Framework();
+		ThreadManager();
+		virtual ~ThreadManager();
 		virtual std::shared_ptr<IThread> createThread(const std::string& name);
 		virtual std::shared_ptr<IThread> getThread(const std::string& name) const;
+
+		std::shared_ptr<IThread> operator[](const std::string& name) const
+		{
+			return getThread(name);
+		}
 
 	private:
 		mutable std::mutex m_mutex;

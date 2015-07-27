@@ -11,7 +11,7 @@
 #include <memory>
 #include "gg/event.hpp"
 
-#if defined GGFRAMEWORK_BUILD
+#if defined GGTHREAD_BUILD
 #	define GG_API __declspec(dllexport)
 #else
 #	define GG_API __declspec(dllimport)
@@ -57,6 +57,31 @@ namespace gg
 			std::unique_ptr<ITask> task(new Task(std::forward<Params>(params)...));
 			addTask(std::move(task));
 		}
+
+		// Warning: it is NOT network compatible
+		template<IEvent::Type EventType, class... Params>
+		void sendEvent(Params... params)
+		{
+			class Event
+			{
+			public:
+				Event(Params... params) :
+					m_params(std::forward<Params>(params)...)
+				{
+				}
+
+				virtual ~Event() = default;
+				virtual IEvent::Type type() const { return EventType; }
+				virtual const IStorage& params() const { return m_params; }
+				virtual void serialize(IPacket&) {}
+
+			private:
+				Storage<Params...> m_params;
+			};
+
+			std::shared_ptr<IEvent> event(new Event(std::forward<Params>(params)...));
+			sendEvent(event);
+		}
 	};
 
 	class ITask
@@ -86,13 +111,13 @@ namespace gg
 	}
 
 
-	class IFramework
+	class IThreadManager
 	{
 	public:
-		virtual ~IFramework() = default;
+		virtual ~IThreadManager() = default;
 		virtual std::shared_ptr<IThread> createThread(const std::string& name) = 0;
 		virtual std::shared_ptr<IThread> getThread(const std::string& name) const = 0;
 	};
 
-	extern GG_API IFramework& fw;
+	extern GG_API IThreadManager& thread;
 };

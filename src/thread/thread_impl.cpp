@@ -6,10 +6,10 @@
  * All rights reserved.
  */
 
-#include "framework_impl.hpp"
+#include "thread_impl.hpp"
 
-static gg::Framework s_fw;
-gg::IFramework& gg::fw = s_fw;
+static gg::ThreadManager s_thread;
+gg::IThreadManager& gg::thread = s_thread;
 
 
 gg::TaskData::TaskData(gg::IThread& thread, std::unique_ptr<ITask> task) :
@@ -299,15 +299,15 @@ void gg::Thread::join()
 }
 
 
-gg::Framework::Framework()
+gg::ThreadManager::ThreadManager()
 {
 }
 
-gg::Framework::~Framework()
+gg::ThreadManager::~ThreadManager()
 {
 }
 
-std::shared_ptr<gg::IThread> gg::Framework::createThread(const std::string& name)
+std::shared_ptr<gg::IThread> gg::ThreadManager::createThread(const std::string& name)
 {
 	std::shared_ptr<IThread> thread(new Thread(name));
 
@@ -319,7 +319,7 @@ std::shared_ptr<gg::IThread> gg::Framework::createThread(const std::string& name
 	return thread;
 }
 
-std::shared_ptr<gg::IThread> gg::Framework::getThread(const std::string& name) const
+std::shared_ptr<gg::IThread> gg::ThreadManager::getThread(const std::string& name) const
 {
 	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 
