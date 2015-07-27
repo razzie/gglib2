@@ -11,15 +11,15 @@
 #include <fstream>
 #include <map>
 #include <mutex>
-#include "gg/filesystem.hpp"
+#include "gg/resource.hpp"
 
 namespace gg
 {
-	class VirtualDirectory
+	class Resource
 	{
 	public:
-		VirtualDirectory(const std::string& vdir_path);
-		virtual ~VirtualDirectory();
+		Resource(const std::string& vdir_path);
+		virtual ~Resource();
 		virtual bool init();
 		virtual const std::string& getName() const;
 		virtual std::shared_ptr<IDirectory> getDirectory(const std::string& dir_name);
@@ -43,28 +43,28 @@ namespace gg
 		std::map<std::string, FileData> m_files;
 	};
 
-	class FileSystem : public IFileSystem
+	class ResourceManager : public IResourceManager
 	{
 	public:
-		FileSystem();
-		virtual ~FileSystem();
-		virtual bool createVirtualDirectoryFile(const std::string& dir_path) const;
-		virtual bool createVirtualDirectoryFile(const std::wstring& dir_path) const;
-		virtual bool addVirtualDirectory(const std::string& vdir_path);
+		ResourceManager();
+		virtual ~ResourceManager();
+		virtual bool createResource(const std::string& dir_path) const;
+		virtual bool createResource(const std::wstring& dir_path) const;
+		virtual bool addResource(const std::string& vdir_path);
 		virtual std::shared_ptr<IDirectory> openDirectory(const std::string& dir_name);
 		virtual std::shared_ptr<IFile> openFile(const std::string& file_name);
 
 	private:
-		std::map<std::string, VirtualDirectory*> m_vdirs;
+		std::map<std::string, Resource*> m_resources;
 	};
 
 	class Directory : public IDirectory
 	{
 	public:
-		Directory(VirtualDirectory* vdir, std::string& name) :
-			m_name(name), m_vdir(vdir)
+		Directory(Resource* res, std::string& name) :
+			m_name(name), m_res(res)
 		{
-			m_vdir->loadDirectoryData(m_name.substr(m_name.find('/') + 1), &m_files);
+			m_res->loadDirectoryData(m_name.substr(m_name.find('/') + 1), &m_files);
 		}
 
 		virtual const std::string& getName() const
@@ -95,14 +95,14 @@ namespace gg
 	private:
 		std::string m_name;
 		std::vector<FileOrDirectory> m_files;
-		VirtualDirectory* m_vdir;
+		Resource* m_res;
 	};
 
 	class File : public IFile
 	{
 	public:
-		File(VirtualDirectory* vdir, const std::string& name) :
-			m_name(name), m_data(nullptr), m_size(0), m_vdir(vdir)
+		File(Resource* res, const std::string& name) :
+			m_name(name), m_data(nullptr), m_size(0), m_res(res)
 		{
 		}
 
@@ -123,7 +123,7 @@ namespace gg
 				std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 
 				if (m_data == nullptr)
-					m_vdir->loadFileData(m_name.substr(m_name.find('/') + 1), &m_data, &m_size);
+					m_res->loadFileData(m_name.substr(m_name.find('/') + 1), &m_data, &m_size);
 			}
 
 			return m_data;
@@ -136,7 +136,7 @@ namespace gg
 				std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 
 				if (m_data == nullptr)
-					m_vdir->loadFileData(m_name.substr(m_name.find('/') + 1), &m_data, &m_size);
+					m_res->loadFileData(m_name.substr(m_name.find('/') + 1), &m_data, &m_size);
 			}
 
 			return m_size;
@@ -159,6 +159,6 @@ namespace gg
 		std::string m_name;
 		mutable const char* m_data;
 		mutable size_t m_size;
-		VirtualDirectory* m_vdir;
+		Resource* m_res;
 	};
 };

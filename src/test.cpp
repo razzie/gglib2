@@ -11,6 +11,7 @@
 #include "gg/function.hpp"
 #include "gg/logger.hpp"
 #include "gg/network.hpp"
+#include "gg/resource.hpp"
 #include "gg/rwmutex.hpp"
 #include "gg/storage.hpp"
 #include "gg/streamutil.hpp"

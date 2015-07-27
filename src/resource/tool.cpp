@@ -8,7 +8,7 @@
 
 #include <Windows.h>
 #include <ShlObj.h>
-#include "filesystem_impl.hpp"
+#include "resource_impl.hpp"
 
 const wchar_t* browseFolder()
 {
@@ -55,10 +55,10 @@ const wchar_t* browseFolder()
 
 int main()
 {
-	gg::FileSystem& fs = static_cast<gg::FileSystem&>(gg::fs);
+	gg::ResourceManager& res = static_cast<gg::ResourceManager&>(gg::res);
 
 	std::wstring dir = browseFolder();
-	fs.createVirtualDirectoryFile(dir);
+	res.createResource(dir);
 
 	return 0;
 }

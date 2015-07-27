@@ -5,8 +5,6 @@ VisualStudioVersion = 14.0.23107.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ggconsole", "ggconsole.vcxproj", "{840D49FE-6E06-4676-A54D-A26E295DAFD9}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ggfilesystem", "ggfilesystem.vcxproj", "{7096BB09-8C6F-4114-843C-746F355123DA}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gglogger", "gglogger.vcxproj", "{70F858A3-324C-4BCC-BC9A-5527D034B35B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ggnetwork", "ggnetwork.vcxproj", "{DCBD7FFB-2C8C-4E86-8B96-B2F86678FFD6}"
@@ -22,6 +20,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test", "test.vcxproj", "{1B
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ggthread", "ggthread.vcxproj", "{EAF1C3B2-D686-4E4F-82DE-E6D0C0716D9B}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ggresource", "ggresource.vcxproj", "{7096BB09-8C6F-4114-843C-746F355123DA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -35,12 +35,6 @@ Global
 		{840D49FE-6E06-4676-A54D-A26E295DAFD9}.Release|Win32.Build.0 = Release|Win32
 		{840D49FE-6E06-4676-A54D-A26E295DAFD9}.Tools|Win32.ActiveCfg = Release|Win32
 		{840D49FE-6E06-4676-A54D-A26E295DAFD9}.Tools|Win32.Build.0 = Release|Win32
-		{7096BB09-8C6F-4114-843C-746F355123DA}.Debug|Win32.ActiveCfg = Debug|Win32
-		{7096BB09-8C6F-4114-843C-746F355123DA}.Debug|Win32.Build.0 = Debug|Win32
-		{7096BB09-8C6F-4114-843C-746F355123DA}.Release|Win32.ActiveCfg = Release|Win32
-		{7096BB09-8C6F-4114-843C-746F355123DA}.Release|Win32.Build.0 = Release|Win32
-		{7096BB09-8C6F-4114-843C-746F355123DA}.Tools|Win32.ActiveCfg = Tools|Win32
-		{7096BB09-8C6F-4114-843C-746F355123DA}.Tools|Win32.Build.0 = Tools|Win32
 		{70F858A3-324C-4BCC-BC9A-5527D034B35B}.Debug|Win32.ActiveCfg = Debug|Win32
 		{70F858A3-324C-4BCC-BC9A-5527D034B35B}.Debug|Win32.Build.0 = Debug|Win32
 		{70F858A3-324C-4BCC-BC9A-5527D034B35B}.Release|Win32.ActiveCfg = Release|Win32
@@ -65,6 +59,12 @@ Global
 		{EAF1C3B2-D686-4E4F-82DE-E6D0C0716D9B}.Release|Win32.Build.0 = Release|Win32
 		{EAF1C3B2-D686-4E4F-82DE-E6D0C0716D9B}.Tools|Win32.ActiveCfg = Release|Win32
 		{EAF1C3B2-D686-4E4F-82DE-E6D0C0716D9B}.Tools|Win32.Build.0 = Release|Win32
+		{7096BB09-8C6F-4114-843C-746F355123DA}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7096BB09-8C6F-4114-843C-746F355123DA}.Debug|Win32.Build.0 = Debug|Win32
+		{7096BB09-8C6F-4114-843C-746F355123DA}.Release|Win32.ActiveCfg = Release|Win32
+		{7096BB09-8C6F-4114-843C-746F355123DA}.Release|Win32.Build.0 = Release|Win32
+		{7096BB09-8C6F-4114-843C-746F355123DA}.Tools|Win32.ActiveCfg = Tools|Win32
+		{7096BB09-8C6F-4114-843C-746F355123DA}.Tools|Win32.Build.0 = Tools|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

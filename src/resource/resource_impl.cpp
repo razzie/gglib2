@@ -11,11 +11,11 @@
 #include <set>
 #include "Doboz/Compressor.h"
 #include "Doboz/Decompressor.h"
-#include "filesystem_impl.hpp"
+#include "resource_impl.hpp"
 #include "stringutil.hpp"
 
-static gg::FileSystem s_fs;
-gg::IFileSystem& gg::fs = s_fs;
+static gg::ResourceManager s_res;
+gg::IResourceManager& gg::res = s_res;
 
 
 #ifdef _WIN32
@@ -146,38 +146,38 @@ static std::string getPathEnd(const std::string& path)
 }*/
 
 
-gg::FileSystem::FileSystem()
+gg::ResourceManager::ResourceManager()
 {
 }
 
-gg::FileSystem::~FileSystem()
+gg::ResourceManager::~ResourceManager()
 {
 }
 
-bool gg::FileSystem::createVirtualDirectoryFile(const std::string& dir_path) const
+bool gg::ResourceManager::createResource(const std::string& dir_path) const
 {
 	std::wstring dir = convertString<char, wchar_t>(dir_path);
-	return createVirtualDirectoryFile(dir);
+	return createResource(dir);
 }
 
-bool gg::FileSystem::createVirtualDirectoryFile(const std::wstring& dir_path) const
+bool gg::ResourceManager::createResource(const std::wstring& dir_path) const
 {
 #ifdef _WIN32
 	std::wstring dir = dir_path;
 	if (dir.back() == '/') dir.pop_back();
-	return packDirectory(dir, dir + L".pak");
+	return packDirectory(dir, dir + L".res");
 #else
 	return false;
 #endif // _WIN32
 }
 
-bool gg::FileSystem::addVirtualDirectory(const std::string& vdir_path)
+bool gg::ResourceManager::addResource(const std::string& res_path)
 {
-	VirtualDirectory* vdir = new VirtualDirectory(vdir_path);
+	Resource* res = new Resource(res_path);
 
-	if (vdir->init())
+	if (res->init())
 	{
-		m_vdirs.emplace(getPathEnd(vdir_path), vdir);
+		m_resources.emplace(getPathEnd(res_path), res);
 		return true;
 	}
 	else
@@ -186,12 +186,12 @@ bool gg::FileSystem::addVirtualDirectory(const std::string& vdir_path)
 	}
 }
 
-std::shared_ptr<gg::IDirectory> gg::FileSystem::openDirectory(const std::string& dir_name)
+std::shared_ptr<gg::IDirectory> gg::ResourceManager::openDirectory(const std::string& dir_name)
 {
 	std::string vdir_name = getPathRoot(dir_name);
 
-	auto it = m_vdirs.find(vdir_name);
-	if (it != m_vdirs.end())
+	auto it = m_resources.find(vdir_name);
+	if (it != m_resources.end())
 	{
 		return it->second->getDirectory(dir_name.substr(dir_name.find('/') + 1));
 	}
@@ -201,12 +201,12 @@ std::shared_ptr<gg::IDirectory> gg::FileSystem::openDirectory(const std::string&
 	}
 }
 
-std::shared_ptr<gg::IFile> gg::FileSystem::openFile(const std::string& file_name)
+std::shared_ptr<gg::IFile> gg::ResourceManager::openFile(const std::string& file_name)
 {
 	std::string vdir_name = getPathRoot(file_name);
 
-	auto it = m_vdirs.find(vdir_name);
-	if (it != m_vdirs.end())
+	auto it = m_resources.find(vdir_name);
+	if (it != m_resources.end())
 	{
 		return it->second->getFile(file_name.substr(file_name.find('/') + 1));
 	}
@@ -217,18 +217,18 @@ std::shared_ptr<gg::IFile> gg::FileSystem::openFile(const std::string& file_name
 }
 
 
-gg::VirtualDirectory::VirtualDirectory(const std::string& vdir_name) :
+gg::Resource::Resource(const std::string& vdir_name) :
 	m_file(vdir_name, std::ios::in | std::ios::binary),
 	m_name(getPathEnd(vdir_name))
 {
 }
 
-gg::VirtualDirectory::~VirtualDirectory()
+gg::Resource::~Resource()
 {
 	m_file.close();
 }
 
-bool gg::VirtualDirectory::init()
+bool gg::Resource::init()
 {
 	if (!m_file.is_open())
 		return false;
@@ -265,17 +265,17 @@ bool gg::VirtualDirectory::init()
 	return true;
 }
 
-const std::string& gg::VirtualDirectory::getName() const
+const std::string& gg::Resource::getName() const
 {
 	return m_name;
 }
 
-std::shared_ptr<gg::IDirectory> gg::VirtualDirectory::getDirectory(const std::string& dir_name)
+std::shared_ptr<gg::IDirectory> gg::Resource::getDirectory(const std::string& dir_name)
 {
 	return std::shared_ptr<IDirectory>(new Directory(this, m_name + '/' + dir_name));
 }
 
-std::shared_ptr<gg::IFile> gg::VirtualDirectory::getFile(const std::string& file_name)
+std::shared_ptr<gg::IFile> gg::Resource::getFile(const std::string& file_name)
 {
 	auto it = m_files.find(file_name);
 	if (it != m_files.end())
@@ -298,7 +298,7 @@ std::shared_ptr<gg::IFile> gg::VirtualDirectory::getFile(const std::string& file
 	return {};
 }
 
-bool gg::VirtualDirectory::loadDirectoryData(const std::string& dir_name, std::vector<IDirectory::FileOrDirectory>* files)
+bool gg::Resource::loadDirectoryData(const std::string& dir_name, std::vector<IDirectory::FileOrDirectory>* files)
 {
 	std::set<std::string> directories;
 	const size_t name_begin_pos = dir_name.size();
@@ -336,7 +336,7 @@ bool gg::VirtualDirectory::loadDirectoryData(const std::string& dir_name, std::v
 	return true;
 }
 
-bool gg::VirtualDirectory::loadFileData(const std::string& file_name, const char** data, size_t* size)
+bool gg::Resource::loadFileData(const std::string& file_name, const char** data, size_t* size)
 {
 	auto it = m_files.find(file_name);
 	if (it != m_files.end())

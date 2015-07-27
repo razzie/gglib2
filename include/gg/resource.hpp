@@ -7,23 +7,26 @@
  */
 
 /**
+ * Resources are archives that act like a directory.
+ *
+ *
  * HOW TO USE:
  * -----------
  *
- * In this example we have a 'textures.pak' named virtual directory in 'media' folder.
+ * In this example we have a 'textures.res' named resource in 'media' folder.
  * It contains 3 files: 'ground.png', 'water.png' and 'sky.png'.
  *
  * 1st step:
- * Add the virtual directory by calling 'gg::fs.addVirtualDirectory("media/textures.pak")'.
+ * Add the resource by calling 'gg::res.addResource("media/textures.res")'.
  *
  * 2nd step:
- * Let's assume the program needs to open 'sky.png', which is a part of 'textures.pak'
- * virtual directory. It can be done by calling: 'auto file = gg::fs.openFile("textures.pak/sky.png")'
+ * Let's assume the program needs to open 'sky.png', which is a part of 'textures.res'
+ * resource. It can be done by calling: 'auto file = gg::res.openFile("textures.res/sky.png")'
  *
  * Important:
- * - Do NOT add virtual directories concurrently.
- * - Thread-safe file and directory operations are supported only AFTER finishing the addition of
- *   virtual directories.
+ * - Do NOT add resources concurrently.
+ * - Thread-safe file and directory operations are supported only AFTER finishing the addition
+ *   of resources.
  * - Do NOT use backslash '\' characters in a file path. Always use slash '/' instead.
  */
 
@@ -33,7 +36,7 @@
 #include <string>
 #include <vector>
 
-#if defined GGFILESYSTEM_BUILD
+#if defined GGRESOURCE_BUILD
 #	define GG_API __declspec(dllexport)
 #else
 #	define GG_API __declspec(dllimport)
@@ -44,17 +47,17 @@ namespace gg
 	class IDirectory;
 	class IFile;
 
-	class IFileSystem
+	class IResourceManager
 	{
 	public:
-		virtual ~IFileSystem() = default;
-		virtual bool createVirtualDirectoryFile(const std::string& dir_path) const = 0;
-		virtual bool addVirtualDirectory(const std::string& vdir_path) = 0;
+		virtual ~IResourceManager() = default;
+		virtual bool createResource(const std::string& dir_path) const = 0;
+		virtual bool addResource(const std::string& res_path) = 0;
 		virtual std::shared_ptr<IDirectory> openDirectory(const std::string& dir_name) = 0;
 		virtual std::shared_ptr<IFile> openFile(const std::string& file_name) = 0;
 	};
 
-	extern GG_API IFileSystem& fs;
+	extern GG_API IResourceManager& res;
 
 	class IDirectory
 	{
@@ -97,7 +100,7 @@ namespace gg
 	{
 	public:
 		FileStream(const std::string& file_name) :
-			std::istream(this), m_file(fs.openFile(file_name)),
+			std::istream(this), m_file(res.openFile(file_name)),
 			m_pos(0)
 		{
 		}
