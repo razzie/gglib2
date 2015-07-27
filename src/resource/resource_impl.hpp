@@ -21,7 +21,7 @@ namespace gg
 		Resource(const std::string& vdir_path);
 		virtual ~Resource();
 		virtual bool init();
-		virtual const std::string& getName() const;
+		virtual const std::string& name() const;
 		virtual std::shared_ptr<IDirectory> getDirectory(const std::string& dir_name);
 		virtual std::shared_ptr<IFile> getFile(const std::string& file_name);
 		virtual bool loadDirectoryData(const std::string& dir_name, std::vector<IDirectory::FileOrDirectory>*);
@@ -67,7 +67,7 @@ namespace gg
 			m_res->loadDirectoryData(m_name.substr(m_name.find('/') + 1), &m_files);
 		}
 
-		virtual const std::string& getName() const
+		virtual const std::string& name() const
 		{
 			return m_name;
 		}
@@ -111,12 +111,12 @@ namespace gg
 			unload();
 		}
 
-		virtual const std::string& getName() const
+		virtual const std::string& name() const
 		{
 			return m_name;
 		}
 
-		virtual const char* getData() const
+		virtual const char* data() const
 		{
 			if (m_data == nullptr)
 			{
@@ -129,7 +129,7 @@ namespace gg
 			return m_data;
 		}
 
-		virtual size_t getSize() const
+		virtual size_t size() const
 		{
 			if (m_data == nullptr)
 			{
