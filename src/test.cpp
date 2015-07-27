@@ -46,7 +46,7 @@ public:
 					auto event = foo_event.create(*packet);
 					if (event)
 					{
-						gg::log << "foo_event: " << event->params().get<int>(0) << ", " << event->params().get<float>(1) << std::endl;
+						gg::log << "foo_event: " << event->get<int>(0) << ", " << event->get<float>(1) << std::endl;
 					}
 				}
 			}

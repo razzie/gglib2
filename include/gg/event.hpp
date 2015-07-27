@@ -41,7 +41,7 @@ namespace gg
 		template<class T>
 		const T& get(unsigned n) const
 		{
-			return params()->get<T>(n);
+			return params().get<T>(n);
 		}
 	};
 
@@ -51,8 +51,6 @@ namespace gg
 		virtual ~IEventDefinitionBase() = default;
 		virtual IEvent::Type type() const = 0;
 		virtual std::shared_ptr<IEvent> create() const = 0;
-		virtual std::shared_ptr<IEvent> create(const IStorage&) const = 0;
-		virtual std::shared_ptr<IEvent> create(IStorage&&) const = 0;
 		virtual std::shared_ptr<IEvent> create(IPacket&) const = 0;
 	};
 
@@ -63,13 +61,7 @@ namespace gg
 		virtual ~IEventDefinition() = default;
 		virtual IEvent::Type type() const = 0;
 		virtual std::shared_ptr<IEvent> create() const = 0;
-		virtual std::shared_ptr<IEvent> create(const IStorage&) const = 0;
-		virtual std::shared_ptr<IEvent> create(IStorage&&) const = 0;
 		virtual std::shared_ptr<IEvent> create(IPacket&) const = 0;
-
-		std::shared_ptr<IEvent> create(Params... params) const
-		{
-			return create(gg::Storage{ params... });
-		}
+		virtual std::shared_ptr<IEvent> create(Params... params) const = 0;
 	};
 };

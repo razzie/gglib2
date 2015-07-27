@@ -188,8 +188,6 @@ namespace gg
 	public:
 		SerializableStorage() = default;
 		SerializableStorage(Types... values) : Storage(std::forward<Types>(values)...) {}
-		SerializableStorage& operator=(const IStorage& other) { copy<0, Types...>(other); return *this; }
-		SerializableStorage& operator=(IStorage&& other) { move<0, Types...>(other); return *this; }
 		virtual ~SerializableStorage() = default;
 		virtual void serialize(IPacket& packet) { serialize<0, Types...>(packet, *this); }
 
@@ -204,26 +202,6 @@ namespace gg
 		{
 			packet & storage.get<Type0>(N);
 			serialize<N + 1, Types...>(packet, storage);
-		}
-
-		template<unsigned N>
-		void copy(const IStorage& other) {}
-
-		template<unsigned N, class Type0, class... Types>
-		void copy(const IStorage& other)
-		{
-			get<Type0>(N) = other.get<Type0>(N);
-			copy<N + 1, Types...>(other);
-		}
-
-		template<unsigned N>
-		void move(IStorage&& other) {}
-
-		template<unsigned N, class Type0, class... Types>
-		void move(IStorage&& other)
-		{
-			get<Type0>(N) = std::move(other.get<Type0>(N));
-			move<N + 1, Types...>(other);
 		}
 	};
 
@@ -247,34 +225,6 @@ namespace gg
 			return event;
 		}
 
-		virtual std::shared_ptr<IEvent> create(const IStorage& s) const
-		{
-			try
-			{
-				std::shared_ptr<IEvent> event(new Event());
-				static_cast<Event*>(event.get())->setup(s);
-				return event;
-			}
-			catch (std::exception&)
-			{
-				return {};
-			}
-		}
-
-		virtual std::shared_ptr<IEvent> create(IStorage&& s) const
-		{
-			try
-			{
-				std::shared_ptr<IEvent> event(new Event());
-				static_cast<Event*>(event.get())->setup(s);
-				return event;
-			}
-			catch (std::exception&)
-			{
-				return {};
-			}
-		}
-
 		virtual std::shared_ptr<IEvent> create(IPacket& packet) const
 		{
 			if (packet.type() != EventType)
@@ -285,7 +235,7 @@ namespace gg
 			return event;
 		}
 
-		std::shared_ptr<IEvent> create(Params... params) const
+		virtual std::shared_ptr<IEvent> create(Params... params) const
 		{
 			std::shared_ptr<IEvent> event(new Event(std::forward<Params>(params)...));
 			return event;
@@ -306,8 +256,6 @@ namespace gg
 			virtual Type type() const { return EventType; }
 			virtual const IStorage& params() const { return m_params; }
 			virtual void serialize(IPacket& packet) { m_params.serialize(packet); }
-			void setup(const IStorage& s) { m_params = s; }
-			void setup(IStorage&& s) { m_params = s; }
 
 		private:
 			SerializableStorage<Params...> m_params;
