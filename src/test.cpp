@@ -8,6 +8,7 @@
 
 #include "gg/any.hpp"
 #include "gg/console.hpp"
+#include "gg/database.hpp"
 #include "gg/function.hpp"
 #include "gg/logger.hpp"
 #include "gg/network.hpp"

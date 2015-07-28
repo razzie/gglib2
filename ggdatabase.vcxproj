@@ -11,20 +11,20 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{1B2790C9-A343-42DC-844B-CC67F08C9A4E}</ProjectGuid>
+    <ProjectGuid>{F9CB6FDF-0B77-4042-A43E-4FB85A40A497}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>gglibvs</RootNamespace>
     <TargetPlatformVersion>8.1</TargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -43,7 +43,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>bin\</OutDir>
-    <TargetExt>.exe</TargetExt>
+    <TargetExt>.dll</TargetExt>
     <IntDir>obj\$(ProjectName)\$(Configuration)\</IntDir>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <TargetName>$(ProjectName)_d</TargetName>
@@ -51,7 +51,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>bin\</OutDir>
-    <TargetExt>.exe</TargetExt>
+    <TargetExt>.dll</TargetExt>
     <IntDir>obj\$(ProjectName)\$(Configuration)\</IntDir>
     <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
@@ -61,9 +61,9 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GGDATABASE_BUILD;WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>include;src;(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;src;src/database;(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <AdditionalOptions>/WL %(AdditionalOptions)</AdditionalOptions>
       <EnablePREfast>false</EnablePREfast>
@@ -74,7 +74,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(IntDir)$(TargetName).pdb</ProgramDatabaseFile>
       <ImportLibrary>$(OutDir)$(TargetName).lib</ImportLibrary>
-      <AdditionalDependencies>bin/gglogger_d.lib;bin/ggresource_d.lib;bin/ggdatabase_d.lib;bin/ggnetwork_d.lib;bin/ggthread_d.lib;bin/ggconsole_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -85,9 +84,9 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GGDATABASE_BUILD;WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>include;src;(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;src;src/database;(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <AdditionalOptions>/WL %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -98,30 +97,15 @@
       <OptimizeReferences>true</OptimizeReferences>
       <ProgramDatabaseFile>$(IntDir)$(TargetName).pdb</ProgramDatabaseFile>
       <ImportLibrary>$(OutDir)$(TargetName).lib</ImportLibrary>
-      <AdditionalDependencies>bin/gglogger.lib;bin/ggresource.lib;bin/ggdatabase.lib;bin/ggnetwork.lib;bin/ggthread.lib;bin/ggconsole.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="include\gg\any.hpp" />
     <ClInclude Include="include\gg\config.hpp" />
-    <ClInclude Include="include\gg\console.hpp" />
     <ClInclude Include="include\gg\database.hpp" />
-    <ClInclude Include="include\gg\event.hpp" />
-    <ClInclude Include="include\gg\filesystem.hpp" />
-    <ClInclude Include="include\gg\framework.hpp" />
-    <ClInclude Include="include\gg\function.hpp" />
-    <ClInclude Include="include\gg\logger.hpp" />
-    <ClInclude Include="include\gg\network.hpp" />
-    <ClInclude Include="include\gg\optional.hpp" />
-    <ClInclude Include="include\gg\resource.hpp" />
-    <ClInclude Include="include\gg\rwmutex.hpp" />
-    <ClInclude Include="include\gg\storage.hpp" />
-    <ClInclude Include="include\gg\streamutil.hpp" />
-    <ClInclude Include="include\gg\thread.hpp" />
-    <ClInclude Include="include\gg\timer.hpp" />
+    <ClInclude Include="src\database\database_impl.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\test.cpp" />
+    <ClCompile Include="src\database\database_impl.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
