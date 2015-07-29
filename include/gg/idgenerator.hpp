@@ -7,6 +7,9 @@
  */
 
 /**
+ * IDGenerator is a random number generator which returns each possible value
+ * only once (then restarts).
+ *
  * Credits: Mike McShaffry
  */
 
@@ -30,6 +33,7 @@ namespace gg
 		NumberType next()
 		{
 			NumberType val;
+			// filling val's bytes with random values one-by-one
 			uint8_t* p = reinterpret_cast<uint8_t*>(&val);
 			for (size_t i = 0; i < sizeof(NumberType); ++i)
 				p[i] = m_generators[i].next();
@@ -49,13 +53,14 @@ namespace gg
 
 				do
 				{
-					const uint8_t a = (dist(mt) % 163) + 1;
-					const uint8_t b = (dist(mt) % 131) + 1;
-					const uint8_t c = (dist(mt) % 101) + 1;
+					// carefully chosen coefficients
+					const uint8_t a = (dist(mt) % 227) + 1;
+					const uint8_t b = (dist(mt) % 223) + 1;
+					const uint8_t c = (dist(mt) % 211) + 1;
 
 					m_step = (a * 255 * 255) + (b * 255) + c;
-					m_step &= ~0xc0000000;
-					m_step %= 257;
+					m_step &= ~0xc0000000; // don't let it become too large
+					m_step %= 257; // first prime greater than or equal to 255
 				} while (m_step == 0);
 			}
 
