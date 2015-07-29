@@ -66,8 +66,11 @@ namespace gg
 
 			uint8_t next()
 			{
-				m_current += m_step;
-				m_current %= 257;
+				do
+				{
+					m_current += m_step;
+					m_current %= 257;
+				} while (m_current > 255);
 				return static_cast<uint8_t>(m_current);
 			}
 
