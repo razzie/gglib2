@@ -10,3 +10,9 @@
 
 static gg::DatabaseManager s_db;
 gg::IDatabaseManager& gg::db = s_db;
+
+
+std::shared_ptr<gg::IDatabase> gg::DatabaseManager::createDatabase(const std::string& name) const
+{
+	return {};
+}

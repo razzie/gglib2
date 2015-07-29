@@ -21,6 +21,8 @@ namespace gg
 	class DatabaseManager : public IDatabaseManager
 	{
 	public:
+		DatabaseManager() = default;
 		virtual ~DatabaseManager() = default;
+		virtual std::shared_ptr<IDatabase> createDatabase(const std::string& name) const;
 	};
 };
