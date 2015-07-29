@@ -79,6 +79,26 @@ namespace gg
 	};
 
 
+	template<class T>
+	OstreamManipulator<T> hex(T t)
+	{
+		OstreamManipulator<T>::Manipulator m =
+			[](std::ostream& o, T t) -> std::ostream&
+			{
+				const char map[] = "0123456789abcdef";
+				const unsigned char* ptr = reinterpret_cast<const unsigned char*>(&t);
+				for (size_t i = 0; i < sizeof(T); ++i)
+				{
+					unsigned first = ptr[i] / 16;
+					unsigned second = ptr[i] - (first * 16);
+					o << map[first] << map[second];
+				}
+				return o;
+			};
+
+		return OstreamManipulator<T>(m, t);
+	}
+
 	inline IstreamManipulator<char> delimiter(char d)
 	{
 		struct CustomLocale : std::ctype<char>
