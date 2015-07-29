@@ -10,6 +10,7 @@
 #include "gg/console.hpp"
 #include "gg/database.hpp"
 #include "gg/function.hpp"
+#include "gg/idgenerator.hpp"
 #include "gg/logger.hpp"
 #include "gg/network.hpp"
 #include "gg/resource.hpp"
@@ -20,6 +21,7 @@
 #include "gg/timer.hpp"
 #include "gg/optional.hpp"
 
+gg::IDGenerator<> gen;
 
 gg::EventDefinition<1, int, float> foo_event;
 
@@ -112,6 +114,10 @@ private:
 
 int main()
 {
+	for (int i = 0; i < 8; ++i)
+		gg::log << gen.next() << ", ";
+	gg::log << std::endl;
+
 	auto server = gg::thread.createThread("server thread");
 	server->addTask<ServerTask>();
 	server->run();

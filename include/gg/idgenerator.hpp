@@ -12,52 +12,65 @@
 
 #pragma once
 
-#include <atomic>
 #include <cstdint>
 #include <random>
-#include <stdexcept>
 
 namespace gg
 {
 	typedef uint16_t ID;
 
+	template<class NumberType = ID>
 	class IDGenerator
 	{
 	public:
-		IDGenerator() :
-			m_current(0)
+		IDGenerator() = default;
+		IDGenerator(const IDGenerator&) = delete;
+		~IDGenerator() = default;
+
+		NumberType next()
 		{
-			std::random_device rd;
-			std::mt19937 mt(rd());
-			std::uniform_int_distribution<uint16_t> dist(0, MAX_VALUE);
-
-			do
-			{
-				const uint8_t a = (dist(mt) % 163) + 1;
-				const uint8_t b = (dist(mt) % 131) + 1;
-				const uint8_t c = (dist(mt) % 101) + 1;
-
-				m_step = (a * MAX_VALUE * MAX_VALUE) + (b * MAX_VALUE) + c;
-				m_step &= ~0xc0000000;
-				m_step %= PRIME;
-			} while (m_step == 0);
-		}
-
-		ID next()
-		{
-			uint32_t next = m_current.fetch_add(m_step) + m_step;
-			if (next > 0x00ffffff)
-				m_current.fetch_sub(0x00ffffff);
-
-			next %= PRIME;
-			return static_cast<uint16_t>(next);
+			NumberType val;
+			uint8_t* p = reinterpret_cast<uint8_t*>(&val);
+			for (size_t i = 0; i < sizeof(NumberType); ++i)
+				p[i] = m_generators[i].next();
+			return val;
 		}
 
 	private:
-		const uint16_t MAX_VALUE = 21001;
-		const uint32_t PRIME = 21001;
+		class ByteGenerator
+		{
+		public:
+			ByteGenerator() :
+				m_current(0)
+			{
+				std::random_device rd;
+				std::mt19937 mt(rd());
+				std::uniform_int_distribution<uint16_t> dist(0, 255);
 
-		uint32_t m_step;
-		std::atomic<uint32_t> m_current;
+				do
+				{
+					const uint8_t a = (dist(mt) % 163) + 1;
+					const uint8_t b = (dist(mt) % 131) + 1;
+					const uint8_t c = (dist(mt) % 101) + 1;
+
+					m_step = (a * 255 * 255) + (b * 255) + c;
+					m_step &= ~0xc0000000;
+					m_step %= 257;
+				} while (m_step == 0);
+			}
+
+			uint8_t next()
+			{
+				m_current += m_step;
+				m_current %= 257;
+				return static_cast<uint8_t>(m_current);
+			}
+
+		private:
+			uint32_t m_step;
+			uint32_t m_current;
+		};
+
+		ByteGenerator m_generators[sizeof(NumberType)];
 	};
 };
