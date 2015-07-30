@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <fstream>
 #include <map>
 #include <mutex>
 #include "gg/database.hpp"
@@ -17,6 +18,8 @@ namespace gg
 	class Database : public IDatabase
 	{
 	public:
+		class Table;
+
 		class Cell : public ICell
 		{
 		public:
@@ -34,6 +37,8 @@ namespace gg
 			virtual void set(float);
 			virtual void set(double);
 			virtual void set(const std::string&);
+			void save(std::fstream&);
+			void load(std::fstream&);
 
 		private:
 			union Data
@@ -55,7 +60,7 @@ namespace gg
 		public:
 			friend class Cell;
 
-			Row();
+			Row(Table&, Key);
 			virtual ~Row() = default;
 			virtual Access access() const;
 			virtual Key key() const;
@@ -64,8 +69,11 @@ namespace gg
 			virtual const ICell& cell(unsigned) const;
 			virtual const ICell& cell(const std::string& cell_name) const;
 			virtual void remove();
+			void save(std::fstream&);
+			void load(std::fstream&);
 
 		private:
+			Table& m_table;
 			Key m_key;
 			std::vector<Cell> m_cells;
 			bool m_force_remove;
@@ -81,15 +89,20 @@ namespace gg
 			friend class Row;
 
 			Table();
+			Table(Table&&);
 			virtual ~Table() = default;
 			virtual Access access() const;
 			virtual const std::string& name() const;
 			virtual std::shared_ptr<IRow> createRow(Key);
 			virtual std::shared_ptr<IRow> row(Key, Access = Access::READ_WRITE);
+			virtual void sync();
 			virtual void remove();
+			void save(std::fstream&);
+			void load(std::fstream&);
 
 		private:
 			std::mutex m_mutex;
+			std::string m_name;
 			std::vector<std::string> m_columns;
 			std::map<Key, Row> m_rows;
 			bool m_force_remove;
@@ -99,10 +112,20 @@ namespace gg
 		{
 		};
 
+		Database(const std::string& name);
 		virtual ~Database() = default;
 		virtual const std::string& name() const;
 		virtual bool createTable(const std::string& name, const std::vector<std::string>& columns);
+		virtual bool createTable(const std::string& name, unsigned columns);
 		virtual std::shared_ptr<ITable> table(const std::string&, Access = Access::READ_WRITE);
+		void save();
+		void load();
+
+	private:
+		std::mutex m_mutex;
+		std::fstream m_file;
+		std::string m_name;
+		std::map<std::string, Table> m_tables;
 	};
 
 	class DatabaseManager : public IDatabaseManager

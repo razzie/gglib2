@@ -81,12 +81,14 @@ namespace gg
 			virtual const std::string& name() const = 0;
 			virtual std::shared_ptr<IRow> createRow(Key) = 0;
 			virtual std::shared_ptr<IRow> row(Key, Access = Access::READ_WRITE) = 0;
+			virtual void sync() = 0;
 			virtual void remove() = 0; // removes table after it's not referenced anywhere
 		};
 
 		virtual ~IDatabase() = default;
 		virtual const std::string& name() const = 0;
 		virtual bool createTable(const std::string& name, const std::vector<std::string>& columns) = 0;
+		virtual bool createTable(const std::string& name, unsigned columns) = 0;
 		virtual std::shared_ptr<ITable> table(const std::string&, Access = Access::READ_WRITE) = 0;
 	};
 
