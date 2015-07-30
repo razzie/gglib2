@@ -37,7 +37,8 @@ namespace gg
 			virtual void set(float);
 			virtual void set(double);
 			virtual void set(const std::string&);
-			void save(std::fstream&);
+			size_t size() const;
+			void save(std::fstream&) const;
 			void load(std::fstream&);
 
 		private:
@@ -49,7 +50,7 @@ namespace gg
 				double d;
 			};
 
-			std::mutex m_mutex;
+			mutable std::mutex m_mutex;
 			Type m_type;
 			Data m_data;
 			std::string m_str_data;
@@ -69,7 +70,8 @@ namespace gg
 			virtual const ICell& cell(unsigned) const;
 			virtual const ICell& cell(const std::string& cell_name) const;
 			virtual void remove();
-			void save(std::fstream&);
+			size_t size() const;
+			void save(std::fstream&) const;
 			void load(std::fstream&);
 
 		private:
@@ -88,8 +90,7 @@ namespace gg
 		public:
 			friend class Row;
 
-			Table();
-			Table(Table&&);
+			Table(const std::string& name, const std::vector<std::string>& columns);
 			virtual ~Table() = default;
 			virtual Access access() const;
 			virtual const std::string& name() const;
@@ -97,11 +98,12 @@ namespace gg
 			virtual std::shared_ptr<IRow> row(Key, Access = Access::READ_WRITE);
 			virtual void sync();
 			virtual void remove();
-			void save(std::fstream&);
+			size_t size() const;
+			void save(std::fstream&) const;
 			void load(std::fstream&);
 
 		private:
-			std::mutex m_mutex;
+			mutable std::mutex m_mutex;
 			std::string m_name;
 			std::vector<std::string> m_columns;
 			std::map<Key, Row> m_rows;
@@ -122,7 +124,7 @@ namespace gg
 		void load();
 
 	private:
-		std::mutex m_mutex;
+		mutable std::mutex m_mutex;
 		std::fstream m_file;
 		std::string m_name;
 		std::map<std::string, Table> m_tables;
