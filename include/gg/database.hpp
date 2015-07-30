@@ -28,6 +28,7 @@ namespace gg
 
 		enum Access
 		{
+			NO_ACCESS,
 			READ,
 			READ_WRITE
 		};
@@ -69,6 +70,7 @@ namespace gg
 			virtual ICell& cell(const std::string& cell_name) = 0;
 			virtual const ICell& cell(unsigned) const = 0;
 			virtual const ICell& cell(const std::string& cell_name) const = 0;
+			virtual void remove() = 0; // removes row after it's not referenced anywhere
 		};
 
 		class ITable
@@ -77,22 +79,22 @@ namespace gg
 			virtual ~ITable() = default;
 			virtual Access access() const = 0;
 			virtual const std::string& name() const = 0;
-			virtual IRow& row(Key) = 0;
-			virtual const IRow& row(Key) const = 0;
+			virtual std::shared_ptr<IRow> createRow(Key) = 0;
+			virtual std::shared_ptr<IRow> row(Key, Access = Access::READ_WRITE) = 0;
+			virtual void remove() = 0; // removes table after it's not referenced anywhere
 		};
 
 		virtual ~IDatabase() = default;
 		virtual const std::string& name() const = 0;
 		virtual bool createTable(const std::string& name, const std::vector<std::string>& columns) = 0;
-		virtual std::shared_ptr<ITable> table(const std::string&) = 0;
-		virtual void sync() = 0;
+		virtual std::shared_ptr<ITable> table(const std::string&, Access = Access::READ_WRITE) = 0;
 	};
 
 	class IDatabaseManager
 	{
 	public:
 		virtual ~IDatabaseManager() = default;
-		virtual std::shared_ptr<IDatabase> createDatabase(const std::string& name) const = 0;
+		virtual std::shared_ptr<IDatabase> open(const std::string& name) const = 0;
 	};
 
 	extern GG_API IDatabaseManager& db;
