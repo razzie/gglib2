@@ -39,12 +39,12 @@ public:
 	{
 		try
 		{
-			if (m_connection->alive())
+			if (m_connection->isAlive())
 			{
 				auto packet = m_connection->getNextPacket(10);
 				if (packet)
 				{
-					gg::log << "packet: length=" << packet->length() << ", type=" << packet->type() << std::endl;
+					gg::log << "packet: length=" << packet->getSize() << ", type=" << packet->getType() << std::endl;
 
 					auto event = foo_event.create(*packet);
 					if (event)
@@ -87,7 +87,7 @@ public:
 	{
 		try
 		{
-			if (m_server->alive())
+			if (m_server->isAlive())
 			{
 				auto connection = m_server->getNextConnection(10);
 				if (connection)

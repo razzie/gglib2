@@ -21,12 +21,10 @@ namespace gg
 
 		Packet(Mode, Type);
 		virtual ~Packet();
-		virtual Mode mode() const;
-		virtual Type type() const;
-		char* data(); // for internal use
-		virtual const char* data() const;
-		virtual size_t length() const;
-		size_t& length();
+		virtual Mode getMode() const;
+		virtual Type getType() const;
+		virtual const char* getData() const;
+		virtual size_t getSize() const;
 
 		virtual Packet& operator& (int8_t&);
 		virtual Packet& operator& (int16_t&);
@@ -41,6 +39,10 @@ namespace gg
 		virtual Packet& operator& (std::string&);
 		virtual Packet& operator& (IBlob&);
 		virtual Packet& operator& (ISerializable&);
+
+		// for internal use
+		char* getDataPtr();
+		void setSize(size_t);
 
 	protected:
 		Mode m_mode;
@@ -69,7 +71,7 @@ namespace gg
 		virtual ~Connection();
 		virtual bool connect(void* user_data = nullptr);
 		virtual void disconnect();
-		virtual bool alive() const;
+		virtual bool isAlive() const;
 		virtual const std::string& getAddress() const;
 		virtual std::shared_ptr<IPacket> getNextPacket(uint32_t timeoutMs = 0);
 		virtual std::shared_ptr<IPacket> createPacket(IPacket::Type) const;
@@ -100,7 +102,7 @@ namespace gg
 		virtual ~Server();
 		virtual bool start(void* user_data = nullptr);
 		virtual void stop();
-		virtual bool alive() const;
+		virtual bool isAlive() const;
 		virtual std::shared_ptr<IConnection> getNextConnection(uint32_t timeoutMs = 0);
 		virtual void closeConnections();
 

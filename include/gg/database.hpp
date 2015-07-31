@@ -26,7 +26,7 @@ namespace gg
 	public:
 		typedef uint16_t Key;
 
-		enum Access
+		enum AccessType
 		{
 			NO_ACCESS,
 			READ,
@@ -64,8 +64,8 @@ namespace gg
 		{
 		public:
 			virtual ~IRow() = default;
-			virtual Access access() const = 0;
-			virtual Key key() const = 0;
+			virtual AccessType getAccessType() const = 0;
+			virtual Key getKey() const = 0;
 			virtual ICell& cell(unsigned) = 0;
 			virtual ICell& cell(const std::string& cell_name) = 0;
 			virtual const ICell& cell(unsigned) const = 0;
@@ -77,26 +77,28 @@ namespace gg
 		{
 		public:
 			virtual ~ITable() = default;
-			virtual Access access() const = 0;
-			virtual const std::string& name() const = 0;
-			virtual std::shared_ptr<IRow> createRow(Key) = 0;
-			virtual std::shared_ptr<IRow> row(Key, Access = Access::READ_WRITE) = 0;
+			virtual AccessType getAccessType() const = 0;
+			virtual const std::string& getName() const = 0;
+			virtual std::shared_ptr<IRow> createRow() = 0;
+			virtual std::shared_ptr<IRow> getRow(Key, bool write = true) = 0;
+			virtual std::shared_ptr<IRow> getNextRow(Key, bool write = true) = 0;
 			virtual void sync() = 0;
 			virtual void remove() = 0; // removes table after it's not referenced anywhere
 		};
 
 		virtual ~IDatabase() = default;
-		virtual const std::string& name() const = 0;
-		virtual bool createTable(const std::string& name, const std::vector<std::string>& columns) = 0;
-		virtual bool createTable(const std::string& name, unsigned columns) = 0;
-		virtual std::shared_ptr<ITable> table(const std::string&, Access = Access::READ_WRITE) = 0;
+		virtual const std::string& getFilename() const = 0;
+		virtual bool createTable(const std::string& table, const std::vector<std::string>& columns) = 0;
+		virtual bool createTable(const std::string& table, unsigned columns) = 0;
+		virtual std::shared_ptr<ITable> getTable(const std::string& table, bool write = true) = 0;
+		virtual void getTableNames(std::vector<std::string>& tables) const = 0;
 	};
 
 	class IDatabaseManager
 	{
 	public:
 		virtual ~IDatabaseManager() = default;
-		virtual std::shared_ptr<IDatabase> open(const std::string& name) const = 0;
+		virtual std::shared_ptr<IDatabase> open(const std::string& filename) const = 0;
 	};
 
 	extern GG_API IDatabaseManager& db;

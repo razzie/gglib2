@@ -123,7 +123,7 @@ namespace gg
 		}
 
 		template<class U>
-		T value_or(U default_value)
+		T valueOr(U default_value)
 		{
 			if (m_engaged)
 				return *this;

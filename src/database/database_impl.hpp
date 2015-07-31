@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <fstream>
 #include <map>
 #include <mutex>
@@ -37,7 +38,7 @@ namespace gg
 			virtual void set(float);
 			virtual void set(double);
 			virtual void set(const std::string&);
-			size_t size() const;
+			size_t getSize() const;
 			void save(std::fstream&) const;
 			void load(std::fstream&);
 
@@ -63,14 +64,14 @@ namespace gg
 
 			Row(Table&, Key);
 			virtual ~Row() = default;
-			virtual Access access() const;
-			virtual Key key() const;
+			virtual AccessType getAccessType() const;
+			virtual Key getKey() const;
 			virtual ICell& cell(unsigned);
 			virtual ICell& cell(const std::string& cell_name);
 			virtual const ICell& cell(unsigned) const;
 			virtual const ICell& cell(const std::string& cell_name) const;
 			virtual void remove();
-			size_t size() const;
+			size_t getSize() const;
 			void save(std::fstream&) const;
 			void load(std::fstream&);
 
@@ -90,20 +91,24 @@ namespace gg
 		public:
 			friend class Row;
 
-			Table(const std::string& name, const std::vector<std::string>& columns);
+			Table();
+			Table(Key, const std::string& name, const std::vector<std::string>& columns);
 			virtual ~Table() = default;
-			virtual Access access() const;
-			virtual const std::string& name() const;
-			virtual std::shared_ptr<IRow> createRow(Key);
-			virtual std::shared_ptr<IRow> row(Key, Access = Access::READ_WRITE);
+			virtual AccessType getAccessType() const;
+			Key getKey() const;
+			virtual const std::string& getName() const;
+			virtual std::shared_ptr<IRow> createRow();
+			virtual std::shared_ptr<IRow> getRow(Key, bool write = true);
+			virtual std::shared_ptr<IRow> getNextRow(Key, bool write = true);
 			virtual void sync();
 			virtual void remove();
-			size_t size() const;
+			size_t getSize() const;
 			void save(std::fstream&) const;
 			void load(std::fstream&);
 
 		private:
 			mutable std::mutex m_mutex;
+			Key m_key;
 			std::string m_name;
 			std::vector<std::string> m_columns;
 			std::map<Key, Row> m_rows;
@@ -114,20 +119,22 @@ namespace gg
 		{
 		};
 
-		Database(const std::string& name);
+		Database(const std::string& filename);
 		virtual ~Database() = default;
-		virtual const std::string& name() const;
-		virtual bool createTable(const std::string& name, const std::vector<std::string>& columns);
-		virtual bool createTable(const std::string& name, unsigned columns);
-		virtual std::shared_ptr<ITable> table(const std::string&, Access = Access::READ_WRITE);
+		virtual const std::string& getFilename() const;
+		virtual bool createTable(const std::string& table, const std::vector<std::string>& columns);
+		virtual bool createTable(const std::string& table, unsigned columns);
+		virtual std::shared_ptr<ITable> getTable(const std::string& table, bool write = true);
+		virtual void getTableNames(std::vector<std::string>& tables) const;
 		void save();
 		void load();
 
 	private:
 		mutable std::mutex m_mutex;
 		std::fstream m_file;
-		std::string m_name;
+		std::string m_filename;
 		std::map<std::string, Table> m_tables;
+		std::atomic<Key> m_last_table_key;
 	};
 
 	class DatabaseManager : public IDatabaseManager
@@ -135,6 +142,6 @@ namespace gg
 	public:
 		DatabaseManager() = default;
 		virtual ~DatabaseManager() = default;
-		virtual std::shared_ptr<IDatabase> open(const std::string& name) const;
+		virtual std::shared_ptr<IDatabase> open(const std::string& filename) const;
 	};
 };

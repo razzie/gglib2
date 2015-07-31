@@ -44,10 +44,10 @@ namespace gg
 		};
 
 		virtual ~IPacket() = default;
-		virtual Mode mode() const = 0;
-		virtual Type type() const = 0;
-		virtual const char* data() const = 0;
-		virtual size_t length() const = 0;
+		virtual Mode getMode() const = 0;
+		virtual Type getType() const = 0;
+		virtual const char* getData() const = 0;
+		virtual size_t getSize() const = 0;
 
 		virtual IPacket& operator& (int8_t&) = 0;
 		virtual IPacket& operator& (int16_t&) = 0;
@@ -93,7 +93,7 @@ namespace gg
 		virtual ~IConnectionBackend() = default;
 		virtual bool connect(void* user_data = nullptr) = 0;
 		virtual void disconnect() = 0;
-		virtual bool alive() const = 0;
+		virtual bool isAlive() const = 0;
 		virtual const std::string& getAddress() const = 0;
 		virtual size_t availableData() = 0;
 		virtual size_t waitForData(size_t len, uint32_t timeoutMs = 0) = 0; // 0: non-blocking
@@ -108,7 +108,7 @@ namespace gg
 		virtual ~IConnection() = default;
 		virtual bool connect(void* user_data = nullptr) = 0;
 		virtual void disconnect() = 0;
-		virtual bool alive() const = 0;
+		virtual bool isAlive() const = 0;
 		virtual const std::string& getAddress() const = 0;
 		virtual std::shared_ptr<IPacket> getNextPacket(uint32_t timeoutMs = 0) = 0; // 0: non-blocking
 		virtual std::shared_ptr<IPacket> createPacket(IPacket::Type) const = 0;
@@ -122,7 +122,7 @@ namespace gg
 		virtual ~IServerBackend() = default;
 		virtual bool start(void* user_data = nullptr) = 0;
 		virtual void stop() = 0;
-		virtual bool alive() const = 0;
+		virtual bool isAlive() const = 0;
 		virtual std::unique_ptr<IConnectionBackend> getNextConnection(uint32_t timeoutMs = 0) = 0; // 0: non-blocking
 	};
 
@@ -132,7 +132,7 @@ namespace gg
 		virtual ~IServer() = default;
 		virtual bool start(void* user_data = nullptr) = 0;
 		virtual void stop() = 0;
-		virtual bool alive() const = 0;
+		virtual bool isAlive() const = 0;
 		virtual std::shared_ptr<IConnection> getNextConnection(uint32_t timeoutMs = 0) = 0; // 0: non-blocking
 		virtual void closeConnections() = 0;
 	};
@@ -163,9 +163,9 @@ namespace gg
 	{
 	public:
 		virtual ~IBlob() = default;
-		virtual char* data() = 0;
-		virtual const char* data() const = 0;
-		virtual size_t length() const = 0;
+		virtual char* getDataPtr() = 0;
+		virtual const char* getData() const = 0;
+		virtual size_t getSize() const = 0;
 	};
 
 	template<size_t SIZE>
@@ -174,9 +174,9 @@ namespace gg
 	public:
 		Blob() = default;
 		virtual ~Blob() = default;
-		virtual char* data() { return m_data; }
-		virtual const char* data() const { return m_data; }
-		virtual size_t length() const { return SIZE; }
+		virtual char* getDataPtr() { return m_data; }
+		virtual const char* getData() const { return m_data; }
+		virtual size_t getSize() const { return SIZE; }
 
 	private:
 		char m_data[SIZE];
@@ -214,7 +214,7 @@ namespace gg
 		EventDefinition(const EventDefinition&) = default;
 		virtual ~EventDefinition() = default;
 
-		virtual IEvent::Type type() const
+		virtual IEvent::Type getType() const
 		{
 			return EventType;
 		}
@@ -227,7 +227,7 @@ namespace gg
 
 		virtual std::shared_ptr<IEvent> create(IPacket& packet) const
 		{
-			if (packet.type() != EventType)
+			if (packet.getType() != EventType)
 				return {};
 
 			std::shared_ptr<IEvent> event(new Event());
@@ -253,8 +253,8 @@ namespace gg
 			}
 
 			virtual ~Event() = default;
-			virtual Type type() const { return EventType; }
-			virtual const IStorage& params() const { return m_params; }
+			virtual Type getType() const { return EventType; }
+			virtual const IStorage& getParams() const { return m_params; }
 			virtual void serialize(IPacket& packet) { m_params.serialize(packet); }
 
 		private:

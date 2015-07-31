@@ -41,34 +41,34 @@ gg::Packet::~Packet()
 {
 }
 
-gg::IPacket::Mode gg::Packet::mode() const
+gg::IPacket::Mode gg::Packet::getMode() const
 {
 	return m_mode;
 }
 
-gg::IPacket::Type gg::Packet::type() const
+gg::IPacket::Type gg::Packet::getType() const
 {
 	return m_type;
 }
 
-char* gg::Packet::data()
+const char* gg::Packet::getData() const
 {
 	return m_data;
 }
 
-const char* gg::Packet::data() const
+size_t gg::Packet::getSize() const
+{
+	return m_data_len;
+}
+
+char* gg::Packet::getDataPtr()
 {
 	return m_data;
 }
 
-size_t gg::Packet::length() const
+void gg::Packet::setSize(size_t size)
 {
-	return m_data_len;
-}
-
-size_t& gg::Packet::length()
-{
-	return m_data_len;
+	m_data_len = size;
 }
 
 gg::Packet& gg::Packet::operator&(int8_t& i)
@@ -274,16 +274,16 @@ gg::Packet& gg::Packet::operator&(gg::IBlob& blob)
 {
 	if (m_mode == Mode::WRITE)
 	{
-		uint16_t len = static_cast<uint16_t>(blob.length());
+		uint16_t len = static_cast<uint16_t>(blob.getSize());
 		*this & len;
-		if (write(blob.data(), len) < len)
+		if (write(blob.getData(), len) < len)
 			throw SerializationError();
 	}
 	else
 	{
 		uint16_t len;
 		*this & len;
-		if (blob.length() != len || read(blob.data(), len) < len)
+		if (blob.getSize() != len || read(blob.getDataPtr(), len) < len)
 			throw SerializationError();
 	}
 
@@ -349,10 +349,10 @@ void gg::Connection::disconnect()
 	m_backend->disconnect();
 }
 
-bool gg::Connection::alive() const
+bool gg::Connection::isAlive() const
 {
 	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
-	return m_backend->alive();
+	return m_backend->isAlive();
 }
 
 const std::string& gg::Connection::getAddress() const
@@ -380,8 +380,8 @@ std::shared_ptr<gg::IPacket> gg::Connection::getNextPacket(uint32_t timeoutMs)
 	m_backend->read(reinterpret_cast<char*>(&head), sizeof(PacketHeader));
 
 	std::shared_ptr<Packet> packet(new Packet(IPacket::Mode::READ, head.packet_type));
-	m_backend->read(packet->data(), head.packet_size);
-	packet->length() = head.packet_size;
+	m_backend->read(packet->getDataPtr(), head.packet_size);
+	packet->setSize(head.packet_size);
 
 	PacketTail tail;
 	m_backend->read(reinterpret_cast<char*>(&tail), sizeof(PacketTail));
@@ -398,7 +398,7 @@ std::shared_ptr<gg::IPacket> gg::Connection::createPacket(gg::IPacket::Type type
 
 std::shared_ptr<gg::IPacket> gg::Connection::createPacket(std::shared_ptr<gg::IEvent> event) const
 {
-	std::shared_ptr<IPacket> packet( new Packet(IPacket::Mode::WRITE, event->type()) );
+	std::shared_ptr<IPacket> packet( new Packet(IPacket::Mode::WRITE, event->getType()) );
 	event->serialize(*packet);
 	return packet;
 }
@@ -408,14 +408,14 @@ bool gg::Connection::send(std::shared_ptr<gg::IPacket> packet)
 	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 
 	PacketHeader head;
-	head.packet_size = static_cast<uint16_t>(packet->length());
-	head.packet_type = packet->type();
+	head.packet_size = static_cast<uint16_t>(packet->getSize());
+	head.packet_type = packet->getType();
 
 	PacketTail tail;
 
 	size_t bytes_written = 0;
 	bytes_written += m_backend->write(reinterpret_cast<const char*>(&head), sizeof(PacketHeader));
-	bytes_written += m_backend->write(packet->data(), head.packet_size);
+	bytes_written += m_backend->write(packet->getData(), head.packet_size);
 	bytes_written += m_backend->write(reinterpret_cast<const char*>(&tail), sizeof(PacketTail));
 
 	return (bytes_written == head.packet_size + sizeof(PacketHeader) + sizeof(PacketTail));
@@ -455,10 +455,10 @@ void gg::Server::stop()
 	closeConnections();
 }
 
-bool gg::Server::alive() const
+bool gg::Server::isAlive() const
 {
 	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
-	return m_backend->alive();
+	return m_backend->isAlive();
 }
 
 std::shared_ptr<gg::IConnection> gg::Server::getNextConnection(uint32_t timeoutMs)
@@ -568,7 +568,7 @@ std::shared_ptr<gg::IPacket> gg::NetworkManager::createPacket(gg::IPacket::Type 
 
 std::shared_ptr<gg::IPacket> gg::NetworkManager::createPacket(std::shared_ptr<gg::IEvent> event) const
 {
-	std::shared_ptr<IPacket> packet( new Packet(IPacket::Mode::WRITE, event->type()) );
+	std::shared_ptr<IPacket> packet( new Packet(IPacket::Mode::WRITE, event->getType()) );
 	event->serialize(*packet);
 	return packet;
 }

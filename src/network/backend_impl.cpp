@@ -138,7 +138,7 @@ void gg::ConnectionBackend::disconnect()
 	}
 }
 
-bool gg::ConnectionBackend::alive() const
+bool gg::ConnectionBackend::isAlive() const
 {
 	return m_connected;
 }
@@ -301,7 +301,7 @@ void gg::ClientBackendTCP::disconnect()
 	}
 }
 
-bool gg::ClientBackendTCP::alive() const
+bool gg::ClientBackendTCP::isAlive() const
 {
 	return m_connected;
 }
@@ -452,7 +452,7 @@ void gg::ClientBackendUDP::disconnect()
 {
 }
 
-bool gg::ClientBackendUDP::alive() const
+bool gg::ClientBackendUDP::isAlive() const
 {
 	return false;
 }
@@ -587,7 +587,7 @@ void gg::ServerBackend::stop()
 	m_started = false;
 }
 
-bool gg::ServerBackend::alive() const
+bool gg::ServerBackend::isAlive() const
 {
 	return m_started;
 }

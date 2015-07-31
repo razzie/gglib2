@@ -201,7 +201,7 @@ void gg::Database::Cell::set(const std::string& s)
 	m_str_data = s;
 }
 
-size_t gg::Database::Cell::size() const
+size_t gg::Database::Cell::getSize() const
 {
 	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 
@@ -288,12 +288,12 @@ gg::Database::Row::Row(Table& table, Key key) :
 	m_cells.resize(m_table.m_columns.size());
 }
 
-gg::IDatabase::Access gg::Database::Row::access() const
+gg::IDatabase::AccessType gg::Database::Row::getAccessType() const
 {
-	return Access::NO_ACCESS;
+	return AccessType::NO_ACCESS;
 }
 
-gg::IDatabase::Key gg::Database::Row::key() const
+gg::IDatabase::Key gg::Database::Row::getKey() const
 {
 	return m_key;
 }
@@ -341,11 +341,11 @@ void gg::Database::Row::remove()
 	m_force_remove = true;
 }
 
-size_t gg::Database::Row::size() const
+size_t gg::Database::Row::getSize() const
 {
 	size_t size = sizeof(Key);
 	for (const Cell& cell : m_cells)
-		size += cell.size();
+		size += cell.getSize();
 	return size;
 }
 
@@ -364,29 +364,41 @@ void gg::Database::Row::load(std::fstream& f)
 }
 
 
-gg::Database::Table::Table(const std::string& name, const std::vector<std::string>& columns) :
+gg::Database::Table::Table() :
+	m_key(0),
+	m_force_remove(false)
+{
+}
+
+gg::Database::Table::Table(Key key, const std::string& name, const std::vector<std::string>& columns) :
+	m_key(key),
 	m_name(name),
 	m_force_remove(false)
 {
 	m_columns.insert(m_columns.end(), columns.begin(), columns.end());
 }
 
-gg::IDatabase::Access gg::Database::Table::access() const
+gg::IDatabase::AccessType gg::Database::Table::getAccessType() const
 {
-	return Access::NO_ACCESS;
+	return AccessType::NO_ACCESS;
 }
 
-const std::string& gg::Database::Table::name() const
+const std::string& gg::Database::Table::getName() const
 {
 	return m_name;
 }
 
-std::shared_ptr<gg::IDatabase::IRow> gg::Database::Table::createRow(Key key)
+std::shared_ptr<gg::IDatabase::IRow> gg::Database::Table::createRow()
 {
 	return std::shared_ptr<IRow>();
 }
 
-std::shared_ptr<gg::IDatabase::IRow> gg::Database::Table::row(Key key, Access access)
+std::shared_ptr<gg::IDatabase::IRow> gg::Database::Table::getRow(Key key, bool write)
+{
+	return std::shared_ptr<IRow>();
+}
+
+std::shared_ptr<gg::IDatabase::IRow> gg::Database::Table::getNextRow(Key key, bool write)
 {
 	return std::shared_ptr<IRow>();
 }
@@ -400,7 +412,7 @@ void gg::Database::Table::remove()
 	m_force_remove = true;
 }
 
-size_t gg::Database::Table::size() const
+size_t gg::Database::Table::getSize() const
 {
 	size_t size = sizeOfString(m_name);
 
@@ -410,7 +422,7 @@ size_t gg::Database::Table::size() const
 
 	size += sizeof(uint16_t); // row_count
 	for (auto& row : m_rows)
-		size += row.second.size();
+		size += row.second.getSize();
 
 	return size;
 }
@@ -419,12 +431,12 @@ void gg::Database::Table::save(std::fstream& f) const
 {
 	saveString(m_name, f);
 
-	uint16_t column_count = m_columns.size();
+	uint16_t column_count = static_cast<uint16_t>(m_columns.size());
 	f.write(reinterpret_cast<const char*>(&column_count), sizeof(uint16_t));
 	for (const std::string& column : m_columns)
 		saveString(column, f);
 
-	uint16_t row_count = m_rows.size();
+	uint16_t row_count = static_cast<uint16_t>(m_rows.size());
 	f.write(reinterpret_cast<const char*>(&column_count), sizeof(uint16_t));
 	for (auto& row : m_rows)
 		row.second.save(f);
@@ -452,9 +464,9 @@ gg::Database::Database(const std::string& name)
 
 }
 
-const std::string& gg::Database::name() const
+const std::string& gg::Database::getFilename() const
 {
-	return m_name;
+	return m_filename;
 }
 
 bool gg::Database::createTable(const std::string& name, const std::vector<std::string>& columns)
@@ -467,9 +479,14 @@ bool gg::Database::createTable(const std::string& name, unsigned columns)
 	return false;
 }
 
-std::shared_ptr<gg::IDatabase::ITable> gg::Database::table(const std::string& name, Access access)
+std::shared_ptr<gg::IDatabase::ITable> gg::Database::getTable(const std::string& name, bool write)
 {
 	return std::shared_ptr<ITable>();
+}
+
+void gg::Database::getTableNames(std::vector<std::string>& tables) const
+{
+
 }
 
 void gg::Database::save()
@@ -483,5 +500,5 @@ void gg::Database::load()
 
 std::shared_ptr<gg::IDatabase> gg::DatabaseManager::open(const std::string& name) const
 {
-	return{};
+	return {};
 }

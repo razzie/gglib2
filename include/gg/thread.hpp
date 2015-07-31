@@ -48,7 +48,7 @@ namespace gg
 		virtual void addTask(std::unique_ptr<ITask>&&) = 0;
 		virtual void clearTasks() = 0; // thread stops if there is no task to run
 		virtual bool run(Mode = Mode::REMOTE) = 0;
-		virtual bool alive() const = 0;
+		virtual bool isAlive() const = 0;
 		virtual void join() = 0;
 
 		template<class Task, class... Params>
@@ -71,8 +71,8 @@ namespace gg
 				}
 
 				virtual ~Event() = default;
-				virtual IEvent::Type type() const { return EventType; }
-				virtual const IStorage& params() const { return m_params; }
+				virtual IEvent::Type getType() const { return EventType; }
+				virtual const IStorage& getParams() const { return m_params; }
 				virtual void serialize(IPacket&) {}
 
 			private:

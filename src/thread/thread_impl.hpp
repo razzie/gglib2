@@ -27,7 +27,7 @@ namespace gg
 		TaskData& operator=(TaskData&&);
 		void pushEvents(const std::vector<std::shared_ptr<IEvent>>&);
 		std::vector<std::unique_ptr<ITask>>& children();
-		bool finished() const;
+		bool isFinished() const;
 		void run();
 
 		// inherited from IThread::TaskOptions
@@ -59,7 +59,7 @@ namespace gg
 		void addTasks(std::vector<std::unique_ptr<ITask>>&);
 		virtual void clearTasks();
 		virtual bool run(Mode = Mode::REMOTE);
-		virtual bool alive() const;
+		virtual bool isAlive() const;
 		virtual void join();
 
 	private:

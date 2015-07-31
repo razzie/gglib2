@@ -79,7 +79,7 @@ namespace gg
 		typedef std::vector<FileOrDirectory>::const_iterator ConstIterator;
 
 		virtual ~IDirectory() = default;
-		virtual const std::string& name() const = 0;
+		virtual const std::string& getName() const = 0;
 		virtual Iterator begin() = 0;
 		virtual Iterator end() = 0;
 		virtual ConstIterator begin() const = 0;
@@ -90,9 +90,9 @@ namespace gg
 	{
 	public:
 		virtual ~IFile() = default;
-		virtual const std::string& name() const = 0;
-		virtual const char* data() const = 0;
-		virtual size_t size() const = 0;
+		virtual const std::string& getName() const = 0;
+		virtual const char* getData() const = 0;
+		virtual size_t getSize() const = 0;
 		virtual void unload() = 0; // can cause crash if other thread is reading file data!
 	};
 
@@ -125,10 +125,10 @@ namespace gg
 
 		virtual int underflow() // get character without advancing position
 		{
-			if (m_pos >= m_file->size())
+			if (m_pos >= m_file->getSize())
 				return std::char_traits<char>::eof();
 			else
-				return static_cast<int>(m_file->data()[m_pos]);
+				return static_cast<int>(m_file->getData()[m_pos]);
 		}
 
 		virtual int uflow() // get character and advance position

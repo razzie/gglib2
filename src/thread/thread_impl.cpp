@@ -58,7 +58,7 @@ void gg::TaskData::pushEvents(const std::vector<std::shared_ptr<gg::IEvent>>& ev
 	{
 		for (IEvent::Type subscription : m_subscriptions)
 		{
-			if (event->type() == subscription)
+			if (event->getType() == subscription)
 				m_events.push(event);
 		}
 	}
@@ -69,7 +69,7 @@ std::vector<std::unique_ptr<gg::ITask>>& gg::TaskData::children()
 	return m_children;
 }
 
-bool gg::TaskData::finished() const
+bool gg::TaskData::isFinished() const
 {
 	return m_finished;
 }
@@ -263,7 +263,7 @@ void gg::Thread::thread()
 			it->run(); // exceptions are already catched here
 
 			// if task is finished, add its children to task list and remove it..
-			if (it->finished())
+			if (it->isFinished())
 			{
 				addTasks(it->children());
 				it = m_tasks.erase(it);
@@ -287,7 +287,7 @@ void gg::Thread::thread()
 	m_running.store(false);
 }
 
-bool gg::Thread::alive() const
+bool gg::Thread::isAlive() const
 {
 	return m_running;
 }

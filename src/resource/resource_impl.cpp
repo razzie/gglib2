@@ -338,7 +338,7 @@ bool gg::Resource::init()
 		// read file data
 		m_file.read(reinterpret_cast<char*>(&fd.original_size), sizeof(uint32_t));
 		m_file.read(reinterpret_cast<char*>(&fd.compressed_size), sizeof(uint32_t));
-		fd.start_pos = m_file.tellg(); // get pointer to compressed content
+		fd.start_pos = static_cast<size_t>(m_file.tellg()); // get pointer to compressed content
 
 		// skip compressed content
 		m_file.seekg(fd.compressed_size, std::ios_base::cur);
@@ -350,7 +350,7 @@ bool gg::Resource::init()
 	return true;
 }
 
-const std::string& gg::Resource::name() const
+const std::string& gg::Resource::getName() const
 {
 	return m_name;
 }

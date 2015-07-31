@@ -34,14 +34,14 @@ namespace gg
 		typedef uint16_t Type;
 
 		virtual ~IEvent() = default;
-		virtual Type type() const = 0;
-		virtual const IStorage& params() const = 0;
+		virtual Type getType() const = 0;
+		virtual const IStorage& getParams() const = 0;
 		virtual void serialize(IPacket&) = 0;
 
 		template<class T>
 		const T& get(unsigned n) const
 		{
-			return params().get<T>(n);
+			return getParams().get<T>(n);
 		}
 	};
 
@@ -49,7 +49,7 @@ namespace gg
 	{
 	public:
 		virtual ~IEventDefinitionBase() = default;
-		virtual IEvent::Type type() const = 0;
+		virtual IEvent::Type getType() const = 0;
 		virtual std::shared_ptr<IEvent> create() const = 0;
 		virtual std::shared_ptr<IEvent> create(IPacket&) const = 0;
 	};
@@ -59,7 +59,7 @@ namespace gg
 	{
 	public:
 		virtual ~IEventDefinition() = default;
-		virtual IEvent::Type type() const = 0;
+		virtual IEvent::Type getType() const = 0;
 		virtual std::shared_ptr<IEvent> create() const = 0;
 		virtual std::shared_ptr<IEvent> create(IPacket&) const = 0;
 		virtual std::shared_ptr<IEvent> create(Params... params) const = 0;

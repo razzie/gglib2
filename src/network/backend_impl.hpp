@@ -22,7 +22,7 @@ namespace gg
 		virtual ~ConnectionBackend();
 		virtual bool connect(void* user_data = nullptr);
 		virtual void disconnect();
-		virtual bool alive() const;
+		virtual bool isAlive() const;
 		virtual const std::string& getAddress() const;
 		virtual size_t availableData();
 		virtual size_t waitForData(size_t len, uint32_t timeoutMs = 0);
@@ -47,7 +47,7 @@ namespace gg
 		virtual ~ClientBackendTCP();
 		virtual bool connect(void* user_data = nullptr);
 		virtual void disconnect();
-		virtual bool alive() const;
+		virtual bool isAlive() const;
 		virtual const std::string& getAddress() const;
 		virtual size_t availableData();
 		virtual size_t waitForData(size_t len, uint32_t timeoutMs = 0);
@@ -69,7 +69,7 @@ namespace gg
 		virtual ~ClientBackendUDP();
 		virtual bool connect(void* user_data = nullptr);
 		virtual void disconnect();
-		virtual bool alive() const;
+		virtual bool isAlive() const;
 		virtual const std::string& getAddress() const;
 		virtual size_t availableData();
 		virtual size_t waitForData(size_t len, uint32_t timeoutMs = 0);
@@ -93,7 +93,7 @@ namespace gg
 		virtual ~ServerBackend();
 		virtual bool start(void* user_data = nullptr);
 		virtual void stop();
-		virtual bool alive() const;
+		virtual bool isAlive() const;
 		virtual std::unique_ptr<IConnectionBackend> getNextConnection(uint32_t timeoutMs = 0);
 
 	private:
