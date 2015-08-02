@@ -80,8 +80,14 @@ void gg::TaskData::run()
 	{
 		m_task->run(m_thread, *this);
 	}
+	catch (std::exception& e)
+	{
+		m_task->onError(e);
+		m_finished = true;
+	}
 	catch (...)
 	{
+		m_task->onError(std::runtime_error("Unknown error"));
 		m_finished = true;
 	}
 

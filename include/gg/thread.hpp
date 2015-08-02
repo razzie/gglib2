@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <exception>
 #include <memory>
 #include "gg/event.hpp"
 
@@ -89,6 +90,7 @@ namespace gg
 	public:
 		virtual ~ITask() = default;
 		virtual void setup(IThread::TaskOptions&) {};
+		virtual void onError(std::exception&) {};
 		virtual void run(IThread&, IThread::TaskOptions&) = 0;
 	};
 
