@@ -15,6 +15,7 @@
 #endif
 
 #include <cstdint>
+#include <exception>
 #include <memory>
 #include <string>
 #include <vector>
@@ -31,6 +32,15 @@ namespace gg
 			NO_ACCESS,
 			READ,
 			READ_WRITE
+		};
+
+		class IAccessError : public std::exception
+		{
+		public:
+			virtual ~IAccessError() = default;
+			virtual const char* what() = 0;
+			virtual AccessType getRequestedAccess() const = 0;
+			virtual AccessType getActualAccess() const = 0;
 		};
 
 		class ICell
@@ -66,10 +76,10 @@ namespace gg
 			virtual ~IRow() = default;
 			virtual AccessType getAccessType() const = 0;
 			virtual Key getKey() const = 0;
-			virtual ICell& cell(unsigned) = 0;
-			virtual ICell& cell(const std::string& cell_name) = 0;
-			virtual const ICell& cell(unsigned) const = 0;
-			virtual const ICell& cell(const std::string& cell_name) const = 0;
+			virtual ICell* cell(unsigned column) = 0;
+			virtual ICell* cell(const std::string& column) = 0;
+			virtual const ICell* cell(unsigned column) const = 0;
+			virtual const ICell* cell(const std::string& column) const = 0;
 			virtual void remove() = 0; // removes row after it's not referenced anywhere
 		};
 
@@ -79,19 +89,19 @@ namespace gg
 			virtual ~ITable() = default;
 			virtual AccessType getAccessType() const = 0;
 			virtual const std::string& getName() const = 0;
-			virtual std::shared_ptr<IRow> createRow() = 0;
-			virtual std::shared_ptr<IRow> getRow(Key, bool write = true) = 0;
-			virtual std::shared_ptr<IRow> getNextRow(Key, bool write = true) = 0;
-			virtual void sync() = 0;
+			virtual std::shared_ptr<IRow> createAndGetRow(bool write_access = true) = 0;
+			virtual std::shared_ptr<IRow> getRow(Key, bool write_access = true) = 0;
+			virtual std::shared_ptr<IRow> getNextRow(Key, bool write_access = true) = 0;
 			virtual void remove() = 0; // removes table after it's not referenced anywhere
 		};
 
 		virtual ~IDatabase() = default;
 		virtual const std::string& getFilename() const = 0;
-		virtual bool createTable(const std::string& table, const std::vector<std::string>& columns) = 0;
-		virtual bool createTable(const std::string& table, unsigned columns) = 0;
+		virtual std::shared_ptr<ITable> createAndGetTable(const std::string& table, const std::vector<std::string>& columns, bool write_access = true) = 0;
+		virtual std::shared_ptr<ITable> createAndGetTable(const std::string& table, unsigned columns, bool write_access = true) = 0;
 		virtual std::shared_ptr<ITable> getTable(const std::string& table, bool write = true) = 0;
 		virtual void getTableNames(std::vector<std::string>& tables) const = 0;
+		virtual bool sync() = 0;
 	};
 
 	class IDatabaseManager
