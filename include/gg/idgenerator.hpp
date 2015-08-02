@@ -27,7 +27,12 @@ namespace gg
 	{
 	public:
 		IDGenerator() = default;
-		IDGenerator(const IDGenerator&) = delete;
+
+		IDGenerator(const IDGenerator& other)
+		{
+			setState(other.getState());
+		}
+
 		~IDGenerator() = default;
 
 		NumberType next()
@@ -38,6 +43,31 @@ namespace gg
 			for (size_t i = 0; i < sizeof(NumberType); ++i)
 				p[i] = m_generators[i].next();
 			return val;
+		}
+
+		struct State
+		{
+			uint32_t step[sizeof(NumberType)];
+			uint32_t current[sizeof(NumberType)];
+		};
+
+		State getState() const
+		{
+			State state;
+			for (size_t i = 0; i < sizeof(NumberType); ++i)
+			{
+				state.step[i] = m_generators[i].m_step;
+				state.current[i] = m_generators[i].m_current;
+			}
+		}
+
+		void setState(const State& state)
+		{
+			for (size_t i = 0; i < sizeof(NumberType); ++i)
+			{
+				m_generators[i].m_step = state.step[i];
+				m_generators[i].m_current = state.current[i];
+			}
 		}
 
 	private:
@@ -74,7 +104,6 @@ namespace gg
 				return static_cast<uint8_t>(m_current);
 			}
 
-		private:
 			uint32_t m_step;
 			uint32_t m_current;
 		};
