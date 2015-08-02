@@ -114,6 +114,16 @@ private:
 
 int main()
 {
+	/*auto db = gg::db.open("valami.db");
+	{
+		auto table = db->createAndGetTable("gyumolcs", { "alma", "korte", "szilva" });
+		auto row = table->createAndGetRow();
+		row->cell("alma")->set(1);
+		row->cell("korte")->set(2);
+		row->cell("szilva")->set(3);
+	}
+	db->sync();*/
+
 	for (int i = 0; i < 8; ++i)
 		gg::log << gen.next() << ", ";
 	gg::log << std::endl;

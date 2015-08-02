@@ -6,6 +6,10 @@
  * All rights reserved.
  */
 
+#ifdef _WIN32
+#	include <Windows.h>
+#endif
+
 #include <stdexcept>
 #include "database_impl.hpp"
 
@@ -375,11 +379,14 @@ const gg::IDatabase::ICell* gg::Database::Row::cell(const std::string& column) c
 
 void gg::Database::Row::remove()
 {
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 	m_force_remove = true;
 }
 
 std::shared_ptr<gg::IDatabase::IRow> gg::Database::Row::createView(bool write_access)
 {
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
+
 	if (m_force_remove)
 		return {};
 	else
@@ -412,7 +419,8 @@ void gg::Database::Row::load(std::fstream& f)
 
 gg::Database::RowView::RowView(Row& row, bool write_access) :
 	m_row(row),
-	m_access(write_access ? AccessType::READ_WRITE : AccessType::READ)
+	m_access(write_access ? AccessType::READ_WRITE : AccessType::READ),
+	m_database(row.m_table.m_database.m_self_ptr.lock())
 {
 	std::lock_guard<decltype(m_row.m_mutex)> guard(m_row.m_mutex);
 
@@ -437,6 +445,9 @@ gg::Database::RowView::RowView(Row& row, bool write_access) :
 
 gg::Database::RowView::~RowView()
 {
+	if (m_access == AccessType::NO_ACCESS)
+		return;
+
 	std::lock_guard<decltype(m_row.m_mutex)> guard(m_row.m_mutex);
 
 	if (m_access == AccessType::READ_WRITE)
@@ -459,6 +470,9 @@ gg::IDatabase::AccessType gg::Database::RowView::getAccessType() const
 
 gg::IDatabase::Key gg::Database::RowView::getKey() const
 {
+	if (m_access == AccessType::NO_ACCESS)
+		throw AccessError(AccessType::READ, m_access);
+
 	return m_row.m_key;
 }
 
@@ -496,6 +510,9 @@ const gg::IDatabase::ICell* gg::Database::RowView::cell(const std::string& colum
 
 void gg::Database::RowView::remove()
 {
+	if (m_access != AccessType::READ_WRITE)
+		throw AccessError(AccessType::READ_WRITE, m_access);
+
 	m_row.remove();
 }
 
@@ -579,6 +596,7 @@ std::shared_ptr<gg::IDatabase::IRow> gg::Database::Table::getNextRow(Key key, bo
 
 void gg::Database::Table::remove()
 {
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 	m_force_remove = true;
 }
 
@@ -590,6 +608,8 @@ void gg::Database::Table::removeRow(Key key)
 
 std::shared_ptr<gg::IDatabase::ITable> gg::Database::Table::createView(bool write_access)
 {
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
+
 	if (m_force_remove)
 		return {};
 	else
@@ -653,7 +673,8 @@ void gg::Database::Table::load(std::fstream& f)
 
 gg::Database::TableView::TableView(Table& table, bool write_access) :
 	m_table(table),
-	m_access(write_access ? AccessType::READ_WRITE : AccessType::READ)
+	m_access(write_access ? AccessType::READ_WRITE : AccessType::READ),
+	m_database(table.m_database.m_self_ptr.lock())
 {
 	std::lock_guard<decltype(m_table.m_mutex)> guard(m_table.m_mutex);
 
@@ -678,6 +699,9 @@ gg::Database::TableView::TableView(Table& table, bool write_access) :
 
 gg::Database::TableView::~TableView()
 {
+	if (m_access == AccessType::NO_ACCESS)
+		return;
+
 	std::lock_guard<decltype(m_table.m_mutex)> guard(m_table.m_mutex);
 
 	if (m_access == AccessType::READ_WRITE)
@@ -700,6 +724,9 @@ gg::IDatabase::AccessType gg::Database::TableView::getAccessType() const
 
 const std::string& gg::Database::TableView::getName() const
 {
+	if (m_access == AccessType::NO_ACCESS)
+		throw AccessError(AccessType::READ, m_access);
+
 	return m_table.m_name;
 }
 
@@ -745,14 +772,32 @@ std::shared_ptr<gg::IDatabase::IRow> gg::Database::TableView::getNextRow(Key key
 
 void gg::Database::TableView::remove()
 {
+	if (m_access != AccessType::READ_WRITE)
+		throw AccessError(AccessType::READ_WRITE, m_access);
+
 	m_table.remove();
 }
 
 
 
-gg::Database::Database(const std::string& name)
+gg::Database::Database(const std::string& filename) :
+	m_filename(filename)
 {
-
+	std::fstream db(filename, std::ios::in | std::ios::binary);
+	if (db.is_open())
+	{
+		load(db);
+		db.close();
+	}
+	else
+	{
+		db.open(filename, std::ios::out);
+		if (!db.is_open())
+		{
+			db.close();
+			throw std::runtime_error("Cannot open or create database");
+		}
+	}
 }
 
 const std::string& gg::Database::getFilename() const
@@ -796,36 +841,88 @@ void gg::Database::getTableNames(std::vector<std::string>& tables) const
 
 bool gg::Database::sync()
 {
-	// TBD: backup
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
+
+#ifdef _WIN32
+	std::string backup = m_filename + ".backup";
+	if (CopyFileA(m_filename.c_str(), backup.c_str(), FALSE) == 0)
+		return false;
+#endif // _WIN32
+
+	std::fstream db(m_filename, std::ios::out | std::ios::trunc | std::ios::binary);
+	if (!db.is_open())
+		return false;
 
 	try
 	{
-		save(m_file);
+		save(db);
 	}
 	catch (std::exception&)
 	{
+		db.close();
+#ifdef _WIN32
+		MoveFileExA(backup.c_str(), m_filename.c_str(), MOVEFILE_REPLACE_EXISTING);
+#endif
 		return false;
 	}
 
+	db.close();
+#ifdef _WIN32
+	DeleteFileA(backup.c_str());
+#endif
 	return true;
 }
 
 void gg::Database::removeTable(const std::string& table)
 {
-
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
+	m_tables.erase(table);
 }
 
 void gg::Database::save(std::fstream& f) const
 {
+	uint16_t table_count = static_cast<uint16_t>(m_tables.size());
+	f.write(reinterpret_cast<const char*>(&table_count), sizeof(uint16_t));
+
+	for (auto& it : m_tables)
+		it.second.save(f);
+
+	if (!f)
+		throw std::runtime_error("Database save error");
 }
 
 void gg::Database::load(std::fstream& f)
 {
+	try
+	{
+		uint16_t table_count = 0;
+		f.read(reinterpret_cast<char*>(&table_count), sizeof(uint16_t));
+
+		for (uint16_t i = 0; i < table_count; ++i)
+		{
+			Table table(*this);
+			table.load(f);
+			m_tables.emplace(table.getName(), std::move(table));
+		}
+	}
+	catch (std::exception&)
+	{
+		m_tables.clear();
+	}
 }
 
 
 
 std::shared_ptr<gg::IDatabase> gg::DatabaseManager::open(const std::string& filename) const
 {
-	return std::shared_ptr<gg::IDatabase>(new Database(filename));
+	try
+	{
+		std::shared_ptr<gg::Database> db(new Database(filename));
+		db->m_self_ptr = db;
+		return db;
+	}
+	catch (std::exception&)
+	{
+		return {};
+	}
 }

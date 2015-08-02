@@ -15,6 +15,14 @@
 
 namespace gg
 {
+	class DatabaseManager : public IDatabaseManager
+	{
+	public:
+		DatabaseManager() = default;
+		virtual ~DatabaseManager() = default;
+		virtual std::shared_ptr<IDatabase> open(const std::string& filename) const;
+	};
+
 	class Database : public IDatabase
 	{
 	public:
@@ -95,7 +103,7 @@ namespace gg
 			friend class Cell;
 			friend class RowView;
 
-			mutable std::mutex m_mutex;
+			mutable std::recursive_mutex m_mutex;
 			Table& m_table;
 			Key m_key;
 			std::vector<Cell> m_cells;
@@ -120,6 +128,7 @@ namespace gg
 		private:
 			Row& m_row;
 			AccessType m_access;
+			std::shared_ptr<IDatabase> m_database;
 		};
 
 		class TableView;
@@ -146,9 +155,10 @@ namespace gg
 
 		private:
 			friend class Row;
+			friend class RowView;
 			friend class TableView;
 
-			mutable std::mutex m_mutex;
+			mutable std::recursive_mutex m_mutex;
 			Database& m_database;
 			std::string m_name;
 			std::vector<std::string> m_columns;
@@ -174,6 +184,7 @@ namespace gg
 		private:
 			Table& m_table;
 			AccessType m_access;
+			std::shared_ptr<IDatabase> m_database;
 		};
 
 		Database(const std::string& filename);
@@ -190,17 +201,11 @@ namespace gg
 		void load(std::fstream&);
 
 	private:
-		mutable std::mutex m_mutex;
-		std::fstream m_file;
+		friend class DatabaseManager;
+
+		mutable std::recursive_mutex m_mutex;
 		std::string m_filename;
 		std::map<std::string, Table> m_tables;
-	};
-
-	class DatabaseManager : public IDatabaseManager
-	{
-	public:
-		DatabaseManager() = default;
-		virtual ~DatabaseManager() = default;
-		virtual std::shared_ptr<IDatabase> open(const std::string& filename) const;
+		std::weak_ptr<IDatabase> m_self_ptr;
 	};
 };
