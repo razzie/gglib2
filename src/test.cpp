@@ -114,15 +114,34 @@ private:
 
 int main()
 {
-	/*auto db = gg::db.open("valami.db");
-	{
-		auto table = db->createAndGetTable("gyumolcs", { "alma", "korte", "szilva" });
-		auto row = table->createAndGetRow();
-		row->cell("alma")->set(1);
-		row->cell("korte")->set(2);
-		row->cell("szilva")->set(3);
+	/*{
+		auto db = gg::db.open("bin/database.db");
+		{
+			auto table = db->getTable("fruit");
+			if (!table)
+			{
+				table = db->createAndGetTable("fruit", { "apple", "pear", "grapes" });
+				auto row = table->getNextRow(0);
+				if (!row)
+				{
+					row = table->createAndGetRow();
+					row->cell("apple")->set(1);
+					row->cell("pear")->set(2);
+					row->cell("grapes")->set(3);
+				}
+			}
+		}
+		db->sync();
 	}
-	db->sync();*/
+
+	{
+		auto db = gg::db.open("bin/database.db");
+		{
+			auto table = db->getTable("fruit");
+			auto row = table->getNextRow(0);
+			std::cout << row->cell("apple")->getString() << std::endl;
+		}
+	}*/
 
 	for (int i = 0; i < 8; ++i)
 		gg::log << gen.next() << ", ";

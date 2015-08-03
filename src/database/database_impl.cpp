@@ -310,13 +310,13 @@ void gg::Database::Cell::load(std::fstream& f)
 
 
 gg::Database::Row::Row(Table& table, Key key) :
-	m_table(table),
+	m_table(&table),
 	m_key(key),
 	m_writer_views(0),
 	m_reader_views(0),
 	m_force_remove(false)
 {
-	m_cells.resize(m_table.m_columns.size());
+	m_cells.resize(m_table->m_columns.size());
 }
 
 gg::Database::Row::Row(Row&& row) :
@@ -349,9 +349,9 @@ gg::IDatabase::ICell* gg::Database::Row::cell(unsigned column)
 
 gg::IDatabase::ICell* gg::Database::Row::cell(const std::string& column)
 {
-	for (size_t i = 0, len = m_table.m_columns.size(); i < len; ++i)
+	for (size_t i = 0, len = m_table->m_columns.size(); i < len; ++i)
 	{
-		if (m_table.m_columns[i] == column)
+		if (m_table->m_columns[i] == column)
 			return &m_cells[i];
 	}
 
@@ -368,9 +368,9 @@ const gg::IDatabase::ICell* gg::Database::Row::cell(unsigned column) const
 
 const gg::IDatabase::ICell* gg::Database::Row::cell(const std::string& column) const
 {
-	for (size_t i = 0, len = m_table.m_columns.size(); i < len; ++i)
+	for (size_t i = 0, len = m_table->m_columns.size(); i < len; ++i)
 	{
-		if (m_table.m_columns[i] == column)
+		if (m_table->m_columns[i] == column)
 			return &m_cells[i];
 	}
 
@@ -420,7 +420,7 @@ void gg::Database::Row::load(std::fstream& f)
 gg::Database::RowView::RowView(Row& row, bool write_access) :
 	m_row(row),
 	m_access(write_access ? AccessType::READ_WRITE : AccessType::READ),
-	m_database(row.m_table.m_database.m_self_ptr.lock())
+	m_database(row.m_table->m_database.m_self_ptr.lock())
 {
 	std::lock_guard<decltype(m_row.m_mutex)> guard(m_row.m_mutex);
 
@@ -459,7 +459,7 @@ gg::Database::RowView::~RowView()
 	if (m_row.m_writer_views == 0 && m_row.m_reader_views == 0
 		&& m_row.m_force_remove)
 	{
-		m_row.m_table.removeRow(m_row.m_key);
+		m_row.m_table->removeRow(m_row.m_key);
 	}
 }
 
@@ -542,11 +542,14 @@ gg::Database::Table::Table(Table&& table) :
 	m_database(table.m_database),
 	m_name(std::move(table.m_name)),
 	m_columns(std::move(table.m_columns)),
+	m_rows(std::move(table.m_rows)),
 	m_last_row_key(table.m_last_row_key),
 	m_writer_views(0),
 	m_reader_views(0),
 	m_force_remove(false)
 {
+	for (auto& it : m_rows)
+		it.second.m_table = this;
 }
 
 gg::IDatabase::AccessType gg::Database::Table::getAccessType() const
@@ -641,7 +644,7 @@ void gg::Database::Table::save(std::fstream& f) const
 		saveString(column, f);
 
 	uint16_t row_count = static_cast<uint16_t>(m_rows.size());
-	f.write(reinterpret_cast<const char*>(&column_count), sizeof(uint16_t));
+	f.write(reinterpret_cast<const char*>(&row_count), sizeof(uint16_t));
 	for (auto& row : m_rows)
 		row.second.save(f);
 }
@@ -665,6 +668,7 @@ void gg::Database::Table::load(std::fstream& f)
 	{
 		Row row(*this, 0);
 		row.load(f);
+		m_last_row_key = row.getKey();
 		m_rows.emplace(row.getKey(), std::move(row));
 	}
 }

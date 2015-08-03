@@ -102,9 +102,10 @@ namespace gg
 		private:
 			friend class Cell;
 			friend class RowView;
+			friend class Table;
 
 			mutable std::recursive_mutex m_mutex;
-			Table& m_table;
+			Table* m_table;
 			Key m_key;
 			std::vector<Cell> m_cells;
 			unsigned m_writer_views;
