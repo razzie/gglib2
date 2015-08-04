@@ -590,11 +590,24 @@ std::shared_ptr<gg::IDatabase::IRow> gg::Database::Table::getNextRow(Key key, bo
 {
 	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 
-	auto it = m_rows.upper_bound(key);
-	if (it != m_rows.end())
-		return it->second.createView(write_access);
-	else
-		return{};
+	std::shared_ptr<IRow> row;
+
+	do
+	{
+		auto it = m_rows.upper_bound(key);
+		if (it != m_rows.end())
+		{
+			row = it->second.createView(write_access);
+			if (!row)
+				key = it->second.getKey();
+		}
+		else
+		{
+			return {};
+		}
+	} while (!row);
+
+	return row;
 }
 
 void gg::Database::Table::remove()
