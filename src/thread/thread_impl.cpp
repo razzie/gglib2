@@ -12,18 +12,18 @@ static gg::ThreadManager s_thread;
 gg::IThreadManager& gg::thread = s_thread;
 
 
-gg::TaskData::TaskData(gg::IThread& thread, std::unique_ptr<ITask> task) :
+gg::TaskData::TaskData(gg::IThread* thread, std::unique_ptr<ITask> task) :
 	m_thread(thread),
 	m_task(std::move(task)),
 	m_finished(false)
 {
 	try
 	{
-		m_task->setup(*this);
+		m_task->onSetup(*this);
 	}
 	catch (...)
 	{
-		m_finished = true;
+		finish();
 	}
 }
 
@@ -31,8 +31,8 @@ gg::TaskData::TaskData(gg::TaskData&& taskdata) :
 	m_thread(taskdata.m_thread),
 	m_task(std::move(taskdata.m_task)),
 	m_subscriptions(std::move(taskdata.m_subscriptions)),
-	m_children(std::move(taskdata.m_children)),
 	m_events(std::move(taskdata.m_events)),
+	m_last_error(std::move(taskdata.m_last_error)),
 	m_finished(false)
 {
 }
@@ -46,52 +46,15 @@ gg::TaskData& gg::TaskData::operator=(TaskData&& taskdata)
 	m_thread = taskdata.m_thread;
 	m_task = std::move(taskdata.m_task);
 	m_subscriptions = std::move(taskdata.m_subscriptions);
-	m_children = std::move(taskdata.m_children);
 	m_events = std::move(taskdata.m_events);
+	m_last_error = std::move(taskdata.m_last_error);
 	m_finished = false;
 	return *this;
 }
 
-void gg::TaskData::pushEvents(const std::vector<std::shared_ptr<gg::IEvent>>& events)
+gg::IThread& gg::TaskData::getThread()
 {
-	for (auto& event : events)
-	{
-		for (IEvent::Type subscription : m_subscriptions)
-		{
-			if (event->getType() == subscription)
-				m_events.push(event);
-		}
-	}
-}
-
-std::vector<std::unique_ptr<gg::ITask>>& gg::TaskData::children()
-{
-	return m_children;
-}
-
-bool gg::TaskData::isFinished() const
-{
-	return m_finished;
-}
-
-void gg::TaskData::run()
-{
-	try
-	{
-		m_task->run(m_thread, *this);
-	}
-	catch (std::exception& e)
-	{
-		m_task->onError(e);
-		m_finished = true;
-	}
-	catch (...)
-	{
-		m_task->onError(std::runtime_error("Unknown error"));
-		m_finished = true;
-	}
-
-	m_timer.reset();
+	return *m_thread;
 }
 
 void gg::TaskData::subscribe(IEvent::Type type)
@@ -117,16 +80,6 @@ void gg::TaskData::unsubscribe(IEvent::Type type)
 	}
 }
 
-void gg::TaskData::addChild(std::unique_ptr<ITask>&& task)
-{
-	m_children.push_back(std::move(task));
-}
-
-uint32_t gg::TaskData::getElapsedMs() const
-{
-	return static_cast<uint32_t>(m_timer.peekElapsed());
-}
-
 bool gg::TaskData::hasEvent() const
 {
 	return !m_events.empty();
@@ -146,9 +99,64 @@ std::shared_ptr<gg::IEvent> gg::TaskData::getNextEvent()
 	}
 }
 
+uint32_t gg::TaskData::getElapsedMs() const
+{
+	return static_cast<uint32_t>(m_timer.peekElapsed());
+}
+
+const std::string& gg::TaskData::getLastError() const
+{
+	return m_last_error;
+}
+
 void gg::TaskData::finish()
 {
 	m_finished = true;
+
+	try
+	{
+		m_task->onFinish(*this);
+	}
+	catch (...)
+	{
+	}
+}
+
+void gg::TaskData::pushEvents(const std::vector<std::shared_ptr<gg::IEvent>>& events)
+{
+	for (auto& event : events)
+	{
+		for (IEvent::Type subscription : m_subscriptions)
+		{
+			if (event->getType() == subscription)
+				m_events.push(event);
+		}
+	}
+}
+
+bool gg::TaskData::isFinished() const
+{
+	return m_finished;
+}
+
+void gg::TaskData::update()
+{
+	try
+	{
+		m_task->onUpdate(*this);
+	}
+	catch (std::exception& e)
+	{
+		m_last_error = e.what();
+		finish();
+	}
+	catch (...)
+	{
+		m_last_error = "Unknown error";
+		finish();
+	}
+
+	m_timer.reset();
 }
 
 
@@ -160,6 +168,7 @@ gg::Thread::Thread(const std::string& name) :
 {
 	m_tasks.reserve(10);
 	m_pending_tasks.reserve(10);
+	m_internal_pending_tasks.reserve(10);
 	m_events.reserve(10);
 	m_pending_events.reserve(10);
 }
@@ -179,31 +188,14 @@ void gg::Thread::sendEvent(std::shared_ptr<gg::IEvent> event)
 
 void gg::Thread::addTask(std::unique_ptr<gg::ITask>&& task)
 {
-	if (m_thread_id == std::this_thread::get_id()
-		&& m_tasks.capacity() > m_tasks.size())
+	if (m_thread_id == std::this_thread::get_id())
 	{
-		m_tasks.emplace_back(*this, std::move(task));
+		m_internal_pending_tasks.push_back(std::move(task));
 	}
 	else
 	{
 		std::lock_guard<decltype(m_tasks_mutex)> guard(m_tasks_mutex);
-		m_pending_tasks.emplace_back(*this, std::move(task));
-	}
-}
-
-void gg::Thread::addTasks(std::vector<std::unique_ptr<ITask>>& tasks)
-{
-	if (m_thread_id == std::this_thread::get_id()
-		&& (m_tasks.capacity() - m_tasks.size()) > tasks.size())
-	{
-		for (auto& task : tasks)
-			m_tasks.emplace_back(*this, std::move(task));
-	}
-	else
-	{
-		std::lock_guard<decltype(m_tasks_mutex)> guard(m_tasks_mutex);
-		for (auto& task : tasks)
-			m_pending_tasks.emplace_back(*this, std::move(task));
+		m_pending_tasks.push_back(std::move(task));
 	}
 }
 
@@ -241,12 +233,14 @@ void gg::Thread::thread()
 		// add pending tasks to task list
 		if (m_tasks_mutex.try_lock())
 		{
-			m_tasks.insert(m_tasks.end(),
-				std::make_move_iterator(m_pending_tasks.begin()),
-				std::make_move_iterator(m_pending_tasks.end()));
-			m_pending_tasks.clear();
+			for (auto&& task : m_pending_tasks)
+				m_tasks.emplace_back(this, std::move(task));
 			m_tasks_mutex.unlock();
 		}
+
+		// add pending internal tasks to task list
+		for (auto&& task : m_internal_pending_tasks)
+			m_tasks.emplace_back(this, std::move(task));
 
 		// add pending events to event list
 		if (m_events_mutex.try_lock())
@@ -266,12 +260,11 @@ void gg::Thread::thread()
 		// run tasks
 		for (auto it = m_tasks.begin(); it != m_tasks.end(); )
 		{
-			it->run(); // exceptions are already catched here
+			it->update(); // exceptions are already catched here
 
 			// if task is finished, add its children to task list and remove it..
 			if (it->isFinished())
 			{
-				addTasks(it->children());
 				it = m_tasks.erase(it);
 				continue;
 			}

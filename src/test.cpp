@@ -35,7 +35,7 @@ public:
 
 	virtual ~ConnectionTask() = default;
 
-	virtual void run(gg::IThread& thread, gg::IThread::TaskOptions& options)
+	virtual void onUpdate(gg::IThread::TaskOptions& options)
 	{
 		try
 		{
@@ -83,7 +83,7 @@ public:
 
 	virtual ~ServerTask() = default;
 
-	virtual void run(gg::IThread& thread, gg::IThread::TaskOptions& options)
+	virtual void onUpdate(gg::IThread::TaskOptions& options)
 	{
 		try
 		{
@@ -93,7 +93,7 @@ public:
 				if (connection)
 				{
 					gg::log << "connection: " << connection->getAddress() << std::endl;
-					thread.addTask<ConnectionTask>(connection);
+					options.getThread().addTask<ConnectionTask>(connection);
 				}
 			}
 			else

@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include <exception>
 #include <memory>
 #include "gg/event.hpp"
 
@@ -29,12 +28,13 @@ namespace gg
 		{
 		public:
 			virtual ~TaskOptions() = default;
+			virtual IThread& getThread() = 0;
 			virtual void subscribe(IEvent::Type) = 0;
 			virtual void unsubscribe(IEvent::Type) = 0;
-			virtual void addChild(std::unique_ptr<ITask>&&) = 0;
-			virtual uint32_t getElapsedMs() const = 0;
 			virtual bool hasEvent() const = 0;
 			virtual std::shared_ptr<IEvent> getNextEvent() = 0;
+			virtual uint32_t getElapsedMs() const = 0;
+			virtual const std::string& getLastError() const = 0;
 			virtual void finish() = 0;
 		};
 
@@ -59,28 +59,10 @@ namespace gg
 			addTask(std::move(task));
 		}
 
-		// Warning: it is NOT network compatible
-		template<IEvent::Type EventType, class... Params>
+		template<IEventDefinitionBase& Def, class... Params>
 		void sendEvent(Params... params)
 		{
-			class Event
-			{
-			public:
-				Event(Params... params) :
-					m_params(std::forward<Params>(params)...)
-				{
-				}
-
-				virtual ~Event() = default;
-				virtual IEvent::Type getType() const { return EventType; }
-				virtual const IStorage& getParams() const { return m_params; }
-				virtual void serialize(IPacket&) {}
-
-			private:
-				Storage<Params...> m_params;
-			};
-
-			std::shared_ptr<IEvent> event(new Event(std::forward<Params>(params)...));
+			auto event = Def.create(std::forward<Params>(params)...);
 			sendEvent(event);
 		}
 	};
@@ -89,9 +71,9 @@ namespace gg
 	{
 	public:
 		virtual ~ITask() = default;
-		virtual void setup(IThread::TaskOptions&) {};
-		virtual void onError(std::exception&) {};
-		virtual void run(IThread&, IThread::TaskOptions&) = 0;
+		virtual void onSetup(IThread::TaskOptions&) {}; // called once before the first update
+		virtual void onUpdate(IThread::TaskOptions&) = 0; // called periodically until the task finishes
+		virtual void onFinish(IThread::TaskOptions&) {}; // called once after the task finished
 	};
 
 	template<class F>
@@ -102,7 +84,7 @@ namespace gg
 		public:
 			FuncTask(F func) : m_func(func) {}
 			virtual ~FuncTask() = default;
-			virtual void run(IThread& t, IThread::TaskOptions& o) { m_func(t, o); }
+			virtual void onUpdate(IThread::TaskOptions& o) { m_func(o); }
 
 		private:
 			F m_func;
@@ -122,4 +104,23 @@ namespace gg
 	};
 
 	extern GG_API IThreadManager& thread;
+
+
+	// Warning: it is NOT network compatible
+	template<IEvent::Type EventType, class... Params>
+	class SimpleEventDefinition : public IEventDefinition<Params...>
+	{
+		SimpleEventDefinition(Params... params) :
+			m_params(std::forward<Params>(params)...)
+		{
+		}
+
+		virtual ~SimpleEventDefinition() = default;
+		virtual IEvent::Type getType() const { return EventType; }
+		virtual const IStorage& getParams() const { return m_params; }
+		virtual void serialize(IPacket&) {}
+
+	private:
+		Storage<Params...> m_params;
+	};
 };
