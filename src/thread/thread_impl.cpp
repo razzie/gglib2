@@ -235,12 +235,14 @@ void gg::Thread::thread()
 		{
 			for (auto&& task : m_pending_tasks)
 				m_tasks.emplace_back(this, std::move(task));
+			m_pending_tasks.clear();
 			m_tasks_mutex.unlock();
 		}
 
 		// add pending internal tasks to task list
 		for (auto&& task : m_internal_pending_tasks)
 			m_tasks.emplace_back(this, std::move(task));
+		m_internal_pending_tasks.clear();
 
 		// add pending events to event list
 		if (m_events_mutex.try_lock())
