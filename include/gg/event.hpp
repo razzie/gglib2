@@ -20,6 +20,7 @@
 namespace gg
 {
 	class IPacket;
+	class IEventDefinitionBase;
 
 	class ISerializable
 	{
@@ -37,6 +38,8 @@ namespace gg
 		virtual Type getType() const = 0;
 		virtual const IStorage& getParams() const = 0;
 		virtual void serialize(IPacket&) = 0;
+
+		bool is(const IEventDefinitionBase&) const;
 
 		template<class T>
 		const T& get(unsigned n) const
@@ -63,5 +66,31 @@ namespace gg
 		virtual std::shared_ptr<IEvent> create() const = 0;
 		virtual std::shared_ptr<IEvent> create(IPacket&) const = 0;
 		virtual std::shared_ptr<IEvent> create(Params... params) const = 0;
+
+		template<unsigned N, class R = Param<N, Params...>::Type>
+		static R get(std::shared_ptr<IEvent> event)
+		{
+			return event->get<R>(N);
+		}
+
+	private:
+		template <int N, typename... T>
+		struct Param;
+
+		template <typename T0, typename... T>
+		struct Param<0, T0, T...>
+		{
+			typedef T0 Type;
+		};
+		template <int N, typename T0, typename... T>
+		struct Param<N, T0, T...>
+		{
+			typedef typename Param<N - 1, T...>::Type Type;
+		};
 	};
+
+	inline bool IEvent::is(const IEventDefinitionBase& def) const
+	{
+		return (getType() == def.getType());
+	}
 };

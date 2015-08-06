@@ -47,9 +47,9 @@ public:
 					gg::log << "packet: length=" << packet->getSize() << ", type=" << packet->getType() << std::endl;
 
 					auto event = foo_event.create(*packet);
-					if (event)
+					if (event && event->is(foo_event))
 					{
-						gg::log << "foo_event: " << event->get<int>(0) << ", " << event->get<float>(1) << std::endl;
+						gg::log << "foo_event: " << foo_event.get<0>(event) << ", " << foo_event.get<1>(event) << std::endl;
 					}
 				}
 			}
