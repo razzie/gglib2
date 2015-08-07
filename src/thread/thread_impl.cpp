@@ -68,6 +68,11 @@ void gg::TaskData::subscribe(IEvent::Type type)
 	m_subscriptions.push_back(type);
 }
 
+void gg::TaskData::subscribe(IEventDefinitionBase& def)
+{
+	subscribe(def.getType());
+}
+
 void gg::TaskData::unsubscribe(IEvent::Type type)
 {
 	for (auto it = m_subscriptions.begin(), end = m_subscriptions.end(); it != end; ++it)
@@ -78,6 +83,11 @@ void gg::TaskData::unsubscribe(IEvent::Type type)
 			return;
 		}
 	}
+}
+
+void gg::TaskData::unsubscribe(IEventDefinitionBase& def)
+{
+	unsubscribe(def.getType());
 }
 
 bool gg::TaskData::hasEvent() const

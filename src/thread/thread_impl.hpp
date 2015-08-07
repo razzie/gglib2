@@ -32,7 +32,9 @@ namespace gg
 		// inherited from IThread::TaskOptions
 		virtual IThread& getThread();
 		virtual void subscribe(IEvent::Type);
+		virtual void subscribe(IEventDefinitionBase&);
 		virtual void unsubscribe(IEvent::Type);
+		virtual void unsubscribe(IEventDefinitionBase&);
 		virtual bool hasEvent() const;
 		virtual std::shared_ptr<IEvent> getNextEvent();
 		virtual uint32_t getElapsedMs() const;
