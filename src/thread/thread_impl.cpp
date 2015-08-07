@@ -291,7 +291,13 @@ void gg::Thread::thread()
 		if (m_clear_tasks)
 		{
 			m_clear_tasks = false;
+
 			m_tasks.clear();
+			m_internal_pending_tasks.clear();
+
+			m_tasks_mutex.lock();
+			m_pending_tasks.clear();
+			m_tasks_mutex.unlock();
 		}
 	} while (!m_tasks.empty());
 
