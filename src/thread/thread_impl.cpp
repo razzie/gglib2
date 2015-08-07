@@ -19,7 +19,7 @@ gg::TaskData::TaskData(gg::IThread* thread, std::unique_ptr<ITask> task) :
 {
 	try
 	{
-		m_task->onSetup(*this);
+		m_task->onStart(*this);
 	}
 	catch (...)
 	{

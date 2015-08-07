@@ -73,7 +73,7 @@ namespace gg
 	{
 	public:
 		virtual ~ITask() = default;
-		virtual void onSetup(IThread::TaskOptions&) {}; // called once before the first update
+		virtual void onStart(IThread::TaskOptions&) {}; // called once before the first update
 		virtual void onUpdate(IThread::TaskOptions&) = 0; // called periodically until the task finishes
 		virtual void onFinish(IThread::TaskOptions&) {}; // called once after the task finished
 	};
