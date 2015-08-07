@@ -112,6 +112,7 @@ namespace gg
 	template<IEvent::Type EventType, class... Params>
 	class SimpleEventDefinition : public IEventDefinition<Params...>
 	{
+	public:
 		SimpleEventDefinition(Params... params) :
 			m_params(std::forward<Params>(params)...)
 		{
