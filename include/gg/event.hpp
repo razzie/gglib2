@@ -46,6 +46,24 @@ namespace gg
 		{
 			return getParams().get<T>(n);
 		}
+
+		// Flag can be used as a parameter to indicate event state
+		// (eg: event is consumed)
+		class Flag
+		{
+		public:
+			Flag() : m_flag(false) {}
+			Flag(bool flag) : m_flag(flag) {}
+			Flag(const Flag& f) : m_flag(f.m_flag) {}
+			~Flag() = default;
+			void set() const { m_flag = true; }
+			void unset() const { m_flag = false; }
+			bool isSet() const { return m_flag; }
+			operator bool() const { return m_flag; }
+
+		private:
+			mutable bool m_flag;
+		};
 	};
 
 	class IEventDefinitionBase

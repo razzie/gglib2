@@ -206,6 +206,22 @@ namespace gg
 	};
 
 
+	inline void serialize(IPacket& packet, IEvent::Flag& flag)
+	{
+		if (packet.getMode() == IPacket::Mode::READ)
+		{
+			uint8_t f;
+			packet & f;
+			f ? flag.set() : flag.unset();
+		}
+		else
+		{
+			uint8_t f = flag.isSet();
+			packet & f;
+		}
+	}
+
+
 	template<IEvent::Type EventType, class... Params>
 	class EventDefinition : public IEventDefinition<Params...>
 	{
