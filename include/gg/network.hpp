@@ -30,8 +30,6 @@
 
 namespace gg
 {
-	class IBlob;
-
 	class IPacket
 	{
 	public:
@@ -39,8 +37,8 @@ namespace gg
 
 		enum Mode
 		{
-			READ,
-			WRITE
+			READ_PACKET,
+			WRITE_PACKET
 		};
 
 		virtual ~IPacket() = default;
@@ -60,8 +58,10 @@ namespace gg
 		virtual IPacket& operator& (float&) = 0;
 		virtual IPacket& operator& (double&) = 0;
 		virtual IPacket& operator& (std::string&) = 0;
-		virtual IPacket& operator& (IBlob&) = 0;
 		virtual IPacket& operator& (ISerializable&) = 0;
+
+		virtual size_t write(const char* ptr, size_t len) = 0;
+		virtual size_t read(char* ptr, size_t len) = 0;
 
 		template<class T>
 		IPacket& operator& (T& t)
@@ -159,28 +159,20 @@ namespace gg
 	extern GG_API INetworkManager& net;
 
 
-	class IBlob
+	inline void serialize(IPacket& packet, IEvent::Flag& flag)
 	{
-	public:
-		virtual ~IBlob() = default;
-		virtual char* getDataPtr() = 0;
-		virtual const char* getData() const = 0;
-		virtual size_t getSize() const = 0;
-	};
-
-	template<size_t SIZE>
-	class Blob : public IBlob
-	{
-	public:
-		Blob() = default;
-		virtual ~Blob() = default;
-		virtual char* getDataPtr() { return m_data; }
-		virtual const char* getData() const { return m_data; }
-		virtual size_t getSize() const { return SIZE; }
-
-	private:
-		char m_data[SIZE];
-	};
+		if (packet.getMode() == IPacket::Mode::READ_PACKET)
+		{
+			uint8_t f;
+			packet & f;
+			f ? flag.set() : flag.unset();
+		}
+		else
+		{
+			uint8_t f = flag.isSet();
+			packet & f;
+		}
+	}
 
 	template<class... Types>
 	class SerializableStorage : public Storage<Types...>, public ISerializable
@@ -204,22 +196,6 @@ namespace gg
 			serialize<N + 1, Types...>(packet, storage);
 		}
 	};
-
-
-	inline void serialize(IPacket& packet, IEvent::Flag& flag)
-	{
-		if (packet.getMode() == IPacket::Mode::READ)
-		{
-			uint8_t f;
-			packet & f;
-			f ? flag.set() : flag.unset();
-		}
-		else
-		{
-			uint8_t f = flag.isSet();
-			packet & f;
-		}
-	}
 
 
 	template<IEvent::Type EventType, class... Params>

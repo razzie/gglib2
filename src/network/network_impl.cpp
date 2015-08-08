@@ -6,7 +6,6 @@
  * All rights reserved.
  */
 
-#include <cassert>
 #include <cstring>
 #include <stdexcept>
 #include "network_impl.hpp"
@@ -73,7 +72,7 @@ void gg::Packet::setSize(size_t size)
 
 gg::Packet& gg::Packet::operator&(int8_t& i)
 {
-	if (m_mode == Mode::WRITE)
+	if (m_mode == Mode::WRITE_PACKET)
 	{
 		if (write(reinterpret_cast<const char*>(&i), sizeof(int8_t)) < sizeof(int8_t))
 			throw SerializationError();
@@ -91,7 +90,7 @@ gg::Packet& gg::Packet::operator&(int8_t& i)
 
 gg::Packet& gg::Packet::operator&(int16_t& i)
 {
-	if (m_mode == Mode::WRITE)
+	if (m_mode == Mode::WRITE_PACKET)
 	{
 		if (write(reinterpret_cast<const char*>(&i), sizeof(int16_t)) < sizeof(int16_t))
 			throw SerializationError();
@@ -109,7 +108,7 @@ gg::Packet& gg::Packet::operator&(int16_t& i)
 
 gg::Packet& gg::Packet::operator&(int32_t& i)
 {
-	if (m_mode == Mode::WRITE)
+	if (m_mode == Mode::WRITE_PACKET)
 	{
 		if (write(reinterpret_cast<const char*>(&i), sizeof(int32_t)) < sizeof(int32_t))
 			throw SerializationError();
@@ -127,7 +126,7 @@ gg::Packet& gg::Packet::operator&(int32_t& i)
 
 gg::Packet& gg::Packet::operator&(int64_t& i)
 {
-	if (m_mode == Mode::WRITE)
+	if (m_mode == Mode::WRITE_PACKET)
 	{
 		if (write(reinterpret_cast<const char*>(&i), sizeof(int64_t)) < sizeof(int64_t))
 			throw SerializationError();
@@ -145,7 +144,7 @@ gg::Packet& gg::Packet::operator&(int64_t& i)
 
 gg::Packet& gg::Packet::operator&(uint8_t& u)
 {
-	if (m_mode == Mode::WRITE)
+	if (m_mode == Mode::WRITE_PACKET)
 	{
 		if (write(reinterpret_cast<const char*>(&u), sizeof(uint8_t)) < sizeof(uint8_t))
 			throw SerializationError();
@@ -163,7 +162,7 @@ gg::Packet& gg::Packet::operator&(uint8_t& u)
 
 gg::Packet& gg::Packet::operator&(uint16_t& u)
 {
-	if (m_mode == Mode::WRITE)
+	if (m_mode == Mode::WRITE_PACKET)
 	{
 		if (write(reinterpret_cast<const char*>(&u), sizeof(uint16_t)) < sizeof(uint16_t))
 			throw SerializationError();
@@ -181,7 +180,7 @@ gg::Packet& gg::Packet::operator&(uint16_t& u)
 
 gg::Packet& gg::Packet::operator&(uint32_t& u)
 {
-	if (m_mode == Mode::WRITE)
+	if (m_mode == Mode::WRITE_PACKET)
 	{
 		if (write(reinterpret_cast<const char*>(&u), sizeof(uint32_t)) < sizeof(uint32_t))
 			throw SerializationError();
@@ -199,7 +198,7 @@ gg::Packet& gg::Packet::operator&(uint32_t& u)
 
 gg::Packet& gg::Packet::operator&(uint64_t& u)
 {
-	if (m_mode == Mode::WRITE)
+	if (m_mode == Mode::WRITE_PACKET)
 	{
 		if (write(reinterpret_cast<const char*>(&u), sizeof(uint64_t)) < sizeof(uint64_t))
 			throw SerializationError();
@@ -217,7 +216,7 @@ gg::Packet& gg::Packet::operator&(uint64_t& u)
 
 gg::Packet& gg::Packet::operator&(float& f)
 {
-	if (m_mode == Mode::WRITE)
+	if (m_mode == Mode::WRITE_PACKET)
 	{
 		uint32_t tmp = static_cast<uint32_t>(pack754_32(f));
 		*this & tmp;
@@ -234,7 +233,7 @@ gg::Packet& gg::Packet::operator&(float& f)
 
 gg::Packet& gg::Packet::operator&(double& f)
 {
-	if (m_mode == Mode::WRITE)
+	if (m_mode == Mode::WRITE_PACKET)
 	{
 		uint64_t tmp = pack754_64(f);
 		*this & tmp;
@@ -251,7 +250,7 @@ gg::Packet& gg::Packet::operator&(double& f)
 
 gg::Packet& gg::Packet::operator&(std::string& str)
 {
-	if (m_mode == Mode::WRITE)
+	if (m_mode == Mode::WRITE_PACKET)
 	{
 		uint16_t len = static_cast<uint16_t>(str.length());
 		*this & len;
@@ -270,26 +269,6 @@ gg::Packet& gg::Packet::operator&(std::string& str)
 	return *this;
 }
 
-gg::Packet& gg::Packet::operator&(gg::IBlob& blob)
-{
-	if (m_mode == Mode::WRITE)
-	{
-		uint16_t len = static_cast<uint16_t>(blob.getSize());
-		*this & len;
-		if (write(blob.getData(), len) < len)
-			throw SerializationError();
-	}
-	else
-	{
-		uint16_t len;
-		*this & len;
-		if (blob.getSize() != len || read(blob.getDataPtr(), len) < len)
-			throw SerializationError();
-	}
-
-	return *this;
-}
-
 gg::Packet& gg::Packet::operator&(ISerializable& serializable)
 {
 	serializable.serialize(*this);
@@ -298,7 +277,8 @@ gg::Packet& gg::Packet::operator&(ISerializable& serializable)
 
 size_t gg::Packet::write(const char* ptr, size_t len)
 {
-	assert(m_mode == Mode::WRITE);
+	if (m_mode != Mode::WRITE_PACKET)
+		throw SerializationError();
 
 	if (BUF_SIZE - m_data_len < len)
 		len = BUF_SIZE - m_data_len;
@@ -310,7 +290,8 @@ size_t gg::Packet::write(const char* ptr, size_t len)
 
 size_t gg::Packet::read(char* ptr, size_t len)
 {
-	assert(m_mode == Mode::READ);
+	if (m_mode != Mode::READ_PACKET)
+		throw SerializationError();
 
 	if (m_data_len - m_data_pos < len)
 		len = m_data_len - m_data_pos;
@@ -379,7 +360,7 @@ std::shared_ptr<gg::IPacket> gg::Connection::getNextPacket(uint32_t timeoutMs)
 	// now that we have the full packet, let's skip the first heading bytes we already know
 	m_backend->read(reinterpret_cast<char*>(&head), sizeof(PacketHeader));
 
-	std::shared_ptr<Packet> packet(new Packet(IPacket::Mode::READ, head.packet_type));
+	std::shared_ptr<Packet> packet(new Packet(IPacket::Mode::READ_PACKET, head.packet_type));
 	m_backend->read(packet->getDataPtr(), head.packet_size);
 	packet->setSize(head.packet_size);
 
@@ -393,12 +374,12 @@ std::shared_ptr<gg::IPacket> gg::Connection::getNextPacket(uint32_t timeoutMs)
 
 std::shared_ptr<gg::IPacket> gg::Connection::createPacket(gg::IPacket::Type type) const
 {
-	return std::shared_ptr<IPacket>( new Packet(IPacket::Mode::WRITE, type) );
+	return std::shared_ptr<IPacket>( new Packet(IPacket::Mode::WRITE_PACKET, type) );
 }
 
 std::shared_ptr<gg::IPacket> gg::Connection::createPacket(std::shared_ptr<gg::IEvent> event) const
 {
-	std::shared_ptr<IPacket> packet( new Packet(IPacket::Mode::WRITE, event->getType()) );
+	std::shared_ptr<IPacket> packet( new Packet(IPacket::Mode::WRITE_PACKET, event->getType()) );
 	event->serialize(*packet);
 	return packet;
 }
@@ -563,12 +544,12 @@ std::shared_ptr<gg::IServer> gg::NetworkManager::createServer(std::unique_ptr<gg
 
 std::shared_ptr<gg::IPacket> gg::NetworkManager::createPacket(gg::IPacket::Type type) const
 {
-	return std::shared_ptr<IPacket>( new Packet(IPacket::Mode::WRITE, type) );
+	return std::shared_ptr<IPacket>( new Packet(IPacket::Mode::WRITE_PACKET, type) );
 }
 
 std::shared_ptr<gg::IPacket> gg::NetworkManager::createPacket(std::shared_ptr<gg::IEvent> event) const
 {
-	std::shared_ptr<IPacket> packet( new Packet(IPacket::Mode::WRITE, event->getType()) );
+	std::shared_ptr<IPacket> packet( new Packet(IPacket::Mode::WRITE_PACKET, event->getType()) );
 	event->serialize(*packet);
 	return packet;
 }

@@ -37,8 +37,10 @@ namespace gg
 		virtual Packet& operator& (float&);
 		virtual Packet& operator& (double&);
 		virtual Packet& operator& (std::string&);
-		virtual Packet& operator& (IBlob&);
 		virtual Packet& operator& (ISerializable&);
+
+		virtual size_t write(const char* ptr, size_t len);
+		virtual size_t read(char* ptr, size_t len);
 
 		// for internal use
 		char* getDataPtr();
@@ -50,9 +52,6 @@ namespace gg
 		char m_data[BUF_SIZE];
 		size_t m_data_len;
 		size_t m_data_pos;
-
-		size_t write(const char* ptr, size_t len);
-		size_t read(char* ptr, size_t len);
 	};
 
 	class SerializationError : public ISerializationError
