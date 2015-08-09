@@ -12,9 +12,10 @@ static gg::ThreadManager s_thread;
 gg::IThreadManager& gg::thread = s_thread;
 
 
-gg::TaskData::TaskData(gg::IThread* thread, std::unique_ptr<ITask> task) :
+gg::TaskData::TaskData(gg::IThread* thread, std::unique_ptr<ITask> task, IThread::State state) :
 	m_thread(thread),
 	m_task(std::move(task)),
+	m_task_state(state),
 	m_finished(false)
 {
 	try
@@ -30,6 +31,7 @@ gg::TaskData::TaskData(gg::IThread* thread, std::unique_ptr<ITask> task) :
 gg::TaskData::TaskData(gg::TaskData&& taskdata) :
 	m_thread(taskdata.m_thread),
 	m_task(std::move(taskdata.m_task)),
+	m_task_state(taskdata.m_task_state),
 	m_subscriptions(std::move(taskdata.m_subscriptions)),
 	m_events(std::move(taskdata.m_events)),
 	m_last_error(std::move(taskdata.m_last_error)),
@@ -45,6 +47,7 @@ gg::TaskData& gg::TaskData::operator=(TaskData&& taskdata)
 {
 	m_thread = taskdata.m_thread;
 	m_task = std::move(taskdata.m_task);
+	m_task_state = taskdata.m_task_state;
 	m_subscriptions = std::move(taskdata.m_subscriptions);
 	m_events = std::move(taskdata.m_events);
 	m_last_error = std::move(taskdata.m_last_error);
@@ -55,6 +58,16 @@ gg::TaskData& gg::TaskData::operator=(TaskData&& taskdata)
 gg::IThread& gg::TaskData::getThread()
 {
 	return *m_thread;
+}
+
+gg::IThread::State gg::TaskData::getState() const
+{
+	return m_task_state;
+}
+
+void gg::TaskData::setState(IThread::State state)
+{
+	m_task_state = state;
 }
 
 void gg::TaskData::subscribe(IEvent::Type type)
@@ -172,9 +185,10 @@ void gg::TaskData::update()
 
 gg::Thread::Thread(const std::string& name) :
 	m_name(name),
+	m_state(0),
 	m_thread_id(std::this_thread::get_id()),
 	m_running(false),
-	m_clear_tasks(false)
+	m_finish_tasks(false)
 {
 	m_tasks.reserve(10);
 	m_pending_tasks.reserve(10);
@@ -187,31 +201,41 @@ gg::Thread::~Thread()
 {
 	if (m_running && m_thread.joinable())
 	{
-		clearTasks();
+		finishTasks();
 		m_thread.join();
 	}
+}
+
+gg::IThread::State gg::Thread::getState() const
+{
+	return m_state;
+}
+
+void gg::Thread::setState(State state)
+{
+	m_state = state;
 }
 
 void gg::Thread::sendEvent(std::shared_ptr<gg::IEvent> event)
 {
 }
 
-void gg::Thread::addTask(std::unique_ptr<gg::ITask>&& task)
+void gg::Thread::addTask(std::unique_ptr<gg::ITask>&& task, State state)
 {
 	if (m_thread_id == std::this_thread::get_id())
 	{
-		m_internal_pending_tasks.push_back(std::move(task));
+		m_internal_pending_tasks.push_back(TaskWithState{ std::move(task), state });
 	}
 	else
 	{
 		std::lock_guard<decltype(m_tasks_mutex)> guard(m_tasks_mutex);
-		m_pending_tasks.push_back(std::move(task));
+		m_pending_tasks.push_back(TaskWithState{ std::move(task), state });
 	}
 }
 
-void gg::Thread::clearTasks()
+void gg::Thread::finishTasks()
 {
-	m_clear_tasks = true;
+	m_finish_tasks = true;
 }
 
 bool gg::Thread::run(Mode mode)
@@ -240,18 +264,20 @@ void gg::Thread::thread()
 {
 	do
 	{
+		State state = m_state;
+
 		// add pending tasks to task list
 		if (m_tasks_mutex.try_lock())
 		{
-			for (auto&& task : m_pending_tasks)
-				m_tasks.emplace_back(this, std::move(task));
+			for (auto& task : m_pending_tasks)
+				m_tasks.emplace_back(this, std::move(task.task), task.state);
 			m_pending_tasks.clear();
 			m_tasks_mutex.unlock();
 		}
 
 		// add pending internal tasks to task list
-		for (auto&& task : m_internal_pending_tasks)
-			m_tasks.emplace_back(this, std::move(task));
+		for (auto& task : m_internal_pending_tasks)
+			m_tasks.emplace_back(this, std::move(task.task), task.state);
 		m_internal_pending_tasks.clear();
 
 		// add pending events to event list
@@ -266,12 +292,19 @@ void gg::Thread::thread()
 
 		// assign events to subscribed tasks
 		for (auto& task : m_tasks)
-			task.pushEvents(m_events);
+		{
+			if (task.getState() == state)
+				task.pushEvents(m_events);
+		}
 		m_events.clear();
 
 		// run tasks
 		for (auto it = m_tasks.begin(); it != m_tasks.end(); )
 		{
+			// don't update tasks that belong to another state
+			if (it->getState() != state)
+				continue;
+
 			it->update(); // exceptions are already catched here
 
 			// if task is finished, add its children to task list and remove it..
@@ -288,9 +321,9 @@ void gg::Thread::thread()
 		}
 
 		// clear tasks if it was requested
-		if (m_clear_tasks)
+		if (m_finish_tasks)
 		{
-			m_clear_tasks = false;
+			m_finish_tasks = false;
 
 			m_tasks.clear();
 			m_internal_pending_tasks.clear();

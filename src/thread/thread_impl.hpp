@@ -21,7 +21,7 @@ namespace gg
 	class TaskData : public IThread::TaskOptions
 	{
 	public:
-		TaskData(IThread*, std::unique_ptr<ITask>);
+		TaskData(IThread*, std::unique_ptr<ITask>, IThread::State);
 		TaskData(TaskData&&);
 		virtual ~TaskData();
 		TaskData& operator=(TaskData&&);
@@ -31,6 +31,8 @@ namespace gg
 
 		// inherited from IThread::TaskOptions
 		virtual IThread& getThread();
+		virtual IThread::State getState() const;
+		virtual void setState(IThread::State);
 		virtual void subscribe(IEvent::Type);
 		virtual void subscribe(IEventDefinitionBase&);
 		virtual void unsubscribe(IEvent::Type);
@@ -44,6 +46,7 @@ namespace gg
 	private:
 		IThread* m_thread;
 		std::unique_ptr<ITask> m_task;
+		IThread::State m_task_state;
 		std::vector<IEvent::Type> m_subscriptions;
 		std::queue<std::shared_ptr<IEvent>> m_events;
 		Timer m_timer;
@@ -56,26 +59,35 @@ namespace gg
 	public:
 		Thread(const std::string& name);
 		virtual ~Thread();
+		virtual State getState() const;
+		virtual void setState(State);
 		virtual void sendEvent(std::shared_ptr<IEvent>);
-		virtual void addTask(std::unique_ptr<ITask>&&);
-		virtual void clearTasks();
+		virtual void addTask(std::unique_ptr<ITask>&&, State);
+		virtual void finishTasks();
 		virtual bool run(Mode = Mode::REMOTE);
 		virtual bool isAlive() const;
 		virtual void join();
 
 	private:
+		struct TaskWithState
+		{
+			std::unique_ptr<ITask> task;
+			State state;
+		};
+
 		std::string m_name;
+		std::atomic<State> m_state;
 		std::mutex m_tasks_mutex;
 		std::vector<TaskData> m_tasks;
-		std::vector<std::unique_ptr<ITask>> m_pending_tasks;
-		std::vector<std::unique_ptr<ITask>> m_internal_pending_tasks;
+		std::vector<TaskWithState> m_pending_tasks;
+		std::vector<TaskWithState> m_internal_pending_tasks;
 		std::mutex m_events_mutex;
 		std::vector<std::shared_ptr<IEvent>> m_events;
 		std::vector<std::shared_ptr<IEvent>> m_pending_events;
 		std::thread m_thread;
 		std::thread::id m_thread_id;
 		std::atomic<bool> m_running;
-		volatile bool m_clear_tasks;
+		volatile bool m_finish_tasks;
 
 		void thread();
 	};

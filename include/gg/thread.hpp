@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include "gg/event.hpp"
 
@@ -24,11 +25,15 @@ namespace gg
 	class IThread
 	{
 	public:
+		typedef uint16_t State;
+
 		class TaskOptions
 		{
 		public:
 			virtual ~TaskOptions() = default;
 			virtual IThread& getThread() = 0;
+			virtual State getState() const = 0;
+			virtual void setState(State) = 0;
 			virtual void subscribe(IEvent::Type) = 0;
 			virtual void subscribe(IEventDefinitionBase&) = 0;
 			virtual void unsubscribe(IEvent::Type) = 0;
@@ -47,18 +52,20 @@ namespace gg
 		};
 
 		virtual ~IThread() = default;
+		virtual State getState() const = 0;
+		virtual void setState(State) = 0;
 		virtual void sendEvent(std::shared_ptr<IEvent>) = 0;
-		virtual void addTask(std::unique_ptr<ITask>&&) = 0;
-		virtual void clearTasks() = 0; // thread stops if there is no task to run
+		virtual void addTask(std::unique_ptr<ITask>&&, State = 0) = 0;
+		virtual void finishTasks() = 0; // thread stops if there is no task to run
 		virtual bool run(Mode = Mode::REMOTE) = 0;
 		virtual bool isAlive() const = 0;
 		virtual void join() = 0;
 
-		template<class Task, class... Params>
+		template<class Task, State state = 0, class... Params>
 		void addTask(Params... params)
 		{
 			std::unique_ptr<ITask> task(new Task(std::forward<Params>(params)...));
-			addTask(std::move(task));
+			addTask(std::move(task), state);
 		}
 
 		template<IEventDefinitionBase& Def, class... Params>

@@ -155,7 +155,7 @@ int main()
 	if (!connection->connect())
 	{
 		gg::log << "Can't connect :(" << std::endl;
-		server->clearTasks();
+		server->finishTasks();
 		server->join();
 		return 1;
 	}
@@ -169,7 +169,7 @@ int main()
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}
 
-	server->clearTasks();
+	server->finishTasks();
 	server->join();
 	return 0;
 }
