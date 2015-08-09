@@ -15,19 +15,12 @@
 
 #include <cstdint>
 #include <memory>
+#include "gg/serializable.hpp"
 #include "gg/storage.hpp"
 
 namespace gg
 {
-	class IPacket;
 	class IEventDefinitionBase;
-
-	class ISerializable
-	{
-	public:
-		virtual ~ISerializable() = default;
-		virtual void serialize(IPacket&) = 0;
-	};
 
 	class IEvent : public ISerializable
 	{

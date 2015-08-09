@@ -19,8 +19,9 @@
 #include <memory>
 #include <string>
 #include <typeinfo>
-#include "gg/storage.hpp"
+#include "gg/serializable.hpp"
 #include "gg/event.hpp"
+#include "gg/storage.hpp"
 
 #if defined GGNETWORK_BUILD
 #	define GG_API __declspec(dllexport)
@@ -159,21 +160,6 @@ namespace gg
 	extern GG_API INetworkManager& net;
 
 
-	inline void serialize(IPacket& packet, IEvent::Flag& flag)
-	{
-		if (packet.getMode() == IPacket::Mode::READ_PACKET)
-		{
-			uint8_t f;
-			packet & f;
-			f ? flag.set() : flag.unset();
-		}
-		else
-		{
-			uint8_t f = flag.isSet();
-			packet & f;
-		}
-	}
-
 	template<class... Types>
 	class SerializableStorage : public Storage<Types...>, public ISerializable
 	{
@@ -253,4 +239,20 @@ namespace gg
 			SerializableStorage<Params...> m_params;
 		};
 	};
+
+
+	inline void serialize(IPacket& packet, IEvent::Flag& flag)
+	{
+		if (packet.getMode() == IPacket::Mode::READ_PACKET)
+		{
+			uint8_t f;
+			packet & f;
+			f ? flag.set() : flag.unset();
+		}
+		else
+		{
+			uint8_t f = flag.isSet();
+			packet & f;
+		}
+	}
 };

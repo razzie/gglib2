@@ -15,6 +15,7 @@
 #include "gg/network.hpp"
 #include "gg/resource.hpp"
 #include "gg/rwmutex.hpp"
+#include "gg/serializable.hpp"
 #include "gg/storage.hpp"
 #include "gg/streamutil.hpp"
 #include "gg/thread.hpp"

@@ -116,6 +116,7 @@
     <ClInclude Include="include\gg\optional.hpp" />
     <ClInclude Include="include\gg\resource.hpp" />
     <ClInclude Include="include\gg\rwmutex.hpp" />
+    <ClInclude Include="include\gg\serializable.hpp" />
     <ClInclude Include="include\gg\storage.hpp" />
     <ClInclude Include="include\gg\streamutil.hpp" />
     <ClInclude Include="include\gg\thread.hpp" />
