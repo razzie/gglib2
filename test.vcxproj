@@ -121,6 +121,7 @@
     <ClInclude Include="include\gg\streamutil.hpp" />
     <ClInclude Include="include\gg\thread.hpp" />
     <ClInclude Include="include\gg\timer.hpp" />
+    <ClInclude Include="include\gg\version.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\test.cpp" />

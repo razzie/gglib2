@@ -22,6 +22,7 @@
 #include "gg/serializable.hpp"
 #include "gg/event.hpp"
 #include "gg/storage.hpp"
+#include "gg/version.hpp"
 
 #if defined GGNETWORK_BUILD
 #	define GG_API __declspec(dllexport)
@@ -254,5 +255,10 @@ namespace gg
 			uint8_t f = flag.isSet();
 			packet & f;
 		}
+	}
+
+	inline void serialize(IPacket& packet, Version& ver)
+	{
+		packet & ver.m_major & ver.m_minor & ver.m_revision;
 	}
 };

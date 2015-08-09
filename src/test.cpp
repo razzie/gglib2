@@ -21,6 +21,7 @@
 #include "gg/thread.hpp"
 #include "gg/timer.hpp"
 #include "gg/optional.hpp"
+#include "gg/version.hpp"
 
 gg::IDGenerator<> gen;
 
