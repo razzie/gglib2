@@ -124,22 +124,51 @@ namespace gg
 	extern GG_API IThreadManager& thread;
 
 
-	// Warning: it is NOT network compatible
+	// Warning: the following event definitions are NOT network compatible
 	template<IEvent::Type EventType, class... Params>
-	class SimpleEventDefinition : public IEventDefinition<Params...>
+	class LocalEvent : public IEvent
 	{
 	public:
-		SimpleEventDefinition(Params... params) :
+		LocalEvent() = default;
+
+		LocalEvent(Params... params) :
 			m_params(std::forward<Params>(params)...)
 		{
 		}
 
-		virtual ~SimpleEventDefinition() = default;
+		virtual ~LocalEvent() = default;
 		virtual IEvent::Type getType() const { return EventType; }
 		virtual const IStorage& getParams() const { return m_params; }
 		virtual void serialize(IPacket&) {}
 
 	private:
 		Storage<Params...> m_params;
+	};
+
+	template<IEvent::Type EventType, class... Params>
+	class LocalEventDefinition : public IEventDefinition<Params...>
+	{
+	public:
+		typedef LocalEvent<EventType, Params...> Event;
+
+		virtual IEvent::Type getType() const
+		{
+			return EventType;
+		}
+
+		virtual EventPtr create() const
+		{
+			return EventPtr(new Event());
+		}
+
+		virtual EventPtr create(IPacket& packet) const
+		{
+			return {};
+		}
+
+		virtual EventPtr create(Params... params) const
+		{
+			return EventPtr(new Event(std::forward<Params>(params)...));
+		}
 	};
 };

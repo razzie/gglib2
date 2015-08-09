@@ -87,15 +87,16 @@ namespace gg
 		}
 
 	private:
-		template <int N, typename... T>
+		template<int N, class... T>
 		struct Param;
 
-		template <typename T0, typename... T>
+		template<class T0, class... T>
 		struct Param<0, T0, T...>
 		{
 			typedef T0 Type;
 		};
-		template <int N, typename T0, typename... T>
+
+		template<int N, class T0, class... T>
 		struct Param<N, T0, T...>
 		{
 			typedef typename Param<N - 1, T...>::Type Type;

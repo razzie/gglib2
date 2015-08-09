@@ -25,7 +25,7 @@
 
 gg::IDGenerator<> gen;
 
-gg::EventDefinition<1, int, float> foo_event;
+gg::SerializableEventDefinition<1, int, float> foo_event;
 
 class ConnectionTask : public gg::ITask
 {
