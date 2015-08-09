@@ -114,6 +114,7 @@
     <ClInclude Include="include\gg\logger.hpp" />
     <ClInclude Include="include\gg\network.hpp" />
     <ClInclude Include="include\gg\optional.hpp" />
+    <ClInclude Include="include\gg\parameterpack.hpp" />
     <ClInclude Include="include\gg\resource.hpp" />
     <ClInclude Include="include\gg\rwmutex.hpp" />
     <ClInclude Include="include\gg\serializable.hpp" />
