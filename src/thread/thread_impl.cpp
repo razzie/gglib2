@@ -12,7 +12,7 @@ static gg::ThreadManager s_thread;
 gg::IThreadManager& gg::thread = s_thread;
 
 
-gg::TaskData::TaskData(gg::IThread* thread, std::unique_ptr<ITask> task, IThread::State state) :
+gg::TaskData::TaskData(gg::IThread* thread, TaskPtr task, IThread::State state) :
 	m_thread(thread),
 	m_task(std::move(task)),
 	m_task_state(state),
@@ -108,7 +108,7 @@ bool gg::TaskData::hasEvent() const
 	return !m_events.empty();
 }
 
-std::shared_ptr<gg::IEvent> gg::TaskData::getNextEvent()
+gg::EventPtr gg::TaskData::getNextEvent()
 {
 	if (m_events.empty())
 	{
@@ -116,7 +116,7 @@ std::shared_ptr<gg::IEvent> gg::TaskData::getNextEvent()
 	}
 	else
 	{
-		std::shared_ptr<gg::IEvent> event = m_events.front();
+		EventPtr event = m_events.front();
 		m_events.pop();
 		return event;
 	}
@@ -145,7 +145,7 @@ void gg::TaskData::finish()
 	}
 }
 
-void gg::TaskData::pushEvents(const std::vector<std::shared_ptr<gg::IEvent>>& events)
+void gg::TaskData::pushEvents(const std::vector<EventPtr>& events)
 {
 	for (auto& event : events)
 	{
@@ -221,11 +221,11 @@ void gg::Thread::setState(State state)
 	m_state = state;
 }
 
-void gg::Thread::sendEvent(std::shared_ptr<gg::IEvent> event)
+void gg::Thread::sendEvent(EventPtr event)
 {
 }
 
-void gg::Thread::addTask(std::unique_ptr<gg::ITask>&& task, State state)
+void gg::Thread::addTask(TaskPtr&& task, State state)
 {
 	if (m_thread_id == std::this_thread::get_id())
 	{
@@ -381,9 +381,9 @@ gg::ThreadManager::~ThreadManager()
 {
 }
 
-std::shared_ptr<gg::IThread> gg::ThreadManager::createThread(const std::string& name)
+gg::ThreadPtr gg::ThreadManager::createThread(const std::string& name)
 {
-	std::shared_ptr<IThread> thread(new Thread(name));
+	ThreadPtr thread(new Thread(name));
 
 	{
 		std::lock_guard<decltype(m_mutex)> guard(m_mutex);
@@ -393,7 +393,7 @@ std::shared_ptr<gg::IThread> gg::ThreadManager::createThread(const std::string& 
 	return thread;
 }
 
-std::shared_ptr<gg::IThread> gg::ThreadManager::getThread(const std::string& name) const
+gg::ThreadPtr gg::ThreadManager::getThread(const std::string& name) const
 {
 	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 

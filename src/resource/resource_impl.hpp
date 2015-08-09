@@ -22,8 +22,8 @@ namespace gg
 		virtual ~Resource();
 		virtual bool init();
 		virtual const std::string& getName() const;
-		virtual std::shared_ptr<IDirectory> getDirectory(const std::string& dir_name);
-		virtual std::shared_ptr<IFile> getFile(const std::string& file_name);
+		virtual DirectoryPtr getDirectory(const std::string& dir_name);
+		virtual FilePtr getFile(const std::string& file_name);
 		virtual bool loadDirectoryData(const std::string& dir_name, std::vector<IDirectory::FileOrDirectory>*);
 		virtual bool loadFileData(const std::string& file_name, const char**, size_t*);
 
@@ -51,8 +51,8 @@ namespace gg
 		virtual bool createResource(const std::string& dir_path) const;
 		virtual bool createResource(const std::wstring& dir_path) const;
 		virtual bool addResource(const std::string& vdir_path);
-		virtual std::shared_ptr<IDirectory> openDirectory(const std::string& dir_name);
-		virtual std::shared_ptr<IFile> openFile(const std::string& file_name);
+		virtual DirectoryPtr openDirectory(const std::string& dir_name);
+		virtual FilePtr openFile(const std::string& file_name);
 
 	private:
 		std::map<std::string, Resource*> m_resources;

@@ -47,14 +47,17 @@ namespace gg
 	class IDirectory;
 	class IFile;
 
+	typedef std::shared_ptr<IDirectory> DirectoryPtr;
+	typedef std::shared_ptr<IFile> FilePtr;
+
 	class IResourceManager
 	{
 	public:
 		virtual ~IResourceManager() = default;
 		virtual bool createResource(const std::string& dir_path) const = 0;
 		virtual bool addResource(const std::string& res_path) = 0;
-		virtual std::shared_ptr<IDirectory> openDirectory(const std::string& dir_name) = 0;
-		virtual std::shared_ptr<IFile> openFile(const std::string& file_name) = 0;
+		virtual DirectoryPtr openDirectory(const std::string& dir_name) = 0;
+		virtual FilePtr openFile(const std::string& file_name) = 0;
 	};
 
 	extern GG_API IResourceManager& res;
@@ -105,7 +108,7 @@ namespace gg
 		{
 		}
 
-		std::shared_ptr<IFile> getFile() const
+		FilePtr getFile() const
 		{
 			return m_file;
 		}
@@ -139,7 +142,7 @@ namespace gg
 		}
 
 	private:
-		std::shared_ptr<IFile> m_file;
+		FilePtr m_file;
 		size_t m_pos;
 	};
 };

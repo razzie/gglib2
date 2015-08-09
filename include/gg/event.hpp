@@ -59,13 +59,15 @@ namespace gg
 		};
 	};
 
+	typedef std::shared_ptr<IEvent> EventPtr;
+
 	class IEventDefinitionBase
 	{
 	public:
 		virtual ~IEventDefinitionBase() = default;
 		virtual IEvent::Type getType() const = 0;
-		virtual std::shared_ptr<IEvent> create() const = 0;
-		virtual std::shared_ptr<IEvent> create(IPacket&) const = 0;
+		virtual EventPtr create() const = 0;
+		virtual EventPtr create(IPacket&) const = 0;
 	};
 
 	template<class... Params>
@@ -74,12 +76,12 @@ namespace gg
 	public:
 		virtual ~IEventDefinition() = default;
 		virtual IEvent::Type getType() const = 0;
-		virtual std::shared_ptr<IEvent> create() const = 0;
-		virtual std::shared_ptr<IEvent> create(IPacket&) const = 0;
-		virtual std::shared_ptr<IEvent> create(Params... params) const = 0;
+		virtual EventPtr create() const = 0;
+		virtual EventPtr create(IPacket&) const = 0;
+		virtual EventPtr create(Params... params) const = 0;
 
 		template<unsigned N, class R = Param<N, Params...>::Type>
-		static R get(std::shared_ptr<IEvent> event)
+		static R get(EventPtr event)
 		{
 			return event->get<R>(N);
 		}

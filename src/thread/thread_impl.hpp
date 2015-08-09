@@ -21,11 +21,11 @@ namespace gg
 	class TaskData : public IThread::TaskOptions
 	{
 	public:
-		TaskData(IThread*, std::unique_ptr<ITask>, IThread::State);
+		TaskData(IThread*, TaskPtr, IThread::State);
 		TaskData(TaskData&&);
 		virtual ~TaskData();
 		TaskData& operator=(TaskData&&);
-		void pushEvents(const std::vector<std::shared_ptr<IEvent>>&);
+		void pushEvents(const std::vector<EventPtr>&);
 		bool isFinished() const;
 		void update();
 		void stateChange(IThread::State old_state, IThread::State new_state);
@@ -39,17 +39,17 @@ namespace gg
 		virtual void unsubscribe(IEvent::Type);
 		virtual void unsubscribe(IEventDefinitionBase&);
 		virtual bool hasEvent() const;
-		virtual std::shared_ptr<IEvent> getNextEvent();
+		virtual EventPtr getNextEvent();
 		virtual uint32_t getElapsedMs() const;
 		virtual const std::string& getLastError() const;
 		virtual void finish();
 
 	private:
 		IThread* m_thread;
-		std::unique_ptr<ITask> m_task;
+		TaskPtr m_task;
 		IThread::State m_task_state;
 		std::vector<IEvent::Type> m_subscriptions;
-		std::queue<std::shared_ptr<IEvent>> m_events;
+		std::queue<EventPtr> m_events;
 		Timer m_timer;
 		std::string m_last_error;
 		bool m_finished;
@@ -62,8 +62,8 @@ namespace gg
 		virtual ~Thread();
 		virtual State getState() const;
 		virtual void setState(State);
-		virtual void sendEvent(std::shared_ptr<IEvent>);
-		virtual void addTask(std::unique_ptr<ITask>&&, State);
+		virtual void sendEvent(EventPtr);
+		virtual void addTask(TaskPtr&&, State);
 		virtual void finishTasks();
 		virtual bool run(Mode = Mode::REMOTE);
 		virtual bool isAlive() const;
@@ -72,7 +72,7 @@ namespace gg
 	private:
 		struct TaskWithState
 		{
-			std::unique_ptr<ITask> task;
+			TaskPtr task;
 			State state;
 		};
 
@@ -83,8 +83,8 @@ namespace gg
 		std::vector<TaskWithState> m_pending_tasks;
 		std::vector<TaskWithState> m_internal_pending_tasks;
 		std::mutex m_events_mutex;
-		std::vector<std::shared_ptr<IEvent>> m_events;
-		std::vector<std::shared_ptr<IEvent>> m_pending_events;
+		std::vector<EventPtr> m_events;
+		std::vector<EventPtr> m_pending_events;
 		std::thread m_thread;
 		std::thread::id m_thread_id;
 		std::atomic<bool> m_running;
@@ -98,10 +98,10 @@ namespace gg
 	public:
 		ThreadManager();
 		virtual ~ThreadManager();
-		virtual std::shared_ptr<IThread> createThread(const std::string& name);
-		virtual std::shared_ptr<IThread> getThread(const std::string& name) const;
+		virtual ThreadPtr createThread(const std::string& name);
+		virtual ThreadPtr getThread(const std::string& name) const;
 
-		std::shared_ptr<IThread> operator[](const std::string& name) const
+		ThreadPtr operator[](const std::string& name) const
 		{
 			return getThread(name);
 		}

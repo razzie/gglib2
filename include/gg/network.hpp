@@ -114,7 +114,7 @@ namespace gg
 		virtual const std::string& getAddress() const = 0;
 		virtual std::shared_ptr<IPacket> getNextPacket(uint32_t timeoutMs = 0) = 0; // 0: non-blocking
 		virtual std::shared_ptr<IPacket> createPacket(IPacket::Type) const = 0;
-		virtual std::shared_ptr<IPacket> createPacket(std::shared_ptr<IEvent>) const = 0;
+		virtual std::shared_ptr<IPacket> createPacket(EventPtr) const = 0;
 		virtual bool send(std::shared_ptr<IPacket>) = 0;
 	};
 
@@ -155,7 +155,7 @@ namespace gg
 		virtual std::shared_ptr<IServer> createServer(uint16_t port) const = 0;
 		virtual std::shared_ptr<IServer> createServer(std::unique_ptr<IServerBackend>&&) const = 0;
 		virtual std::shared_ptr<IPacket> createPacket(IPacket::Type) const = 0;
-		virtual std::shared_ptr<IPacket> createPacket(std::shared_ptr<IEvent>) const = 0;
+		virtual std::shared_ptr<IPacket> createPacket(EventPtr) const = 0;
 	};
 
 	extern GG_API INetworkManager& net;
@@ -198,25 +198,25 @@ namespace gg
 			return EventType;
 		}
 
-		virtual std::shared_ptr<IEvent> create() const
+		virtual EventPtr create() const
 		{
-			std::shared_ptr<IEvent> event(new Event());
+			EventPtr event(new Event());
 			return event;
 		}
 
-		virtual std::shared_ptr<IEvent> create(IPacket& packet) const
+		virtual EventPtr create(IPacket& packet) const
 		{
 			if (packet.getType() != EventType)
 				return {};
 
-			std::shared_ptr<IEvent> event(new Event());
+			EventPtr event(new Event());
 			event->serialize(packet);
 			return event;
 		}
 
-		virtual std::shared_ptr<IEvent> create(Params... params) const
+		virtual EventPtr create(Params... params) const
 		{
-			std::shared_ptr<IEvent> event(new Event(std::forward<Params>(params)...));
+			EventPtr event(new Event(std::forward<Params>(params)...));
 			return event;
 		}
 

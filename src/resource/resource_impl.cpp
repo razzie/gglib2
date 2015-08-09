@@ -269,7 +269,7 @@ bool gg::ResourceManager::addResource(const std::string& res_path)
 	}
 }
 
-std::shared_ptr<gg::IDirectory> gg::ResourceManager::openDirectory(const std::string& dir_name)
+gg::DirectoryPtr gg::ResourceManager::openDirectory(const std::string& dir_name)
 {
 	std::string vdir_name = getPathRoot(dir_name);
 
@@ -284,7 +284,7 @@ std::shared_ptr<gg::IDirectory> gg::ResourceManager::openDirectory(const std::st
 	}
 }
 
-std::shared_ptr<gg::IFile> gg::ResourceManager::openFile(const std::string& file_name)
+gg::FilePtr gg::ResourceManager::openFile(const std::string& file_name)
 {
 	std::string vdir_name = getPathRoot(file_name);
 
@@ -355,12 +355,12 @@ const std::string& gg::Resource::getName() const
 	return m_name;
 }
 
-std::shared_ptr<gg::IDirectory> gg::Resource::getDirectory(const std::string& dir_name)
+gg::DirectoryPtr gg::Resource::getDirectory(const std::string& dir_name)
 {
-	return std::shared_ptr<IDirectory>(new Directory(this, m_name + '/' + dir_name));
+	return DirectoryPtr(new Directory(this, m_name + '/' + dir_name));
 }
 
-std::shared_ptr<gg::IFile> gg::Resource::getFile(const std::string& file_name)
+gg::FilePtr gg::Resource::getFile(const std::string& file_name)
 {
 	auto it = m_files.find(file_name);
 	if (it != m_files.end())
@@ -374,7 +374,7 @@ std::shared_ptr<gg::IFile> gg::Resource::getFile(const std::string& file_name)
 		}
 		else
 		{
-			std::shared_ptr<IFile> ptr(new File(this, m_name + '/' + file_name));
+			FilePtr ptr(new File(this, m_name + '/' + file_name));
 			fd.ptr = ptr;
 			return ptr;
 		}

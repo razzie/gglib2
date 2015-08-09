@@ -21,6 +21,10 @@
 namespace gg
 {
 	class ITask;
+	class IThread;
+
+	typedef std::unique_ptr<ITask> TaskPtr;
+	typedef std::shared_ptr<IThread> ThreadPtr;
 
 	class IThread
 	{
@@ -39,7 +43,7 @@ namespace gg
 			virtual void unsubscribe(IEvent::Type) = 0;
 			virtual void unsubscribe(IEventDefinitionBase&) = 0;
 			virtual bool hasEvent() const = 0;
-			virtual std::shared_ptr<IEvent> getNextEvent() = 0;
+			virtual EventPtr getNextEvent() = 0;
 			virtual uint32_t getElapsedMs() const = 0;
 			virtual const std::string& getLastError() const = 0;
 			virtual void finish() = 0;
@@ -54,8 +58,8 @@ namespace gg
 		virtual ~IThread() = default;
 		virtual State getState() const = 0;
 		virtual void setState(State) = 0;
-		virtual void sendEvent(std::shared_ptr<IEvent>) = 0;
-		virtual void addTask(std::unique_ptr<ITask>&&, State = 0) = 0;
+		virtual void sendEvent(EventPtr) = 0;
+		virtual void addTask(TaskPtr&&, State = 0) = 0;
 		virtual void finishTasks() = 0; // thread stops if there is no task to run
 		virtual bool run(Mode = Mode::REMOTE) = 0;
 		virtual bool isAlive() const = 0;
@@ -64,7 +68,7 @@ namespace gg
 		template<class Task, State state = 0, class... Params>
 		void addTask(Params... params)
 		{
-			std::unique_ptr<ITask> task(new Task(std::forward<Params>(params)...));
+			TaskPtr task(new Task(std::forward<Params>(params)...));
 			addTask(std::move(task), state);
 		}
 
@@ -91,7 +95,7 @@ namespace gg
 	};
 
 	template<class F>
-	std::unique_ptr<ITask> createTask(F func)
+	TaskPtr createTask(F func)
 	{
 		class FuncTask : public ITask
 		{
@@ -104,7 +108,7 @@ namespace gg
 			F m_func;
 		};
 
-		std::unique_ptr<ITask> task(new FuncTask(func));
+		TaskPtr task(new FuncTask(func));
 		return std::move(task);
 	}
 
@@ -113,8 +117,8 @@ namespace gg
 	{
 	public:
 		virtual ~IThreadManager() = default;
-		virtual std::shared_ptr<IThread> createThread(const std::string& name) = 0;
-		virtual std::shared_ptr<IThread> getThread(const std::string& name) const = 0;
+		virtual ThreadPtr createThread(const std::string& name) = 0;
+		virtual ThreadPtr getThread(const std::string& name) const = 0;
 	};
 
 	extern GG_API IThreadManager& thread;

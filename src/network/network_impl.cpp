@@ -377,7 +377,7 @@ std::shared_ptr<gg::IPacket> gg::Connection::createPacket(gg::IPacket::Type type
 	return std::shared_ptr<IPacket>( new Packet(IPacket::Mode::WRITE_PACKET, type) );
 }
 
-std::shared_ptr<gg::IPacket> gg::Connection::createPacket(std::shared_ptr<gg::IEvent> event) const
+std::shared_ptr<gg::IPacket> gg::Connection::createPacket(EventPtr event) const
 {
 	std::shared_ptr<IPacket> packet( new Packet(IPacket::Mode::WRITE_PACKET, event->getType()) );
 	event->serialize(*packet);
@@ -547,7 +547,7 @@ std::shared_ptr<gg::IPacket> gg::NetworkManager::createPacket(gg::IPacket::Type 
 	return std::shared_ptr<IPacket>( new Packet(IPacket::Mode::WRITE_PACKET, type) );
 }
 
-std::shared_ptr<gg::IPacket> gg::NetworkManager::createPacket(std::shared_ptr<gg::IEvent> event) const
+std::shared_ptr<gg::IPacket> gg::NetworkManager::createPacket(EventPtr event) const
 {
 	std::shared_ptr<IPacket> packet( new Packet(IPacket::Mode::WRITE_PACKET, event->getType()) );
 	event->serialize(*packet);
