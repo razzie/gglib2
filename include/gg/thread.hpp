@@ -80,9 +80,14 @@ namespace gg
 	{
 	public:
 		virtual ~ITask() = default;
-		virtual void onStart(IThread::TaskOptions&) {}; // called once before the first update
-		virtual void onUpdate(IThread::TaskOptions&) = 0; // called periodically until the task finishes
-		virtual void onFinish(IThread::TaskOptions&) {}; // called once after the task finished
+		// called once before the first update
+		virtual void onStart(IThread::TaskOptions&) {};
+		// called periodically until the task finishes
+		virtual void onUpdate(IThread::TaskOptions&) = 0;
+		// called when thread changed state and task got activate/deactivated
+		virtual void onStateChange(IThread::State old_state, IThread::State new_state) {};
+		// called once after the task has finished
+		virtual void onFinish(IThread::TaskOptions&) {};
 	};
 
 	template<class F>

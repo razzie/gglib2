@@ -182,6 +182,11 @@ void gg::TaskData::update()
 	m_timer.reset();
 }
 
+void gg::TaskData::stateChange(IThread::State old_state, IThread::State new_state)
+{
+	m_task->onStateChange(old_state, new_state);
+}
+
 
 gg::Thread::Thread(const std::string& name) :
 	m_name(name),
@@ -262,9 +267,17 @@ bool gg::Thread::run(Mode mode)
 
 void gg::Thread::thread()
 {
+	State state = m_state;
+	State prev_state;
+
+	unsigned task_run_count;
+
 	do
 	{
-		State state = m_state;
+		prev_state = state;
+		state = m_state;
+
+		task_run_count = 0;
 
 		// add pending tasks to task list
 		if (m_tasks_mutex.try_lock())
@@ -302,18 +315,25 @@ void gg::Thread::thread()
 		for (auto it = m_tasks.begin(); it != m_tasks.end(); )
 		{
 			// don't update tasks that belong to another state
-			if (it->getState() != state)
+			State task_state = it->getState();
+			if (task_state != state)
+			{
+				if (task_state == prev_state)
+					it->stateChange(prev_state, state);
 				continue;
+			}
 
 			it->update(); // exceptions are already catched here
 
-			// if task is finished, add its children to task list and remove it..
+			++task_run_count;
+
+			// remove the task if finished..
 			if (it->isFinished())
 			{
 				it = m_tasks.erase(it);
 				continue;
 			}
-			// ..otherwise go to next task
+			// ..or go to next task
 			else
 			{
 				++it;
@@ -332,7 +352,11 @@ void gg::Thread::thread()
 			m_pending_tasks.clear();
 			m_tasks_mutex.unlock();
 		}
-	} while (!m_tasks.empty());
+		else
+		{
+			std::this_thread::yield();
+		}
+	} while (task_run_count);
 
 	m_running.store(false);
 }

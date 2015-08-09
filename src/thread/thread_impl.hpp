@@ -28,6 +28,7 @@ namespace gg
 		void pushEvents(const std::vector<std::shared_ptr<IEvent>>&);
 		bool isFinished() const;
 		void update();
+		void stateChange(IThread::State old_state, IThread::State new_state);
 
 		// inherited from IThread::TaskOptions
 		virtual IThread& getThread();
