@@ -17,7 +17,7 @@ namespace gg
 	class Packet : public IPacket
 	{
 	public:
-		static const size_t BUF_SIZE = 2048;
+		static const size_t BUF_SIZE = 8192;
 
 		Packet(Mode, Type);
 		virtual ~Packet();
