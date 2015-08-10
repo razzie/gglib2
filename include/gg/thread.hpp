@@ -119,9 +119,17 @@ namespace gg
 		virtual ~IThreadManager() = default;
 		virtual ThreadPtr createThread(const std::string& name) = 0;
 		virtual ThreadPtr getThread(const std::string& name) const = 0;
+		virtual void sendEvent(EventPtr) = 0;
+
+		template<IEventDefinitionBase& Def, class... Params>
+		void sendEvent(Params... params)
+		{
+			auto event = Def.create(std::forward<Params>(params)...);
+			sendEvent(event);
+		}
 	};
 
-	extern GG_API IThreadManager& thread;
+	extern GG_API IThreadManager& threadmgr;
 
 
 	// Warning: the following event definitions are NOT network compatible

@@ -163,7 +163,7 @@ int main()
 		gg::log << gen.next() << ", ";
 	gg::log << std::endl;
 
-	auto server = gg::thread.createThread("server thread");
+	auto server = gg::threadmgr.createThread("server thread");
 	server->addTask<ServerTask>();
 	server->run();
 

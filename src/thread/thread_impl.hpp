@@ -100,6 +100,8 @@ namespace gg
 		virtual ~ThreadManager();
 		virtual ThreadPtr createThread(const std::string& name);
 		virtual ThreadPtr getThread(const std::string& name) const;
+		virtual void sendEvent(EventPtr);
+		virtual void clean();
 
 		ThreadPtr operator[](const std::string& name) const
 		{

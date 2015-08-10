@@ -9,7 +9,7 @@
 #include "thread_impl.hpp"
 
 static gg::ThreadManager s_thread;
-gg::IThreadManager& gg::thread = s_thread;
+gg::IThreadManager& gg::threadmgr = s_thread;
 
 
 gg::TaskData::TaskData(gg::IThread* thread, TaskPtr task, IThread::State state) :
@@ -414,5 +414,32 @@ gg::ThreadPtr gg::ThreadManager::getThread(const std::string& name) const
 	else
 	{
 		return {};
+	}
+}
+
+void gg::ThreadManager::sendEvent(EventPtr event)
+{
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
+
+	for (auto& it : m_threads)
+	{
+		ThreadPtr thread = it.second.lock();
+		if (thread)
+		{
+			thread->sendEvent(event);
+		}
+	}
+}
+
+void gg::ThreadManager::clean()
+{
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
+
+	for (auto it = m_threads.begin(); it != m_threads.end(); )
+	{
+		if (it->second.expired())
+			it = m_threads.erase(it);
+		else
+			++it;
 	}
 }
