@@ -223,6 +223,15 @@ void gg::Thread::setState(State state)
 
 void gg::Thread::sendEvent(EventPtr event)
 {
+	if (m_thread_id == std::this_thread::get_id())
+	{
+		m_events.push_back(event);
+	}
+	else
+	{
+		std::lock_guard<decltype(m_events_mutex)> guard(m_events_mutex);
+		m_pending_events.push_back(event);
+	}
 }
 
 void gg::Thread::addTask(TaskPtr&& task, State state)
