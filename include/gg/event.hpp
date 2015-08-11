@@ -29,7 +29,7 @@
  * --------
  * auto event = foo_event(1, 'a');
  * auto first = foo_event.get<0>(event); // return type is determined
- * auto second = event.get<char>(1); // must specify return type
+ * auto second = event->get<char>(1); // must specify return type
  * // ..do stuff..
  * thread->sendEvent(event);
  *
