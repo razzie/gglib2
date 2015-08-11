@@ -223,6 +223,9 @@ void gg::Thread::setState(State state)
 
 void gg::Thread::sendEvent(EventPtr event)
 {
+	if (!event)
+		return;
+
 	if (m_thread_id == std::this_thread::get_id())
 	{
 		m_events.push_back(event);

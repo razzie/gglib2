@@ -66,8 +66,8 @@ namespace gg
 	public:
 		virtual ~IEventDefinitionBase() = default;
 		virtual IEvent::Type getType() const = 0;
-		virtual EventPtr create() const = 0;
-		virtual EventPtr create(IPacket&) const = 0;
+		virtual EventPtr operator()() const = 0;
+		virtual EventPtr operator()(IPacket&) const = 0;
 	};
 
 	template<class... Params>
@@ -76,9 +76,9 @@ namespace gg
 	public:
 		virtual ~IEventDefinition() = default;
 		virtual IEvent::Type getType() const = 0;
-		virtual EventPtr create() const = 0;
-		virtual EventPtr create(IPacket&) const = 0;
-		virtual EventPtr create(Params... params) const = 0;
+		virtual EventPtr operator()() const = 0;
+		virtual EventPtr operator()(IPacket&) const = 0;
+		virtual EventPtr operator()(Params... params) const = 0;
 
 		template<unsigned N, class R = Param<N, Params...>::Type>
 		static R get(EventPtr event)

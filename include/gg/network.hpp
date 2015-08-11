@@ -215,12 +215,12 @@ namespace gg
 			return EventType;
 		}
 
-		virtual EventPtr create() const
+		virtual EventPtr operator()() const
 		{
 			return EventPtr(new Event());
 		}
 
-		virtual EventPtr create(IPacket& packet) const
+		virtual EventPtr operator()(IPacket& packet) const
 		{
 			if (packet.getType() != EventType)
 				return {};
@@ -230,7 +230,7 @@ namespace gg
 			return event;
 		}
 
-		virtual EventPtr create(Params... params) const
+		virtual EventPtr operator()(Params... params) const
 		{
 			return EventPtr(new Event(std::forward<Params>(params)...));
 		}

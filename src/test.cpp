@@ -62,11 +62,8 @@ public:
 				{
 					gg::log << "packet: length=" << packet->getSize() << ", type=" << packet->getType() << std::endl;
 
-					auto event = foo_event.create(*packet);
-					if (event)
-					{
-						options.getThread().sendEvent(event);
-					}
+					auto event = foo_event(*packet);
+					options.getThread().sendEvent(event); // accepts empty pointer too
 				}
 			}
 			else
@@ -178,7 +175,7 @@ int main()
 
 	for (int i = 0; i < 5; ++i)
 	{
-		auto event = foo_event.create(1, 2.34f);
+		auto event = foo_event(1, 2.34f);
 		auto packet = gg::net.createPacket(event);
 		connection->send(packet);
 

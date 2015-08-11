@@ -71,13 +71,6 @@ namespace gg
 			TaskPtr task(new Task(std::forward<Params>(params)...));
 			addTask(std::move(task), state);
 		}
-
-		template<IEventDefinitionBase& Def, class... Params>
-		void sendEvent(Params... params)
-		{
-			auto event = Def.create(std::forward<Params>(params)...);
-			sendEvent(event);
-		}
 	};
 
 	class ITask
@@ -120,13 +113,6 @@ namespace gg
 		virtual ThreadPtr createThread(const std::string& name) = 0;
 		virtual ThreadPtr getThread(const std::string& name) const = 0;
 		virtual void sendEvent(EventPtr) = 0;
-
-		template<IEventDefinitionBase& Def, class... Params>
-		void sendEvent(Params... params)
-		{
-			auto event = Def.create(std::forward<Params>(params)...);
-			sendEvent(event);
-		}
 	};
 
 	extern GG_API IThreadManager& threadmgr;
@@ -164,17 +150,17 @@ namespace gg
 			return EventType;
 		}
 
-		virtual EventPtr create() const
+		virtual EventPtr operator()() const
 		{
 			return EventPtr(new Event());
 		}
 
-		virtual EventPtr create(IPacket& packet) const
+		virtual EventPtr operator()(IPacket& packet) const
 		{
 			return {};
 		}
 
-		virtual EventPtr create(Params... params) const
+		virtual EventPtr operator()(Params... params) const
 		{
 			return EventPtr(new Event(std::forward<Params>(params)...));
 		}
