@@ -7,8 +7,32 @@
  */
 
 /**
+ * Events enable communication between processes or threads of a single
+ * process. Once an event is created, its type and parameters cannot be
+ * modified (except for special parameters like IEvent::Flag). This helps
+ * avoiding race conditions.
+ *
+ * The preferred way of defining an event is having an extern IEventDefinition
+ * reference in a public header file and putting the implementation to a source
+ * file:
+ *
+ * myevents.hpp
+ * ------------
+ * extern gg::IEventDefinition<int, char>& foo_event;
+ *
+ * myevents.cpp
+ * ------------
+ * static gg::SerializableEventDefinition<TYPE, int, char> _foo_event;
+ * gg::IEventDefinition<int, char>& foo_event = _foo_event;
+ *
+ * main.cpp
+ * --------
+ * auto event = foo_event(1, 'a');
+ * thread->sendEvent(event);
+ *
  * NOTE:
- * This is a helper file to avoid including gg/network.hpp
+ * For implemented events and event definitions include one of the following
+ * headers: gg/network.hpp or gg/thread.hpp
  */
 
 #pragma once
