@@ -20,34 +20,17 @@
 
 namespace gg
 {
-	class ITask;
 	class IThread;
+	class ITask;
+	class ITaskOptions;
 
-	typedef std::unique_ptr<ITask> TaskPtr;
 	typedef std::shared_ptr<IThread> ThreadPtr;
+	typedef std::unique_ptr<ITask> TaskPtr;
 
 	class IThread
 	{
 	public:
 		typedef uint16_t State;
-
-		class TaskOptions
-		{
-		public:
-			virtual ~TaskOptions() = default;
-			virtual IThread& getThread() = 0;
-			virtual State getState() const = 0;
-			virtual void setState(State) = 0;
-			virtual void subscribe(IEvent::Type) = 0;
-			virtual void subscribe(IEventDefinitionBase&) = 0;
-			virtual void unsubscribe(IEvent::Type) = 0;
-			virtual void unsubscribe(IEventDefinitionBase&) = 0;
-			virtual bool hasEvent() const = 0;
-			virtual EventPtr getNextEvent() = 0;
-			virtual uint32_t getElapsedMs() const = 0;
-			virtual const std::string& getLastError() const = 0;
-			virtual void finish() = 0;
-		};
 
 		enum Mode
 		{
@@ -76,35 +59,38 @@ namespace gg
 	class ITask
 	{
 	public:
+		typedef uint16_t ID;
+
 		virtual ~ITask() = default;
 		// called once before the first update
-		virtual void onStart(IThread::TaskOptions&) {};
+		virtual void onStart(ITaskOptions&) {}
+		// called for each event the task received right before onUpdate
+		virtual void onEvent(ITaskOptions&, EventPtr) = 0;
 		// called periodically until the task finishes
-		virtual void onUpdate(IThread::TaskOptions&) = 0;
-		// called when thread changed state and task got activate/deactivated
-		virtual void onStateChange(IThread::State old_state, IThread::State new_state) {};
+		virtual void onUpdate(ITaskOptions&) = 0;
+		// called when thread changed state and task got activated/deactivated
+		virtual void onStateChange(ITaskOptions&, IThread::State old_state, IThread::State new_state) {}
+		// called each time an exception is encountered while processing events/update
+		virtual void onError(ITaskOptions&, std::exception&) {}
 		// called once after the task has finished
-		virtual void onFinish(IThread::TaskOptions&) {};
+		virtual void onFinish(ITaskOptions&) {}
 	};
 
-	template<class F>
-	TaskPtr createTask(F func)
+	class ITaskOptions
 	{
-		class FuncTask : public ITask
-		{
-		public:
-			FuncTask(F func) : m_func(func) {}
-			virtual ~FuncTask() = default;
-			virtual void onUpdate(IThread::TaskOptions& o) { m_func(o); }
-
-		private:
-			F m_func;
-		};
-
-		TaskPtr task(new FuncTask(func));
-		return std::move(task);
-	}
-
+	public:
+		virtual ~ITaskOptions() = default;
+		virtual IThread& getThread() = 0;
+		virtual ITask::ID getTaskID() const = 0;
+		virtual IThread::State getState() const = 0;
+		virtual void setState(IThread::State) = 0;
+		virtual void subscribe(IEvent::Type) = 0;
+		virtual void subscribe(IEventDefinitionBase&) = 0;
+		virtual void unsubscribe(IEvent::Type) = 0;
+		virtual void unsubscribe(IEventDefinitionBase&) = 0;
+		virtual uint32_t getElapsedMs() const = 0;
+		virtual void finish() = 0;
+	};
 
 	class IThreadManager
 	{

@@ -9,8 +9,7 @@
 /**
  * Events enable communication between processes or threads of a single
  * process. Once an event is created, its type and parameters cannot be
- * modified (except for special parameters like IEvent::Flag). This helps
- * avoiding race conditions.
+ * modified. This helps avoiding race conditions.
  *
  * The preferred way of defining an event is having an extern IEventDefinition
  * reference in a public header file and putting the implementation to a source
@@ -66,24 +65,6 @@ namespace gg
 		{
 			return getParams().get<T>(n);
 		}
-
-		// Flag can be used as a parameter to indicate event state
-		// (eg: event is consumed)
-		class Flag
-		{
-		public:
-			Flag() : m_flag(false) {}
-			Flag(bool flag) : m_flag(flag) {}
-			Flag(const Flag& f) : m_flag(f.m_flag) {}
-			~Flag() = default;
-			void set() const { m_flag = true; }
-			void unset() const { m_flag = false; }
-			bool isSet() const { return m_flag; }
-			operator bool() const { return m_flag; }
-
-		private:
-			mutable bool m_flag;
-		};
 	};
 
 	typedef std::shared_ptr<IEvent> EventPtr;

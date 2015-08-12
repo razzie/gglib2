@@ -11,47 +11,45 @@
 #include <atomic>
 #include <map>
 #include <mutex>
-#include <queue>
 #include <vector>
 #include "gg/thread.hpp"
+#include "gg/idgenerator.hpp"
 #include "gg/timer.hpp"
 
 namespace gg
 {
-	class TaskData : public IThread::TaskOptions
+	class TaskData : public ITaskOptions
 	{
 	public:
-		TaskData(IThread*, TaskPtr, IThread::State);
+		TaskData(IThread*, TaskPtr, ITask::ID, IThread::State);
 		TaskData(TaskData&&);
 		virtual ~TaskData();
 		TaskData& operator=(TaskData&&);
-		void pushEvents(const std::vector<EventPtr>&);
 		bool isFinished() const;
-		void update();
+		bool isSubscribed(IEvent::Type) const;
+		void update(const std::vector<EventPtr>&);
 		void stateChange(IThread::State old_state, IThread::State new_state);
+		void error(std::exception&);
 
 		// inherited from IThread::TaskOptions
 		virtual IThread& getThread();
+		virtual ITask::ID getTaskID() const;
 		virtual IThread::State getState() const;
 		virtual void setState(IThread::State);
 		virtual void subscribe(IEvent::Type);
 		virtual void subscribe(IEventDefinitionBase&);
 		virtual void unsubscribe(IEvent::Type);
 		virtual void unsubscribe(IEventDefinitionBase&);
-		virtual bool hasEvent() const;
-		virtual EventPtr getNextEvent();
 		virtual uint32_t getElapsedMs() const;
-		virtual const std::string& getLastError() const;
 		virtual void finish();
 
 	private:
 		IThread* m_thread;
 		TaskPtr m_task;
+		ITask::ID m_task_id;
 		IThread::State m_task_state;
 		std::vector<IEvent::Type> m_subscriptions;
-		std::queue<EventPtr> m_events;
 		Timer m_timer;
-		std::string m_last_error;
 		bool m_finished;
 	};
 
@@ -78,13 +76,14 @@ namespace gg
 
 		std::string m_name;
 		std::atomic<State> m_state;
+		gg::IDGenerator<ITask::ID> m_task_id_generator;
 		std::mutex m_tasks_mutex;
-		std::vector<TaskData> m_tasks;
+		std::vector<TaskData> m_tasks[2];
 		std::vector<TaskWithState> m_pending_tasks;
-		std::vector<TaskWithState> m_internal_pending_tasks;
 		std::mutex m_events_mutex;
-		std::vector<EventPtr> m_events;
+		std::vector<EventPtr> m_events[2];
 		std::vector<EventPtr> m_pending_events;
+		unsigned m_switch_active;
 		std::thread m_thread;
 		std::thread::id m_thread_id;
 		std::atomic<bool> m_running;

@@ -37,24 +37,23 @@ public:
 
 	virtual ~ConnectionTask() = default;
 
-	virtual void onStart(gg::IThread::TaskOptions& options)
+	virtual void onStart(gg::ITaskOptions& options)
 	{
 		options.subscribe(foo_event);
 	}
 
-	virtual void onUpdate(gg::IThread::TaskOptions& options)
+	virtual void onEvent(gg::ITaskOptions& options, gg::EventPtr event)
+	{
+		if (event->is(foo_event))
+		{
+			gg::log << "foo_event: " << foo_event.get<0>(event) << ", " << foo_event.get<1>(event) << std::endl;
+		}
+	}
+
+	virtual void onUpdate(gg::ITaskOptions& options)
 	{
 		try
 		{
-			if (options.hasEvent())
-			{
-				auto event = options.getNextEvent();
-				if (event->is(foo_event))
-				{
-					gg::log << "foo_event: " << foo_event.get<0>(event) << ", " << foo_event.get<1>(event) << std::endl;
-				}
-			}
-
 			if (m_connection->isAlive())
 			{
 				auto packet = m_connection->getNextPacket(10);
@@ -96,7 +95,11 @@ public:
 
 	virtual ~ServerTask() = default;
 
-	virtual void onUpdate(gg::IThread::TaskOptions& options)
+	virtual void onEvent(gg::ITaskOptions& options, gg::EventPtr event)
+	{
+	}
+
+	virtual void onUpdate(gg::ITaskOptions& options)
 	{
 		try
 		{

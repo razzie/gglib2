@@ -237,21 +237,6 @@ namespace gg
 	};
 
 
-	inline void serialize(IPacket& packet, IEvent::Flag& flag)
-	{
-		if (packet.getMode() == IPacket::Mode::READ_PACKET)
-		{
-			uint8_t f;
-			packet & f;
-			f ? flag.set() : flag.unset();
-		}
-		else
-		{
-			uint8_t f = flag.isSet();
-			packet & f;
-		}
-	}
-
 	inline void serialize(IPacket& packet, Version& ver)
 	{
 		packet & ver.m_major & ver.m_minor & ver.m_revision;
