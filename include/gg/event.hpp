@@ -89,7 +89,7 @@ namespace gg
 		virtual EventPtr operator()(Params... params) const = 0;
 
 		template<unsigned N, class R = Param<N, Params...>::Type>
-		static R get(EventPtr event)
+		static const R& get(EventPtr event)
 		{
 			return event->get<R>(N);
 		}

@@ -101,9 +101,9 @@ namespace gg
 		template<unsigned N, size_t offset, class T0, class... Ts>
 		void construct(T0 t0, Ts... ts)
 		{
-			m_ptrs[N] = reinterpret_cast<char*>(new (m_buffer + offset) T0(t0));
+			m_ptrs[N] = reinterpret_cast<char*>(new (m_buffer + offset) T0(std::forward<T0>(t0)));
 			m_types[N] = &typeid(T0);
-			construct<N + 1, offset + sizeof(T0), Ts...>(ts...);
+			construct<N + 1, offset + sizeof(T0), Ts...>(std::forward<Ts>(ts)...);
 		}
 
 		template<unsigned N, size_t offset>
