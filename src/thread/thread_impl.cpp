@@ -350,7 +350,11 @@ void gg::Thread::thread()
 				}
 
 				if (task_state != state)
+				{
+					// skip this task now, but try running it next time
+					next_tasks.push_back(std::move(task));
 					continue;
+				}
 
 				// update task, exceptions are handled internally
 				task.update(events);
@@ -362,8 +366,9 @@ void gg::Thread::thread()
 					next_tasks.push_back(std::move(task));
 			}
 			tasks.clear(); // clear after the run, we'll switch to next_tasks soon
-			events.clear();
 		}
+
+		events.clear();
 
 		// clear tasks if it was requested
 		if (m_finish_tasks)
