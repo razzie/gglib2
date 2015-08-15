@@ -337,11 +337,11 @@ void gg::Thread::thread()
 		{
 			for (auto& task : tasks)
 			{
-				State task_state = task.getState();
-
 				// thread just changed state
 				if (state != prev_state)
 				{
+					State task_state = task.getState();
+
 					// check if task got activated or deactivated and fire callback
 					if (task_state == state || task_state == prev_state)
 					{
@@ -349,9 +349,10 @@ void gg::Thread::thread()
 					}
 				}
 
-				if (task_state != state)
+				// check again if task state matches thread state and..
+				if (task.getState() != state)
 				{
-					// skip this task now, but try running it next time
+					// ..skip it now but try running it next time
 					next_tasks.push_back(std::move(task));
 					continue;
 				}
