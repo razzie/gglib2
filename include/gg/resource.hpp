@@ -102,9 +102,13 @@ namespace gg
 	class FileStream : public std::istream, public std::streambuf
 	{
 	public:
+		FileStream(FilePtr file) :
+			std::istream(this), m_file(file), m_pos(0)
+		{
+		}
+
 		FileStream(const std::string& file_name) :
-			std::istream(this), m_file(res.openFile(file_name)),
-			m_pos(0)
+			FileStream(res.openFile(file_name))
 		{
 		}
 
