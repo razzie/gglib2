@@ -175,6 +175,7 @@
     <ClInclude Include="src\console\renderer\opengl_renderer.hpp" />
     <ClInclude Include="src\console\renderer\renderer.hpp" />
     <ClInclude Include="include\gg\any.hpp" />
+    <ClInclude Include="src\console\stringutil.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

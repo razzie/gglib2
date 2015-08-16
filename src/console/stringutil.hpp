@@ -98,8 +98,8 @@ namespace gg
         mbstate_t state = {0};
 		auto& facet = std::use_facet<std::codecvt<TO, FROM, std::mbstate_t> >(loc);
         std::codecvt_base::result conv_result = facet.in(state,
-			&s[0], &s[0] + s.size(), from_next,
-			&result[0], &result[0] + result.size(), to_next);
+			&s[0], &s[s.size()], from_next,
+			&result[0], &result[result.size()], to_next);
 
 		assert(conv_result == std::codecvt_base::ok);
         *to_next = '\0';

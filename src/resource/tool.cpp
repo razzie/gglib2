@@ -58,7 +58,11 @@ int main()
 	gg::ResourceManager& res = static_cast<gg::ResourceManager&>(gg::res);
 
 	std::wstring dir = browseFolder();
-	res.createResource(dir);
+	gg::ResourceCreatorPtr creator(res.createResource(dir + L".res"));
+	if (creator)
+		static_cast<gg::ResourceCreator*>(creator.get())->addDirectory(dir);
+	else
+		return 1;
 
 	return 0;
 }

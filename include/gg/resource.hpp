@@ -17,16 +17,17 @@
  * It contains 3 files: 'ground.png', 'water.png' and 'sky.png'.
  *
  * 1st step:
- * Add the resource by calling 'gg::res.addResource("media/textures.res")'.
+ * Create a resource pool 'auto pool = gg::res.createResourcePool()' or use the default
+ * 'gg::res.getDefaultResourcePool()'.
+ *
+ * 1st step:
+ * Include the resource by calling 'pool.addResource("media/textures.res")'.
  *
  * 2nd step:
  * Let's assume the program needs to open 'sky.png', which is a part of 'textures.res'
- * resource. It can be done by calling: 'auto file = gg::res.openFile("textures.res/sky.png")'
+ * resource. It can be done by calling: 'auto file = pool.openFile("textures.res/sky.png")'
  *
  * Important:
- * - Do NOT add resources concurrently.
- * - Thread-safe file and directory operations are supported only AFTER finishing the addition
- *   of resources.
  * - Do NOT use backslash '\' characters in a file path. Always use slash '/' instead.
  */
 
@@ -44,9 +45,13 @@
 
 namespace gg
 {
+	class IResourcePool;
+	class IResourceCreator;
 	class IDirectory;
 	class IFile;
 
+	typedef std::shared_ptr<IResourcePool> ResourcePoolPtr;
+	typedef std::shared_ptr<IResourceCreator> ResourceCreatorPtr;
 	typedef std::shared_ptr<IDirectory> DirectoryPtr;
 	typedef std::shared_ptr<IFile> FilePtr;
 
@@ -54,13 +59,30 @@ namespace gg
 	{
 	public:
 		virtual ~IResourceManager() = default;
-		virtual bool createResource(const std::string& dir_path) const = 0;
-		virtual bool addResource(const std::string& res_path) = 0;
-		virtual DirectoryPtr openDirectory(const std::string& dir_name) = 0;
-		virtual FilePtr openFile(const std::string& file_name) = 0;
+		virtual ResourcePoolPtr createResourcePool() const = 0;
+		virtual ResourcePoolPtr getDefaultResourcePool() = 0;
+		virtual ResourceCreatorPtr createResource(const std::string& res_path, bool append_mode = false) const = 0;
 	};
 
 	extern GG_API IResourceManager& res;
+
+	class IResourcePool
+	{
+	public:
+		virtual ~IResourcePool() = default;
+		virtual bool includeResource(const std::string& res_path) = 0;
+		virtual void releaseResources() = 0;
+		virtual DirectoryPtr openDirectory(const std::string& dir_name) const = 0;
+		virtual FilePtr openFile(const std::string& file_name) const = 0;
+	};
+
+	class IResourceCreator
+	{
+	public:
+		virtual ~IResourceCreator() = default;
+		virtual bool addFile(const std::string& file_path, const std::string& res_file_name) = 0;
+		virtual bool addDirectory(const std::string& dir_path) = 0;
+	};
 
 	class IDirectory
 	{
@@ -78,15 +100,12 @@ namespace gg
 			Type type;
 		};
 
-		typedef std::vector<FileOrDirectory>::iterator Iterator;
-		typedef std::vector<FileOrDirectory>::const_iterator ConstIterator;
+		typedef std::vector<FileOrDirectory>::const_iterator Iterator;
 
 		virtual ~IDirectory() = default;
 		virtual const std::string& getName() const = 0;
-		virtual Iterator begin() = 0;
-		virtual Iterator end() = 0;
-		virtual ConstIterator begin() const = 0;
-		virtual ConstIterator end() const = 0;
+		virtual Iterator begin() const = 0;
+		virtual Iterator end() const = 0;
 	};
 
 	class IFile
@@ -108,7 +127,7 @@ namespace gg
 		}
 
 		FileStream(const std::string& file_name) :
-			FileStream(res.openFile(file_name))
+			FileStream(res.getDefaultResourcePool()->openFile(file_name))
 		{
 		}
 

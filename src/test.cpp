@@ -22,6 +22,7 @@
 #include "gg/timer.hpp"
 #include "gg/optional.hpp"
 #include "gg/version.hpp"
+#include <fstream>
 
 gg::IDGenerator<> gen;
 
@@ -159,6 +160,19 @@ int main()
 		}
 	}*/
 
+
+	/*auto pool = gg::res.createResourcePool();
+	pool->includeResource("resfolder.res");
+
+	auto file = pool->openFile("resfolder.res/coffee_is_hot.jpg");
+	if (file)
+	{
+		std::ofstream pic("coffee_is_hot.jpg", std::ios::out | std::ios::binary);
+		pic.write(file->getData(), file->getSize());
+		pic.close();
+	}*/
+
+
 	for (int i = 0; i < 8; ++i)
 		gg::log << gen.next() << ", ";
 	gg::log << std::endl;
@@ -187,5 +201,6 @@ int main()
 
 	server->finishTasks();
 	server->join();
+
 	return 0;
 }
