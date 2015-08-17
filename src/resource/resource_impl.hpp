@@ -73,8 +73,8 @@ namespace gg
 
 		virtual ~ResourceCreator();
 		virtual bool addFile(const std::string& file_path, const std::string& res_file_name);
-		virtual bool addDirectory(const std::string& dir_path);
 		virtual bool addFile(const std::wstring& file_path, const std::string& res_file_name);
+		virtual bool addDirectory(const std::string& dir_path);
 		virtual bool addDirectory(const std::wstring& dir_path);
 
 	private:

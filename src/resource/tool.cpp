@@ -8,6 +8,7 @@
 
 #include <Windows.h>
 #include <ShlObj.h>
+#include <locale>
 #include "resource_impl.hpp"
 
 const wchar_t* browseFolder()
@@ -55,12 +56,14 @@ const wchar_t* browseFolder()
 
 int main()
 {
-	gg::ResourceManager& res = static_cast<gg::ResourceManager&>(gg::res);
+	std::wstring_convert<std::codecvt<wchar_t, char, std::mbstate_t>, wchar_t> convert;
 
 	std::wstring dir = browseFolder();
-	gg::ResourceCreatorPtr creator(res.createResource(dir + L".res"));
+	std::string resource = convert.to_bytes(dir) + ".res";
+
+	gg::ResourceCreatorPtr creator(gg::res.createResource(resource));
 	if (creator)
-		static_cast<gg::ResourceCreator*>(creator.get())->addDirectory(dir);
+		creator->addDirectory(dir);
 	else
 		return 1;
 
