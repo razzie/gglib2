@@ -178,9 +178,16 @@ namespace gg
 
 		virtual EventPtr operator()(IArchive& ar) const
 		{
-			EventPtr event(new Event());
-			event->serialize(ar);
-			return event;
+			try
+			{
+				EventPtr event(new Event());
+				event->serialize(ar);
+				return event;
+			}
+			catch (ISerializationError&)
+			{
+				return {};
+			}
 		}
 
 		virtual EventPtr operator()(Params... params) const
