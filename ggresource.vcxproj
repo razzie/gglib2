@@ -152,6 +152,7 @@
     <ClInclude Include="src\resource\Doboz\Compressor.h" />
     <ClInclude Include="src\resource\Doboz\Decompressor.h" />
     <ClInclude Include="src\resource\Doboz\Dictionary.h" />
+    <ClInclude Include="src\resource\encoder.hpp" />
     <ClInclude Include="src\resource\resource_impl.hpp" />
     <ClInclude Include="src\stringutil.hpp" />
   </ItemGroup>
