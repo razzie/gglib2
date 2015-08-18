@@ -131,8 +131,8 @@ private:
 
 int main()
 {
-	/*{
-		auto db = gg::db.open("bin/database.db");
+	{
+		auto db = gg::db.open("test/database.db");
 		{
 			auto table = db->getTable("fruit");
 			if (!table)
@@ -147,30 +147,30 @@ int main()
 					row->cell("grapes")->set(3);
 				}
 			}
+			db->sync();
 		}
-		db->sync();
 	}
 
 	{
-		auto db = gg::db.open("bin/database.db");
+		auto db = gg::db.open("test/database.db");
 		{
 			auto table = db->getTable("fruit");
 			auto row = table->getNextRow(0);
 			std::cout << row->cell("apple")->getString() << std::endl;
 		}
-	}*/
+	}
 
 
-	/*auto pool = gg::res.createResourcePool();
-	pool->includeResource("resfolder.res");
+	auto pool = gg::res.createResourcePool();
+	pool->includeResource("test/resfolder.res");
 
 	auto file = pool->openFile("resfolder.res/coffee_is_hot.jpg");
 	if (file)
 	{
-		std::ofstream pic("coffee_is_hot.jpg", std::ios::out | std::ios::binary);
+		std::ofstream pic("test/results/coffee_is_hot.jpg", std::ios::out | std::ios::binary);
 		pic.write(file->getData(), file->getSize());
 		pic.close();
-	}*/
+	}
 
 
 	for (int i = 0; i < 8; ++i)

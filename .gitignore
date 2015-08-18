@@ -1,6 +1,6 @@
 bin
 obj
-old-src
+test/results
 .vs
 gglib.sdf
 gglib.opensdf
