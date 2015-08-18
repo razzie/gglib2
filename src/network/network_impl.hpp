@@ -39,16 +39,16 @@ namespace gg
 	class Connection : public IConnection
 	{
 	public:
-		Connection(std::unique_ptr<IConnectionBackend>&&);
+		Connection(ConnectionBackendPtr&&);
 		virtual ~Connection();
 		virtual bool connect(void* user_data = nullptr);
 		virtual void disconnect();
 		virtual bool isAlive() const;
 		virtual const std::string& getAddress() const;
-		virtual std::shared_ptr<IPacket> getNextPacket(uint32_t timeoutMs = 0);
-		virtual std::shared_ptr<IPacket> createPacket(IPacket::Type) const;
-		virtual std::shared_ptr<IPacket> createPacket(EventPtr) const;
-		virtual bool send(std::shared_ptr<IPacket>);
+		virtual PacketPtr getNextPacket(uint32_t timeoutMs = 0);
+		virtual PacketPtr createPacket(IPacket::Type) const;
+		virtual PacketPtr createPacket(EventPtr) const;
+		virtual bool send(PacketPtr);
 
 	private:
 		struct ArchiveHeader
@@ -64,23 +64,23 @@ namespace gg
 		};
 
 		mutable std::recursive_mutex m_mutex;
-		std::unique_ptr<IConnectionBackend> m_backend;
+		ConnectionBackendPtr m_backend;
 	};
 
 	class Server : public IServer
 	{
 	public:
-		Server(std::unique_ptr<IServerBackend>&&);
+		Server(ServerBackendPtr&&);
 		virtual ~Server();
 		virtual bool start(void* user_data = nullptr);
 		virtual void stop();
 		virtual bool isAlive() const;
-		virtual std::shared_ptr<IConnection> getNextConnection(uint32_t timeoutMs = 0);
+		virtual ConnectionPtr getNextConnection(uint32_t timeoutMs = 0);
 		virtual void closeConnections();
 
 	private:
 		mutable std::recursive_mutex m_mutex;
-		std::unique_ptr<IServerBackend> m_backend;
+		ServerBackendPtr m_backend;
 		std::vector<std::weak_ptr<IConnection>> m_clients;
 	};
 
@@ -100,11 +100,11 @@ namespace gg
 	public:
 		NetworkManager();
 		virtual ~NetworkManager();
-		virtual std::shared_ptr<IConnection> createConnection(const std::string& host, uint16_t port) const;
-		virtual std::shared_ptr<IConnection> createConnection(std::unique_ptr<IConnectionBackend>&&) const;
-		virtual std::shared_ptr<IServer> createServer(uint16_t port) const;
-		virtual std::shared_ptr<IServer> createServer(std::unique_ptr<IServerBackend>&&) const;
-		virtual std::shared_ptr<IPacket> createPacket(IPacket::Type) const;
-		virtual std::shared_ptr<IPacket> createPacket(EventPtr) const;
+		virtual ConnectionPtr createConnection(const std::string& host, uint16_t port) const;
+		virtual ConnectionPtr createConnection(ConnectionBackendPtr&&) const;
+		virtual ServerPtr createServer(uint16_t port) const;
+		virtual ServerPtr createServer(ServerBackendPtr&&) const;
+		virtual PacketPtr createPacket(IPacket::Type) const;
+		virtual PacketPtr createPacket(EventPtr) const;
 	};
 };

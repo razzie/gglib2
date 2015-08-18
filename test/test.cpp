@@ -31,7 +31,7 @@ gg::SerializableEventDefinition<1, int, float> foo_event;
 class ConnectionTask : public gg::ITask
 {
 public:
-	ConnectionTask(std::shared_ptr<gg::IConnection> connection) :
+	ConnectionTask(gg::ConnectionPtr connection) :
 		m_connection(connection)
 	{
 	}
@@ -78,7 +78,7 @@ public:
 	}
 
 private:
-	std::shared_ptr<gg::IConnection> m_connection;
+	gg::ConnectionPtr m_connection;
 };
 
 class ServerTask : public gg::ITask
@@ -125,7 +125,7 @@ public:
 	}
 
 private:
-	std::shared_ptr<gg::IServer> m_server;
+	gg::ServerPtr m_server;
 };
 
 

@@ -593,9 +593,9 @@ bool gg::ServerBackend::isAlive() const
 	return m_started;
 }
 
-std::unique_ptr<gg::IConnectionBackend> gg::ServerBackend::getNextConnection(uint32_t timeoutMs)
+gg::ConnectionBackendPtr gg::ServerBackend::getNextConnection(uint32_t timeoutMs)
 {
-	std::unique_ptr<IConnectionBackend> client;
+	ConnectionBackendPtr client;
 
 	if (!m_started)
 		return {};

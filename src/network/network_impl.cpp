@@ -15,7 +15,7 @@ static gg::NetworkManager s_netmgr;
 gg::INetworkManager& gg::net = s_netmgr;
 
 
-gg::Connection::Connection(std::unique_ptr<gg::IConnectionBackend>&& backend) :
+gg::Connection::Connection(ConnectionBackendPtr&& backend) :
 	m_backend(std::move(backend))
 {
 }
@@ -49,7 +49,7 @@ const std::string& gg::Connection::getAddress() const
 	return m_backend->getAddress();
 }
 
-std::shared_ptr<gg::IPacket> gg::Connection::getNextPacket(uint32_t timeoutMs)
+gg::PacketPtr gg::Connection::getNextPacket(uint32_t timeoutMs)
 {
 	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 
@@ -79,19 +79,19 @@ std::shared_ptr<gg::IPacket> gg::Connection::getNextPacket(uint32_t timeoutMs)
 	return packet;
 }
 
-std::shared_ptr<gg::IPacket> gg::Connection::createPacket(gg::IPacket::Type type) const
+gg::PacketPtr gg::Connection::createPacket(IPacket::Type type) const
 {
-	return std::shared_ptr<IPacket>( new Packet(IArchive::Mode::DESERIALIZE, type) );
+	return PacketPtr( new Packet(IArchive::Mode::DESERIALIZE, type) );
 }
 
-std::shared_ptr<gg::IPacket> gg::Connection::createPacket(EventPtr event) const
+gg::PacketPtr gg::Connection::createPacket(EventPtr event) const
 {
-	std::shared_ptr<IPacket> packet( new Packet(IArchive::Mode::DESERIALIZE, event->getType()) );
+	PacketPtr packet( new Packet(IArchive::Mode::DESERIALIZE, event->getType()) );
 	event->serialize(*packet);
 	return packet;
 }
 
-bool gg::Connection::send(std::shared_ptr<gg::IPacket> packet)
+bool gg::Connection::send(PacketPtr packet)
 {
 	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 
@@ -110,7 +110,7 @@ bool gg::Connection::send(std::shared_ptr<gg::IPacket> packet)
 }
 
 
-gg::Server::Server(std::unique_ptr<gg::IServerBackend>&& backend) :
+gg::Server::Server(ServerBackendPtr&& backend) :
 	m_backend(std::move(backend))
 {
 }
@@ -149,7 +149,7 @@ bool gg::Server::isAlive() const
 	return m_backend->isAlive();
 }
 
-std::shared_ptr<gg::IConnection> gg::Server::getNextConnection(uint32_t timeoutMs)
+gg::ConnectionPtr gg::Server::getNextConnection(uint32_t timeoutMs)
 {
 	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 
@@ -227,36 +227,36 @@ gg::NetworkManager::~NetworkManager()
 #endif
 }
 
-std::shared_ptr<gg::IConnection> gg::NetworkManager::createConnection(const std::string& host, uint16_t port) const
+gg::ConnectionPtr gg::NetworkManager::createConnection(const std::string& host, uint16_t port) const
 {
-	std::unique_ptr<gg::IConnectionBackend> backend(new ConnectionBackend(host, port));
-	return std::shared_ptr<IConnection>( new Connection(std::move(backend)) );
+	ConnectionBackendPtr backend(new ConnectionBackend(host, port));
+	return ConnectionPtr( new Connection(std::move(backend)) );
 }
 
-std::shared_ptr<gg::IConnection> gg::NetworkManager::createConnection(std::unique_ptr<gg::IConnectionBackend>&& backend) const
+gg::ConnectionPtr gg::NetworkManager::createConnection(ConnectionBackendPtr&& backend) const
 {
-	return std::shared_ptr<IConnection>( new Connection(std::move(backend)) );
+	return ConnectionPtr( new Connection(std::move(backend)) );
 }
 
-std::shared_ptr<gg::IServer> gg::NetworkManager::createServer(uint16_t port) const
+gg::ServerPtr gg::NetworkManager::createServer(uint16_t port) const
 {
-	std::unique_ptr<gg::IServerBackend> backend(new ServerBackend(port));
-	return std::shared_ptr<IServer>( new Server(std::move(backend)) );
+	ServerBackendPtr backend(new ServerBackend(port));
+	return ServerPtr( new Server(std::move(backend)) );
 }
 
-std::shared_ptr<gg::IServer> gg::NetworkManager::createServer(std::unique_ptr<gg::IServerBackend>&& backend) const
+gg::ServerPtr gg::NetworkManager::createServer(ServerBackendPtr&& backend) const
 {
-	return std::shared_ptr<IServer>( new Server(std::move(backend)) );
+	return ServerPtr( new Server(std::move(backend)) );
 }
 
-std::shared_ptr<gg::IPacket> gg::NetworkManager::createPacket(gg::IPacket::Type type) const
+std::shared_ptr<gg::IPacket> gg::NetworkManager::createPacket(IPacket::Type type) const
 {
-	return std::shared_ptr<IPacket>( new Packet(IArchive::Mode::DESERIALIZE, type) );
+	return PacketPtr( new Packet(IArchive::Mode::DESERIALIZE, type) );
 }
 
 std::shared_ptr<gg::IPacket> gg::NetworkManager::createPacket(EventPtr event) const
 {
-	std::shared_ptr<IPacket> packet( new Packet(IArchive::Mode::DESERIALIZE, event->getType()) );
+	PacketPtr packet( new Packet(IArchive::Mode::DESERIALIZE, event->getType()) );
 	event->serialize(*packet);
 	return packet;
 }
