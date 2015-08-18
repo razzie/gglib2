@@ -112,7 +112,9 @@
     <ClInclude Include="include\gg\streamutil.hpp" />
     <ClInclude Include="include\gg\thread.hpp" />
     <ClInclude Include="include\gg\timer.hpp" />
+    <ClInclude Include="src\archive_impl.hpp" />
     <ClInclude Include="src\database\database_impl.hpp" />
+    <ClInclude Include="src\ieee754.hpp" />
     <ClInclude Include="src\logger\logger_impl.hpp" />
     <ClInclude Include="src\network\backend_impl.hpp" />
     <ClInclude Include="src\network\ieee754.hpp" />
@@ -126,6 +128,7 @@
     <ClInclude Include="src\thread\thread_impl.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\archive_impl.cpp" />
     <ClCompile Include="src\database\database_impl.cpp" />
     <ClCompile Include="src\logger\logger_impl.cpp" />
     <ClCompile Include="src\network\backend_impl.cpp" />
