@@ -32,62 +32,24 @@
 
 namespace gg
 {
-	class IPacket
+	class IPacket : public virtual IArchive
 	{
 	public:
 		typedef IEvent::Type Type;
 
-		enum Mode
-		{
-			READ_PACKET,
-			WRITE_PACKET
-		};
-
 		virtual ~IPacket() = default;
-		virtual Mode getMode() const = 0;
 		virtual Type getType() const = 0;
-		virtual const char* getData() const = 0;
-		virtual size_t getSize() const = 0;
 
-		virtual IPacket& operator& (int8_t&) = 0;
-		virtual IPacket& operator& (int16_t&) = 0;
-		virtual IPacket& operator& (int32_t&) = 0;
-		virtual IPacket& operator& (int64_t&) = 0;
-		virtual IPacket& operator& (uint8_t&) = 0;
-		virtual IPacket& operator& (uint16_t&) = 0;
-		virtual IPacket& operator& (uint32_t&) = 0;
-		virtual IPacket& operator& (uint64_t&) = 0;
-		virtual IPacket& operator& (float&) = 0;
-		virtual IPacket& operator& (double&) = 0;
-		virtual IPacket& operator& (std::string&) = 0;
-		virtual IPacket& operator& (ISerializable&) = 0;
-
-		virtual size_t write(const char* ptr, size_t len) = 0;
-		virtual size_t read(char* ptr, size_t len) = 0;
-
-		template<class T>
-		IPacket& operator& (T& t)
-		{
-			serialize(*this, t);
-			return *this;
-		}
+		/* inherits all IArchive functions */
 	};
 
 	template<class T>
-	IPacket& operator& (std::shared_ptr<IPacket> packet_ptr, T& t)
+	IPacket& operator& (std::shared_ptr<IPacket> p, T& t)
 	{
-		IPacket& packet = *packet_ptr;
+		IPacket& packet = *p;
 		packet & t;
 		return packet;
 	}
-
-	class ISerializationError : public std::exception
-	{
-	public:
-		virtual ~ISerializationError() = default;
-		virtual const char* what() const = 0;
-	};
-
 
 	class IConnectionBackend // adaption to external APIs like Steam
 	{
@@ -159,86 +121,4 @@ namespace gg
 	};
 
 	extern GG_API INetworkManager& net;
-
-
-	template<class... Types>
-	class SerializableStorage : public Storage<Types...>, public ISerializable
-	{
-	public:
-		SerializableStorage() = default;
-		SerializableStorage(Types... values) : Storage(std::forward<Types>(values)...) {}
-		virtual ~SerializableStorage() = default;
-		virtual void serialize(IPacket& packet) { serialize<0, Types...>(packet, *this); }
-
-	private:
-		template<size_t N>
-		static void serialize(IPacket& packet, IStorage& storage)
-		{
-		}
-
-		template<size_t N, class Type0, class... Types>
-		static void serialize(IPacket& packet, IStorage& storage)
-		{
-			packet & storage.get<Type0>(N);
-			serialize<N + 1, Types...>(packet, storage);
-		}
-	};
-
-	template<IEvent::Type EventType, class... Params>
-	class SerializableEvent : public IEvent
-	{
-	public:
-		SerializableEvent() = default;
-
-		SerializableEvent(Params... params) :
-			m_params(std::forward<Params>(params)...)
-		{
-		}
-
-		virtual ~SerializableEvent() = default;
-		virtual Type getType() const { return EventType; }
-		virtual const IStorage& getParams() const { return m_params; }
-		virtual void serialize(IPacket& packet) { m_params.serialize(packet); }
-
-	private:
-		SerializableStorage<Params...> m_params;
-	};
-
-	template<IEvent::Type EventType, class... Params>
-	class SerializableEventDefinition : public IEventDefinition<Params...>
-	{
-	public:
-		typedef SerializableEvent<EventType, Params...> Event;
-
-		virtual IEvent::Type getType() const
-		{
-			return EventType;
-		}
-
-		virtual EventPtr operator()() const
-		{
-			return EventPtr(new Event());
-		}
-
-		virtual EventPtr operator()(IPacket& packet) const
-		{
-			if (packet.getType() != EventType)
-				return {};
-
-			EventPtr event(new Event());
-			event->serialize(packet);
-			return event;
-		}
-
-		virtual EventPtr operator()(Params... params) const
-		{
-			return EventPtr(new Event(std::forward<Params>(params)...));
-		}
-	};
-
-
-	inline void serialize(IPacket& packet, Version& ver)
-	{
-		packet & ver.m_major & ver.m_minor & ver.m_revision;
-	}
 };

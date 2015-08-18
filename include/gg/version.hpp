@@ -10,12 +10,13 @@
 
 #include <cstdint>
 #include <iosfwd>
+#include "gg/serializable.hpp"
 
 namespace gg
 {
-	class IPacket;
+	class IArchive;
 
-	class Version
+	class Version : public ISerializable
 	{
 	public:
 		Version(uint16_t major, uint16_t minor, uint16_t revision = 0) :
@@ -83,6 +84,11 @@ namespace gg
 				return m_revision < ver.m_revision;
 		}
 
+		virtual void serialize(IArchive& ar, Version& ver)
+		{
+			ar & ver.m_major & ver.m_minor & ver.m_revision;
+		}
+
 		std::ostream& operator<<(std::ostream& o)
 		{
 			o << m_major << '.' << m_minor << '.' << m_revision;
@@ -92,7 +98,5 @@ namespace gg
 		uint16_t m_major;
 		uint16_t m_minor;
 		uint16_t m_revision;
-
-		friend void serialize(IPacket&, Version&);
 	};
 };

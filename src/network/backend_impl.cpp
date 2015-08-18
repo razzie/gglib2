@@ -6,8 +6,9 @@
  * All rights reserved.
  */
 
-#include "backend_impl.hpp"
+#ifdef _WIN32
 #include "gg/timer.hpp"
+#include "backend_impl.hpp"
 
 
 static uint16_t getPortFromSockaddr(SOCKADDR_STORAGE* sockaddr)
@@ -493,8 +494,8 @@ size_t gg::ClientBackendUDP::read(char* ptr, size_t len)
 
 size_t gg::ClientBackendUDP::write(const char* ptr, size_t len)
 {
-	if (len > Packet::BUF_SIZE - m_data_len)
-		len = Packet::BUF_SIZE - m_data_len;
+	if (len > Archive::BUF_SIZE - m_data_len)
+		len = Archive::BUF_SIZE - m_data_len;
 
 	std::memcpy(&m_data[m_data_len], ptr, len);
 	m_data_len += len;
@@ -640,3 +641,5 @@ std::unique_ptr<gg::IConnectionBackend> gg::ServerBackend::getNextConnection(uin
 
 	return std::move(client);
 }
+
+#endif // _WIN32

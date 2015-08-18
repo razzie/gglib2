@@ -56,7 +56,7 @@ namespace gg
 		virtual ~IEvent() = default;
 		virtual Type getType() const = 0;
 		virtual const IStorage& getParams() const = 0;
-		virtual void serialize(IPacket&) = 0;
+		virtual void serialize(IArchive&) = 0;
 
 		bool is(const IEventDefinitionBase&) const;
 
@@ -75,7 +75,7 @@ namespace gg
 		virtual ~IEventDefinitionBase() = default;
 		virtual IEvent::Type getType() const = 0;
 		virtual EventPtr operator()() const = 0;
-		virtual EventPtr operator()(IPacket&) const = 0;
+		virtual EventPtr operator()(IArchive&) const = 0;
 	};
 
 	template<class... Params>
@@ -85,7 +85,7 @@ namespace gg
 		virtual ~IEventDefinition() = default;
 		virtual IEvent::Type getType() const = 0;
 		virtual EventPtr operator()() const = 0;
-		virtual EventPtr operator()(IPacket&) const = 0;
+		virtual EventPtr operator()(IArchive&) const = 0;
 		virtual EventPtr operator()(Params... params) const = 0;
 
 		template<unsigned N, class R = Param<N, Params...>::Type>
@@ -115,4 +115,125 @@ namespace gg
 	{
 		return (getType() == def.getType());
 	}
+
+
+	template<class... Types>
+	class SerializableStorage : public Storage<Types...>, public ISerializable
+	{
+	public:
+		SerializableStorage() = default;
+		SerializableStorage(Types... values) : Storage(std::forward<Types>(values)...) {}
+		virtual ~SerializableStorage() = default;
+		virtual void serialize(IArchive& packet) { serialize<0, Types...>(packet, *this); }
+
+	private:
+		template<size_t N>
+		static void serialize(IArchive& packet, IStorage& storage)
+		{
+		}
+
+		template<size_t N, class Type0, class... Types>
+		static void serialize(IArchive& packet, IStorage& storage)
+		{
+			packet & storage.get<Type0>(N);
+			serialize<N + 1, Types...>(packet, storage);
+		}
+	};
+
+	template<IEvent::Type EventType, class... Params>
+	class SerializableEvent : public IEvent
+	{
+	public:
+		SerializableEvent() = default;
+
+		SerializableEvent(Params... params) :
+			m_params(std::forward<Params>(params)...)
+		{
+		}
+
+		virtual ~SerializableEvent() = default;
+		virtual Type getType() const { return EventType; }
+		virtual const IStorage& getParams() const { return m_params; }
+		virtual void serialize(IArchive& packet) { m_params.serialize(packet); }
+
+	private:
+		SerializableStorage<Params...> m_params;
+	};
+
+	template<IEvent::Type EventType, class... Params>
+	class SerializableEventDefinition : public IEventDefinition<Params...>
+	{
+	public:
+		typedef SerializableEvent<EventType, Params...> Event;
+
+		virtual IEvent::Type getType() const
+		{
+			return EventType;
+		}
+
+		virtual EventPtr operator()() const
+		{
+			return EventPtr(new Event());
+		}
+
+		virtual EventPtr operator()(IArchive& ar) const
+		{
+			EventPtr event(new Event());
+			event->serialize(ar);
+			return event;
+		}
+
+		virtual EventPtr operator()(Params... params) const
+		{
+			return EventPtr(new Event(std::forward<Params>(params)...));
+		}
+	};
+
+
+	template<IEvent::Type EventType, class... Params>
+	class LocalEvent : public IEvent
+	{
+	public:
+		LocalEvent() = default;
+
+		LocalEvent(Params... params) :
+			m_params(std::forward<Params>(params)...)
+		{
+		}
+
+		virtual ~LocalEvent() = default;
+		virtual IEvent::Type getType() const { return EventType; }
+		virtual const IStorage& getParams() const { return m_params; }
+		virtual void serialize(IArchive&) {}
+
+	private:
+		Storage<Params...> m_params;
+	};
+
+	template<IEvent::Type EventType, class... Params>
+	class LocalEventDefinition : public IEventDefinition<Params...>
+	{
+	public:
+		typedef LocalEvent<EventType, Params...> Event;
+
+		virtual IEvent::Type getType() const
+		{
+			return EventType;
+		}
+
+		virtual EventPtr operator()() const
+		{
+			return EventPtr(new Event());
+		}
+
+		virtual EventPtr operator()(IArchive& ar) const
+		{
+			return {};
+		}
+
+		virtual EventPtr operator()(Params... params) const
+		{
+			return EventPtr(new Event(std::forward<Params>(params)...));
+		}
+	};
 };

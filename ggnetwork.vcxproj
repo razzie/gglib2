@@ -109,12 +109,13 @@
     <ClInclude Include="include\gg\serializable.hpp" />
     <ClInclude Include="include\gg\storage.hpp" />
     <ClInclude Include="include\gg\timer.hpp" />
-    <ClInclude Include="include\gg\version.hpp" />
+    <ClInclude Include="src\archive_impl.hpp" />
     <ClInclude Include="src\network\backend_impl.hpp" />
-    <ClInclude Include="src\network\ieee754.hpp" />
+    <ClInclude Include="src\ieee754.hpp" />
     <ClInclude Include="src\network\network_impl.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\archive_impl.cpp" />
     <ClCompile Include="src\network\backend_impl.cpp" />
     <ClCompile Include="src\network\network_impl.cpp" />
   </ItemGroup>

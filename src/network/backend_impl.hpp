@@ -7,10 +7,16 @@
  */
 
 #pragma once
+#pragma warning (disable : 4250)
 
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#else
+typedef int SOCKET;
+typedef int SOCKADDR_STORAGE;
+#endif // _WIN32
+
 #include "network_impl.hpp"
 
 namespace gg
@@ -81,7 +87,7 @@ namespace gg
 		SOCKET m_socket;
 		SOCKADDR_STORAGE m_sockaddr;
 		std::string m_address; // host + port
-		char m_data[Packet::BUF_SIZE];
+		char m_data[Archive::BUF_SIZE];
 		size_t m_data_len;
 		size_t m_data_pos;
 	};
@@ -104,5 +110,3 @@ namespace gg
 		bool m_started;
 	};
 };
-
-#endif // _WIN32
