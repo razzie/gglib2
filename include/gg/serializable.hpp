@@ -8,6 +8,9 @@
 
 #pragma once
 
+#include <cstdint>
+#include <string>
+
 namespace gg
 {
 	class ISerializable;
