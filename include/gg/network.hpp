@@ -22,7 +22,6 @@
 #include "gg/serializable.hpp"
 #include "gg/event.hpp"
 #include "gg/storage.hpp"
-#include "gg/version.hpp"
 
 #if defined GGNETWORK_BUILD
 #	define GG_API __declspec(dllexport)
