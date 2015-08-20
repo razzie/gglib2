@@ -9,6 +9,7 @@
 #pragma once
 
 #include <atomic>
+#include <condition_variable>
 #include <map>
 #include <mutex>
 #include <vector>
@@ -62,7 +63,9 @@ namespace gg
 		virtual void setState(State);
 		virtual void sendEvent(EventPtr);
 		virtual void addTask(TaskPtr&&, State);
+		virtual void finish();
 		virtual void finishTasks();
+		virtual void finishTasksInState(State);
 		virtual bool run(Mode = Mode::REMOTE);
 		virtual bool isAlive() const;
 		virtual void join();
@@ -74,20 +77,34 @@ namespace gg
 			State state;
 		};
 
+		struct Finish
+		{
+			bool thread = false;
+			bool all_tasks = false;
+			bool state_tasks = false;
+			State state = 0;
+		};
+
 		std::string m_name;
-		std::atomic<State> m_state;
-		gg::IDGenerator<ITask::ID> m_task_id_generator;
-		std::mutex m_tasks_mutex;
-		std::vector<TaskData> m_tasks[2];
-		std::vector<TaskWithState> m_pending_tasks;
-		std::mutex m_events_mutex;
-		std::vector<EventPtr> m_events[2];
-		std::vector<EventPtr> m_pending_events;
-		unsigned m_switch_active;
 		std::thread m_thread;
 		std::thread::id m_thread_id;
+		Mode m_mode;
 		std::atomic<bool> m_running;
-		volatile bool m_finish_tasks;
+		std::atomic<bool> m_zombie;
+		mutable std::mutex m_state_mutex;
+		std::vector<State> m_state;
+		mutable std::mutex m_finish_mutex;
+		volatile Finish m_finish;
+		mutable std::mutex m_awake_mutex;
+		std::condition_variable m_awake;
+		gg::IDGenerator<ITask::ID> m_task_id_generator;
+		unsigned m_switch_active;
+		mutable std::mutex m_tasks_mutex;
+		std::vector<TaskData> m_tasks[2];
+		std::vector<TaskWithState> m_pending_tasks;
+		mutable std::mutex m_events_mutex;
+		std::vector<EventPtr> m_events[2];
+		std::vector<EventPtr> m_pending_events;
 
 		void thread();
 	};

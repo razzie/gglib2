@@ -43,7 +43,9 @@ namespace gg
 		virtual void setState(State) = 0;
 		virtual void sendEvent(EventPtr) = 0;
 		virtual void addTask(TaskPtr&&, State = 0) = 0;
-		virtual void finishTasks() = 0; // thread stops if there is no task to run
+		virtual void finish() = 0; // stops thread
+		virtual void finishTasks() = 0; // thread becomes zombie if there is no task to run in current state
+		virtual void finishTasksInState(State) = 0;
 		virtual bool run(Mode = Mode::REMOTE) = 0;
 		virtual bool isAlive() const = 0;
 		virtual void join() = 0;

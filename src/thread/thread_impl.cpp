@@ -201,15 +201,17 @@ void gg::TaskData::error(std::exception& e)
 
 gg::Thread::Thread(const std::string& name) :
 	m_name(name),
-	m_state(0),
 	m_thread_id(std::this_thread::get_id()),
-	m_switch_active(1),
 	m_running(false),
-	m_finish_tasks(false)
+	m_zombie(false),
+	m_switch_active(1)
 {
+	m_state.push_back(0);
+
 	m_tasks[0].reserve(10);
 	m_tasks[1].reserve(10);
 	m_pending_tasks.reserve(10);
+
 	m_events[0].reserve(10);
 	m_events[1].reserve(10);
 	m_pending_events.reserve(10);
@@ -219,19 +221,26 @@ gg::Thread::~Thread()
 {
 	if (m_running && m_thread.joinable())
 	{
-		finishTasks();
+		finish();
 		m_thread.join();
 	}
 }
 
 gg::IThread::State gg::Thread::getState() const
 {
-	return m_state;
+	std::lock_guard<decltype(m_state_mutex)> guard(m_state_mutex);
+	return m_state.front();
 }
 
 void gg::Thread::setState(State state)
 {
-	m_state = state;
+	std::lock_guard<decltype(m_state_mutex)> guard(m_state_mutex);
+
+	if (m_state.back() != state)
+		m_state.push_back(state);
+
+	if (m_zombie)
+		m_awake.notify_all();
 }
 
 void gg::Thread::sendEvent(EventPtr event)
@@ -261,12 +270,29 @@ void gg::Thread::addTask(TaskPtr&& task, State state)
 	{
 		std::lock_guard<decltype(m_tasks_mutex)> guard(m_tasks_mutex);
 		m_pending_tasks.push_back(TaskWithState{ std::move(task), state });
+
+		if (m_zombie)
+			m_awake.notify_all();
 	}
+}
+
+void gg::Thread::finish()
+{
+	std::lock_guard<decltype(m_finish_mutex)> guard(m_finish_mutex);
+	m_finish.thread = true;
 }
 
 void gg::Thread::finishTasks()
 {
-	m_finish_tasks = true;
+	std::lock_guard<decltype(m_finish_mutex)> guard(m_finish_mutex);
+	m_finish.all_tasks = true;
+}
+
+void gg::Thread::finishTasksInState(State state)
+{
+	std::lock_guard<decltype(m_finish_mutex)> guard(m_finish_mutex);
+	m_finish.state_tasks = true;
+	m_finish.state = state;
 }
 
 bool gg::Thread::run(Mode mode)
@@ -293,15 +319,34 @@ bool gg::Thread::run(Mode mode)
 
 void gg::Thread::thread()
 {
-	State state = m_state;
+	State state = getState();
 	State prev_state;
-
+	bool state_will_change;
 	unsigned task_run_count;
+
+restart_thread:
+	m_zombie.store(false);
 
 	do
 	{
-		prev_state = state;
-		state = m_state;
+		// update current state
+		{
+			std::lock_guard<decltype(m_state_mutex)> guard(m_state_mutex);
+
+			prev_state = state;
+			state = m_state.front();
+			state_will_change = false;
+
+			// if there are states waiting, move the first one to the front
+			if (m_state.size() > 1)
+			{
+				m_state.erase(m_state.begin());
+
+				// keep the thread running if there is still at least one state in the queue
+				if (m_state.size() > 1)
+					state_will_change = true;
+			}
+		}
 
 		// switch between tasks/next_tasks and events/next_events
 		m_switch_active = (m_switch_active + 1) % 2;
@@ -311,25 +356,69 @@ void gg::Thread::thread()
 		std::vector<EventPtr>& next_events = m_events[(m_switch_active + 1) % 2];
 
 		// add pending tasks to task list
-		if (m_tasks_mutex.try_lock())
 		{
+			std::lock_guard<decltype(m_tasks_mutex)> guard(m_tasks_mutex);
+
 			for (auto& task : m_pending_tasks)
 			{
 				tasks.emplace_back(
 					this, std::move(task.task), m_task_id_generator.next(), task.state);
 			}
 			m_pending_tasks.clear();
-			m_tasks_mutex.unlock();
+		}
+
+		// check for finish conditions
+		{
+			std::lock_guard<decltype(m_finish_mutex)> guard(m_finish_mutex);
+
+			if (m_finish.all_tasks)
+			{
+				m_finish.all_tasks = false;
+
+				tasks.clear();
+				next_tasks.clear();
+
+				break;
+			}
+
+			if (m_finish.state_tasks)
+			{
+				m_finish.state_tasks = false;
+
+				for (auto it = tasks.begin(); it != tasks.end(); )
+				{
+					if (it->getState() == m_finish.state)
+						tasks.erase(it);
+					else
+						++it;
+				}
+
+				for (auto it = next_tasks.begin(); it != next_tasks.end(); )
+				{
+					if (it->getState() == m_finish.state)
+						next_tasks.erase(it);
+					else
+						++it;
+				}
+			}
+
+			if (m_finish.thread)
+			{
+				m_finish.thread = false;
+
+				m_running.store(false);
+				return;
+			}
 		}
 
 		// add pending events to event list
-		if (m_events_mutex.try_lock())
 		{
+			std::lock_guard<decltype(m_events_mutex)> guard(m_events_mutex);
+
 			events.insert(events.end(),
 				std::make_move_iterator(m_pending_events.begin()),
 				std::make_move_iterator(m_pending_events.end()));
 			m_pending_tasks.clear();
-			m_events_mutex.unlock();
 		}
 
 		task_run_count = 0;
@@ -370,26 +459,26 @@ void gg::Thread::thread()
 		}
 
 		events.clear();
+		std::this_thread::yield();
 
-		// clear tasks if it was requested
-		if (m_finish_tasks)
-		{
-			m_finish_tasks = false;
+	} while (task_run_count || state_will_change);
 
-			tasks.clear();
-			next_tasks.clear();
+	// enter zombie (waiting) state if no task to run on REMOTE mode
+	if (m_mode == Mode::REMOTE)
+	{
+		m_zombie.store(true);
 
-			m_tasks_mutex.lock();
-			m_pending_tasks.clear();
-			m_tasks_mutex.unlock();
-		}
-		else
-		{
-			std::this_thread::yield();
-		}
-	} while (task_run_count);
+		std::unique_lock<decltype(m_awake_mutex)> l(m_awake_mutex);
+		m_awake.wait(l);
 
-	m_running.store(false);
+		goto restart_thread;
+	}
+	// in LOCAL mode, just exit the function
+	else
+	{
+		m_running.store(false);
+		return;
+	}
 }
 
 bool gg::Thread::isAlive() const
