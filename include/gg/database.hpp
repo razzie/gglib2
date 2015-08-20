@@ -84,32 +84,38 @@ namespace gg
 			virtual void remove() = 0; // removes row after it's not referenced anywhere
 		};
 
+		typedef std::shared_ptr<IRow> RowPtr;
+
 		class ITable : public ISerializable
 		{
 		public:
 			virtual ~ITable() = default;
 			virtual AccessType getAccessType() const = 0;
 			virtual const std::string& getName() const = 0;
-			virtual std::shared_ptr<IRow> createAndGetRow(bool write_access = true) = 0;
-			virtual std::shared_ptr<IRow> getRow(Key, bool write_access = true) = 0;
-			virtual std::shared_ptr<IRow> getNextRow(Key, bool write_access = true) = 0;
+			virtual RowPtr createAndGetRow(bool write_access = true) = 0;
+			virtual RowPtr getRow(Key, bool write_access = true) = 0;
+			virtual RowPtr getNextRow(Key, bool write_access = true) = 0;
 			virtual void remove() = 0; // removes table after it's not referenced anywhere
 		};
 
+		typedef std::shared_ptr<ITable> TablePtr;
+
 		virtual ~IDatabase() = default;
 		virtual const std::string& getFilename() const = 0;
-		virtual std::shared_ptr<ITable> createAndGetTable(const std::string& table, const std::vector<std::string>& columns, bool write_access = true) = 0;
-		virtual std::shared_ptr<ITable> createAndGetTable(const std::string& table, unsigned columns, bool write_access = true) = 0;
-		virtual std::shared_ptr<ITable> getTable(const std::string& table, bool write = true) = 0;
+		virtual TablePtr createAndGetTable(const std::string& table, const std::vector<std::string>& columns, bool write_access = true) = 0;
+		virtual TablePtr createAndGetTable(const std::string& table, unsigned columns, bool write_access = true) = 0;
+		virtual TablePtr getTable(const std::string& table, bool write = true) = 0;
 		virtual void getTableNames(std::vector<std::string>& tables) const = 0;
 		virtual bool save() = 0;
 	};
+
+	typedef std::shared_ptr<IDatabase> DatabasePtr;
 
 	class IDatabaseManager
 	{
 	public:
 		virtual ~IDatabaseManager() = default;
-		virtual std::shared_ptr<IDatabase> open(const std::string& filename) const = 0;
+		virtual DatabasePtr open(const std::string& filename) const = 0;
 	};
 
 	extern GG_API IDatabaseManager& db;

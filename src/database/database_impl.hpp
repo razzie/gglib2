@@ -85,7 +85,7 @@ namespace gg
 			virtual void remove();
 			virtual void serialize(IArchive&);
 
-			std::shared_ptr<IRow> createView(bool write);
+			RowPtr createView(bool write);
 
 		private:
 			friend class Cell;
@@ -118,7 +118,7 @@ namespace gg
 		private:
 			Row& m_row;
 			AccessType m_access;
-			std::shared_ptr<IDatabase> m_database;
+			DatabasePtr m_database;
 		};
 
 		class TableView;
@@ -132,14 +132,14 @@ namespace gg
 			virtual ~Table() = default;
 			virtual AccessType getAccessType() const;
 			virtual const std::string& getName() const;
-			virtual std::shared_ptr<IRow> createAndGetRow(bool write_access = true);
-			virtual std::shared_ptr<IRow> getRow(Key, bool write_access = true);
-			virtual std::shared_ptr<IRow> getNextRow(Key, bool write_access = true);
+			virtual RowPtr createAndGetRow(bool write_access = true);
+			virtual RowPtr getRow(Key, bool write_access = true);
+			virtual RowPtr getNextRow(Key, bool write_access = true);
 			virtual void remove();
 			virtual void serialize(IArchive&);
 
 			void removeRow(Key);
-			std::shared_ptr<ITable> createView(bool write_access);
+			TablePtr createView(bool write_access);
 
 		private:
 			friend class Row;
@@ -164,24 +164,24 @@ namespace gg
 			virtual ~TableView();
 			virtual AccessType getAccessType() const;
 			virtual const std::string& getName() const;
-			virtual std::shared_ptr<IRow> createAndGetRow(bool write_access = true);
-			virtual std::shared_ptr<IRow> getRow(Key, bool write_access = true);
-			virtual std::shared_ptr<IRow> getNextRow(Key, bool write_access = true);
+			virtual RowPtr createAndGetRow(bool write_access = true);
+			virtual RowPtr getRow(Key, bool write_access = true);
+			virtual RowPtr getNextRow(Key, bool write_access = true);
 			virtual void remove();
 			virtual void serialize(IArchive&);
 
 		private:
 			Table& m_table;
 			AccessType m_access;
-			std::shared_ptr<IDatabase> m_database;
+			DatabasePtr m_database;
 		};
 
 		Database(const std::string& filename);
 		virtual ~Database() = default;
 		virtual const std::string& getFilename() const;
-		virtual std::shared_ptr<ITable> createAndGetTable(const std::string& table, const std::vector<std::string>& columns, bool write_access = true);
-		virtual std::shared_ptr<ITable> createAndGetTable(const std::string& table, unsigned columns, bool write_access = true);
-		virtual std::shared_ptr<ITable> getTable(const std::string& table, bool write = true);
+		virtual TablePtr createAndGetTable(const std::string& table, const std::vector<std::string>& columns, bool write_access = true);
+		virtual TablePtr createAndGetTable(const std::string& table, unsigned columns, bool write_access = true);
+		virtual TablePtr getTable(const std::string& table, bool write = true);
 		virtual void getTableNames(std::vector<std::string>& tables) const;
 		virtual bool save();
 		virtual void serialize(IArchive&);
@@ -202,7 +202,7 @@ namespace gg
 	public:
 		DatabaseManager() = default;
 		virtual ~DatabaseManager() = default;
-		virtual std::shared_ptr<IDatabase> open(const std::string& filename) const;
+		virtual DatabasePtr open(const std::string& filename) const;
 	};
 
 	class FileArchive : public Archive

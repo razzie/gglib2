@@ -571,7 +571,7 @@ std::shared_ptr<gg::IDatabase::IRow> gg::Database::Table::getNextRow(Key key, bo
 {
 	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 
-	std::shared_ptr<IRow> row;
+	RowPtr row;
 
 	do
 	{
@@ -888,7 +888,7 @@ void gg::Database::serialize(IArchive& ar)
 
 
 
-std::shared_ptr<gg::IDatabase> gg::DatabaseManager::open(const std::string& filename) const
+gg::DatabasePtr gg::DatabaseManager::open(const std::string& filename) const
 {
 	try
 	{
