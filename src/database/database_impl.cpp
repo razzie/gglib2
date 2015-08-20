@@ -932,7 +932,11 @@ size_t gg::FileArchive::write(const char* ptr, size_t len)
 
 size_t gg::FileArchive::read(char* ptr, size_t len)
 {
-	return static_cast<size_t>(m_file.readsome(ptr, len));
+	//return static_cast<size_t>(m_file.readsome(ptr, len));
+	auto start_pos = m_file.tellg();
+	m_file.read(ptr, len);
+	auto end_pos = m_file.tellg();
+	return static_cast<size_t>(end_pos - start_pos);
 }
 
 gg::FileArchive::operator bool() const
