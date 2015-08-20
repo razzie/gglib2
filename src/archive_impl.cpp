@@ -38,7 +38,7 @@ gg::IArchive::Mode gg::Archive::getMode() const
 
 gg::Archive& gg::Archive::operator&(int8_t& i)
 {
-	if (m_mode == Mode::DESERIALIZE)
+	if (m_mode == Mode::SERIALIZE)
 	{
 		if (write(reinterpret_cast<const char*>(&i), sizeof(int8_t)) < sizeof(int8_t))
 			throw SerializationError();
@@ -56,7 +56,7 @@ gg::Archive& gg::Archive::operator&(int8_t& i)
 
 gg::Archive& gg::Archive::operator&(int16_t& i)
 {
-	if (m_mode == Mode::DESERIALIZE)
+	if (m_mode == Mode::SERIALIZE)
 	{
 		if (write(reinterpret_cast<const char*>(&i), sizeof(int16_t)) < sizeof(int16_t))
 			throw SerializationError();
@@ -74,7 +74,7 @@ gg::Archive& gg::Archive::operator&(int16_t& i)
 
 gg::Archive& gg::Archive::operator&(int32_t& i)
 {
-	if (m_mode == Mode::DESERIALIZE)
+	if (m_mode == Mode::SERIALIZE)
 	{
 		if (write(reinterpret_cast<const char*>(&i), sizeof(int32_t)) < sizeof(int32_t))
 			throw SerializationError();
@@ -92,7 +92,7 @@ gg::Archive& gg::Archive::operator&(int32_t& i)
 
 gg::Archive& gg::Archive::operator&(int64_t& i)
 {
-	if (m_mode == Mode::DESERIALIZE)
+	if (m_mode == Mode::SERIALIZE)
 	{
 		if (write(reinterpret_cast<const char*>(&i), sizeof(int64_t)) < sizeof(int64_t))
 			throw SerializationError();
@@ -110,7 +110,7 @@ gg::Archive& gg::Archive::operator&(int64_t& i)
 
 gg::Archive& gg::Archive::operator&(uint8_t& u)
 {
-	if (m_mode == Mode::DESERIALIZE)
+	if (m_mode == Mode::SERIALIZE)
 	{
 		if (write(reinterpret_cast<const char*>(&u), sizeof(uint8_t)) < sizeof(uint8_t))
 			throw SerializationError();
@@ -128,7 +128,7 @@ gg::Archive& gg::Archive::operator&(uint8_t& u)
 
 gg::Archive& gg::Archive::operator&(uint16_t& u)
 {
-	if (m_mode == Mode::DESERIALIZE)
+	if (m_mode == Mode::SERIALIZE)
 	{
 		if (write(reinterpret_cast<const char*>(&u), sizeof(uint16_t)) < sizeof(uint16_t))
 			throw SerializationError();
@@ -146,7 +146,7 @@ gg::Archive& gg::Archive::operator&(uint16_t& u)
 
 gg::Archive& gg::Archive::operator&(uint32_t& u)
 {
-	if (m_mode == Mode::DESERIALIZE)
+	if (m_mode == Mode::SERIALIZE)
 	{
 		if (write(reinterpret_cast<const char*>(&u), sizeof(uint32_t)) < sizeof(uint32_t))
 			throw SerializationError();
@@ -164,7 +164,7 @@ gg::Archive& gg::Archive::operator&(uint32_t& u)
 
 gg::Archive& gg::Archive::operator&(uint64_t& u)
 {
-	if (m_mode == Mode::DESERIALIZE)
+	if (m_mode == Mode::SERIALIZE)
 	{
 		if (write(reinterpret_cast<const char*>(&u), sizeof(uint64_t)) < sizeof(uint64_t))
 			throw SerializationError();
@@ -182,7 +182,7 @@ gg::Archive& gg::Archive::operator&(uint64_t& u)
 
 gg::Archive& gg::Archive::operator&(float& f)
 {
-	if (m_mode == Mode::DESERIALIZE)
+	if (m_mode == Mode::SERIALIZE)
 	{
 		uint32_t tmp = static_cast<uint32_t>(pack754_32(f));
 		*this & tmp;
@@ -199,7 +199,7 @@ gg::Archive& gg::Archive::operator&(float& f)
 
 gg::Archive& gg::Archive::operator&(double& f)
 {
-	if (m_mode == Mode::DESERIALIZE)
+	if (m_mode == Mode::SERIALIZE)
 	{
 		uint64_t tmp = pack754_64(f);
 		*this & tmp;
@@ -216,7 +216,7 @@ gg::Archive& gg::Archive::operator&(double& f)
 
 gg::Archive& gg::Archive::operator&(std::string& str)
 {
-	if (m_mode == Mode::DESERIALIZE)
+	if (m_mode == Mode::SERIALIZE)
 	{
 		uint16_t len = static_cast<uint16_t>(str.length());
 		*this & len;

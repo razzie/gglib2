@@ -54,7 +54,7 @@ void gg::Packet::setSize(size_t size)
 
 size_t gg::Packet::write(const char* ptr, size_t len)
 {
-	if (getMode() != Mode::DESERIALIZE)
+	if (getMode() != Mode::SERIALIZE)
 		throw SerializationError();
 
 	if (BUF_SIZE - m_data_len < len)
@@ -67,7 +67,7 @@ size_t gg::Packet::write(const char* ptr, size_t len)
 
 size_t gg::Packet::read(char* ptr, size_t len)
 {
-	if (getMode() != Mode::SERIALIZE)
+	if (getMode() != Mode::DESERIALIZE)
 		throw SerializationError();
 
 	if (m_data_len - m_data_pos < len)
@@ -131,7 +131,7 @@ gg::PacketPtr gg::Connection::getNextPacket(uint32_t timeoutMs)
 	// now that we have the full packet, let's skip the first heading bytes we already know
 	m_backend->read(reinterpret_cast<char*>(&head), sizeof(ArchiveHeader));
 
-	std::shared_ptr<Packet> packet(new Packet(IArchive::Mode::SERIALIZE, head.packet_type));
+	std::shared_ptr<Packet> packet(new Packet(IArchive::Mode::DESERIALIZE, head.packet_type));
 	m_backend->read(packet->getDataPtr(), head.packet_size);
 	packet->setSize(head.packet_size);
 
@@ -145,12 +145,12 @@ gg::PacketPtr gg::Connection::getNextPacket(uint32_t timeoutMs)
 
 gg::PacketPtr gg::Connection::createPacket(IPacket::Type type) const
 {
-	return PacketPtr( new Packet(IArchive::Mode::DESERIALIZE, type) );
+	return PacketPtr( new Packet(IArchive::Mode::SERIALIZE, type) );
 }
 
 gg::PacketPtr gg::Connection::createPacket(EventPtr event) const
 {
-	PacketPtr packet( new Packet(IArchive::Mode::DESERIALIZE, event->getType()) );
+	PacketPtr packet( new Packet(IArchive::Mode::SERIALIZE, event->getType()) );
 	event->serialize(*packet);
 	return packet;
 }
@@ -315,12 +315,12 @@ gg::ServerPtr gg::NetworkManager::createServer(ServerBackendPtr&& backend) const
 
 std::shared_ptr<gg::IPacket> gg::NetworkManager::createPacket(IPacket::Type type) const
 {
-	return PacketPtr( new Packet(IArchive::Mode::DESERIALIZE, type) );
+	return PacketPtr( new Packet(IArchive::Mode::SERIALIZE, type) );
 }
 
 std::shared_ptr<gg::IPacket> gg::NetworkManager::createPacket(EventPtr event) const
 {
-	PacketPtr packet( new Packet(IArchive::Mode::DESERIALIZE, event->getType()) );
+	PacketPtr packet( new Packet(IArchive::Mode::SERIALIZE, event->getType()) );
 	event->serialize(*packet);
 	return packet;
 }
