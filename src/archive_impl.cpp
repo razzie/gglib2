@@ -227,7 +227,7 @@ gg::Archive& gg::Archive::operator&(std::string& str)
 	{
 		uint16_t len;
 		*this & len;
-		str.resize(len + 1);
+		str.resize(len);
 		if (read(&str[0], len) < len)
 			throw SerializationError();
 	}
