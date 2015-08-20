@@ -23,9 +23,7 @@
 
 
 gg::Archive::Archive(IArchive::Mode mode) :
-	m_mode(mode),
-	m_data_len(0),
-	m_data_pos(0)
+	m_mode(mode)
 {
 }
 
@@ -36,26 +34,6 @@ gg::Archive::~Archive()
 gg::IArchive::Mode gg::Archive::getMode() const
 {
 	return m_mode;
-}
-
-const char* gg::Archive::getData() const
-{
-	return m_data;
-}
-
-size_t gg::Archive::getSize() const
-{
-	return m_data_len;
-}
-
-char* gg::Archive::getDataPtr()
-{
-	return m_data;
-}
-
-void gg::Archive::setSize(size_t size)
-{
-	m_data_len = size;
 }
 
 gg::Archive& gg::Archive::operator&(int8_t& i)
@@ -261,32 +239,6 @@ gg::Archive& gg::Archive::operator&(ISerializable& serializable)
 {
 	serializable.serialize(*this);
 	return *this;
-}
-
-size_t gg::Archive::write(const char* ptr, size_t len)
-{
-	if (m_mode != Mode::DESERIALIZE)
-		throw SerializationError();
-
-	if (BUF_SIZE - m_data_len < len)
-		len = BUF_SIZE - m_data_len;
-
-	std::memcpy(&m_data[m_data_len], ptr, len);
-	m_data_len += len;
-	return len;
-}
-
-size_t gg::Archive::read(char* ptr, size_t len)
-{
-	if (m_mode != Mode::SERIALIZE)
-		throw SerializationError();
-
-	if (m_data_len - m_data_pos < len)
-		len = m_data_len - m_data_pos;
-
-	std::memcpy(ptr, &m_data[m_data_pos], len);
-	m_data_pos += len;
-	return len;
 }
 
 

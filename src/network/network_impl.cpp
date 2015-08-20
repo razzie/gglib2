@@ -15,6 +15,70 @@ static gg::NetworkManager s_netmgr;
 gg::INetworkManager& gg::net = s_netmgr;
 
 
+gg::Packet::Packet(Mode mode, Type type) :
+	Archive(mode),
+	m_type(type),
+	m_data_len(0),
+	m_data_pos(0)
+{
+}
+
+gg::Packet::~Packet()
+{
+}
+
+gg::IPacket::Type gg::Packet::getType() const
+{
+	return m_type;
+}
+
+const char* gg::Packet::getData() const
+{
+	return m_data;
+}
+
+size_t gg::Packet::getSize() const
+{
+	return m_data_len;
+}
+
+char* gg::Packet::getDataPtr()
+{
+	return m_data;
+}
+
+void gg::Packet::setSize(size_t size)
+{
+	m_data_len = size;
+}
+
+size_t gg::Packet::write(const char* ptr, size_t len)
+{
+	if (getMode() != Mode::DESERIALIZE)
+		throw SerializationError();
+
+	if (BUF_SIZE - m_data_len < len)
+		len = BUF_SIZE - m_data_len;
+
+	std::memcpy(&m_data[m_data_len], ptr, len);
+	m_data_len += len;
+	return len;
+}
+
+size_t gg::Packet::read(char* ptr, size_t len)
+{
+	if (getMode() != Mode::SERIALIZE)
+		throw SerializationError();
+
+	if (m_data_len - m_data_pos < len)
+		len = m_data_len - m_data_pos;
+
+	std::memcpy(ptr, &m_data[m_data_pos], len);
+	m_data_pos += len;
+	return len;
+}
+
+
 gg::Connection::Connection(ConnectionBackendPtr&& backend) :
 	m_backend(std::move(backend))
 {

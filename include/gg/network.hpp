@@ -50,6 +50,8 @@ namespace gg
 
 		virtual ~IPacket() = default;
 		virtual Type getType() const = 0;
+		virtual const char* getData() const = 0;
+		virtual size_t getSize() const = 0;
 
 		/* inherits all IArchive functions */
 	};

@@ -19,18 +19,22 @@ namespace gg
 	class Packet : public IPacket, public Archive
 	{
 	public:
-		Packet(Mode mode, Type type) :
-			Archive(mode),
-			m_type(type)
-		{
-		}
+		Packet(Mode mode, Type type);
+		virtual ~Packet();
+		virtual Type getType() const;
+		virtual const char* getData() const;
+		virtual size_t getSize() const;
+		virtual size_t write(const char* ptr, size_t len);
+		virtual size_t read(char* ptr, size_t len);
 
-		virtual ~Packet() = default;
+		// for internal use
+		char* getDataPtr();
+		void setSize(size_t);
 
-		virtual Type getType() const
-		{
-			return m_type;
-		}
+	protected:
+		char m_data[BUF_SIZE];
+		size_t m_data_len;
+		size_t m_data_pos;
 
 	private:
 		Type m_type;

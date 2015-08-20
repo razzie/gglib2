@@ -22,9 +22,6 @@ namespace gg
 		Archive(Mode);
 		virtual ~Archive();
 		virtual Mode getMode() const;
-		virtual const char* getData() const;
-		virtual size_t getSize() const;
-
 		virtual Archive& operator& (int8_t&);
 		virtual Archive& operator& (int16_t&);
 		virtual Archive& operator& (int32_t&);
@@ -38,18 +35,14 @@ namespace gg
 		virtual Archive& operator& (std::string&);
 		virtual Archive& operator& (ISerializable&);
 
-		virtual size_t write(const char* ptr, size_t len);
-		virtual size_t read(char* ptr, size_t len);
+		// the following functions should be implemented by the end user
+		virtual const char* getData() const = 0;
+		virtual size_t getSize() const = 0;
+		virtual size_t write(const char* ptr, size_t len) = 0;
+		virtual size_t read(char* ptr, size_t len) = 0;
 
-		// for internal use
-		char* getDataPtr();
-		void setSize(size_t);
-
-	protected:
+	private:
 		Mode m_mode;
-		char m_data[BUF_SIZE];
-		size_t m_data_len;
-		size_t m_data_pos;
 	};
 
 	class SerializationError : public ISerializationError
