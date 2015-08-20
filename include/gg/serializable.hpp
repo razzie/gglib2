@@ -26,9 +26,6 @@ namespace gg
 
 		virtual ~IArchive() = default;
 		virtual Mode getMode() const = 0;
-		virtual const char* getData() const = 0;
-		virtual size_t getSize() const = 0;
-
 		virtual IArchive& operator& (int8_t&) = 0;
 		virtual IArchive& operator& (int16_t&) = 0;
 		virtual IArchive& operator& (int32_t&) = 0;
@@ -41,7 +38,6 @@ namespace gg
 		virtual IArchive& operator& (double&) = 0;
 		virtual IArchive& operator& (std::string&) = 0;
 		virtual IArchive& operator& (ISerializable&) = 0;
-
 		virtual size_t write(const char* ptr, size_t len) = 0;
 		virtual size_t read(char* ptr, size_t len) = 0;
 

@@ -131,33 +131,29 @@ private:
 
 int main()
 {
+	if (auto db = gg::db.open("test/database.db"))
 	{
-		auto db = gg::db.open("test/database.db");
+		auto table = db->getTable("fruit");
+		if (!table)
 		{
-			auto table = db->getTable("fruit");
-			if (!table)
+			table = db->createAndGetTable("fruit", { "apple", "pear", "grapes" });
+			auto row = table->getNextRow(0);
+			if (!row)
 			{
-				table = db->createAndGetTable("fruit", { "apple", "pear", "grapes" });
-				auto row = table->getNextRow(0);
-				if (!row)
-				{
-					row = table->createAndGetRow();
-					row->cell("apple")->set(1);
-					row->cell("pear")->set(2);
-					row->cell("grapes")->set(3);
-				}
+				row = table->createAndGetRow();
+				row->cell("apple")->set(1);
+				row->cell("pear")->set(2);
+				row->cell("grapes")->set(3);
 			}
-			db->sync();
 		}
+		db->save();
 	}
 
+	if (auto db = gg::db.open("test/database.db"))
 	{
-		auto db = gg::db.open("test/database.db");
-		{
-			auto table = db->getTable("fruit");
-			auto row = table->getNextRow(0);
-			std::cout << row->cell("apple")->getString() << std::endl;
-		}
+		auto table = db->getTable("fruit");
+		auto row = table->getNextRow(0);
+		std::cout << row->cell("apple")->getString() << std::endl;
 	}
 
 

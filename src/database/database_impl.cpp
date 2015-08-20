@@ -17,24 +17,58 @@ static gg::DatabaseManager s_db;
 gg::IDatabaseManager& gg::db = s_db;
 
 
-static void saveString(const std::string& s, std::fstream& f)
+template<class T>
+void serialize(gg::IArchive& ar, std::vector<T>& v)
 {
-	uint16_t len = static_cast<uint16_t>(s.size());
-	f.write(reinterpret_cast<const char*>(&len), sizeof(uint16_t));
-	f.write(s.c_str(), s.size());
+	uint16_t items;
+
+	if (ar.getMode() == gg::IArchive::Mode::SERIALIZE)
+	{
+		items = static_cast<uint16_t>(v.size());
+		ar & items;
+		for (auto& i : v)
+			ar & i;
+	}
+	else
+	{
+		ar & items;
+		for (uint16_t i = 0; i < items; ++i)
+		{
+			v.emplace_back();
+			ar & v.back();
+		}
+	}
 }
 
-static void loadString(std::string& s, std::fstream& f)
+/*template<class Key, class Value>
+void serialize(gg::IArchive& ar, std::map<Key, Value>& m)
 {
-	uint16_t len = 0;
-	f.read(reinterpret_cast<char*>(&len), sizeof(uint16_t));
-	s.resize(len);
-	f.read(&s[0], s.size());
-}
+	uint16_t items;
 
-static size_t sizeOfString(const std::string& s)
+	if (ar.getMode() == gg::IArchive::Mode::SERIALIZE)
+	{
+		items = static_cast<uint16_t>(m.size());
+		ar & items;
+		for (auto& i : m)
+			ar & i.first & i.second;
+	}
+	else
+	{
+		ar & items;
+		for (uint16_t i = 0; i < items; ++i)
+		{
+			Key key;
+			Value value;
+			ar & key & value;
+			m.emplace(key, value);
+		}
+	}
+}*/
+
+void serialize(gg::IArchive& ar, gg::IDatabase::ICell::Type& type)
 {
-	return (sizeof(uint16_t) + s.size());
+	uint16_t& v = reinterpret_cast<uint16_t&>(type);
+	ar & v;
 }
 
 
@@ -229,81 +263,32 @@ void gg::Database::Cell::set(const std::string& s)
 	m_str_data = s;
 }
 
-size_t gg::Database::Cell::getSize() const
+void gg::Database::Cell::serialize(IArchive& ar)
 {
 	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
+
+	ar & m_type;
 
 	switch (m_type)
 	{
 	case Type::INT32:
-		return (sizeof(Type) + sizeof(int32_t));
-	case Type::INT64:
-		return (sizeof(Type) + sizeof(int64_t));
-	case Type::FLOAT:
-		return (sizeof(Type) + sizeof(float));
-	case Type::DOUBLE:
-		return (sizeof(Type) + sizeof(double));
-	case Type::STRING:
-		return (sizeof(Type) + sizeOfString(m_str_data));
-
-	default:
-		return 0;
-	}
-}
-
-void gg::Database::Cell::save(std::fstream& f) const
-{
-	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
-
-	f.write(reinterpret_cast<const char*>(&m_type), sizeof(Type));
-	switch (m_type)
-	{
-	case Type::INT32:
-		f.write(reinterpret_cast<const char*>(&m_data.i32), sizeof(int32_t));
+		ar & m_data.i32;
 		break;
 	case Type::INT64:
-		f.write(reinterpret_cast<const char*>(&m_data.i64), sizeof(int64_t));
+		ar & m_data.i64;
 		break;
 	case Type::FLOAT:
-		f.write(reinterpret_cast<const char*>(&m_data.f), sizeof(float));
+		ar & m_data.f;
 		break;
 	case Type::DOUBLE:
-		f.write(reinterpret_cast<const char*>(&m_data.d), sizeof(double));
+		ar & m_data.d;
 		break;
 	case Type::STRING:
-		saveString(m_str_data, f);
+		ar & m_str_data;
 		break;
 
 	default:
 		break;
-	}
-}
-
-void gg::Database::Cell::load(std::fstream& f)
-{
-	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
-
-	f.read(reinterpret_cast<char*>(&m_type), sizeof(Type));
-	switch (m_type)
-	{
-	case Type::INT32:
-		f.read(reinterpret_cast<char*>(&m_data.i32), sizeof(int32_t));
-		break;
-	case Type::INT64:
-		f.read(reinterpret_cast<char*>(&m_data.i64), sizeof(int64_t));
-		break;
-	case Type::FLOAT:
-		f.read(reinterpret_cast<char*>(&m_data.f), sizeof(float));
-		break;
-	case Type::DOUBLE:
-		f.read(reinterpret_cast<char*>(&m_data.d), sizeof(double));
-		break;
-	case Type::STRING:
-		loadString(m_str_data, f);
-		break;
-
-	default:
-		throw std::runtime_error("Invalid cell type");
 	}
 }
 
@@ -383,6 +368,13 @@ void gg::Database::Row::remove()
 	m_force_remove = true;
 }
 
+void gg::Database::Row::serialize(IArchive& ar)
+{
+	ar & m_key;
+	for (Cell& cell : m_cells)
+		cell.serialize(ar);
+}
+
 std::shared_ptr<gg::IDatabase::IRow> gg::Database::Row::createView(bool write_access)
 {
 	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
@@ -393,34 +385,12 @@ std::shared_ptr<gg::IDatabase::IRow> gg::Database::Row::createView(bool write_ac
 		return std::shared_ptr<gg::IDatabase::IRow>(new RowView(*this, write_access));
 }
 
-size_t gg::Database::Row::getSize() const
-{
-	size_t size = sizeof(Key);
-	for (const Cell& cell : m_cells)
-		size += cell.getSize();
-	return size;
-}
-
-void gg::Database::Row::save(std::fstream& f) const
-{
-	f.write(reinterpret_cast<const char*>(&m_key), sizeof(Key));
-	for (const Cell& cell : m_cells)
-		cell.save(f);
-}
-
-void gg::Database::Row::load(std::fstream& f)
-{
-	f.read(reinterpret_cast<char*>(&m_key), sizeof(Key));
-	for (Cell& cell : m_cells)
-		cell.load(f);
-}
-
 
 
 gg::Database::RowView::RowView(Row& row, bool write_access) :
 	m_row(row),
 	m_access(write_access ? AccessType::READ_WRITE : AccessType::READ),
-	m_database(row.m_table->m_database.m_self_ptr.lock())
+	m_database(row.m_table->m_database->m_self_ptr.lock())
 {
 	std::lock_guard<decltype(m_row.m_mutex)> guard(m_row.m_mutex);
 
@@ -516,10 +486,21 @@ void gg::Database::RowView::remove()
 	m_row.remove();
 }
 
+void gg::Database::RowView::serialize(IArchive& ar)
+{
+	if (ar.getMode() == IArchive::Mode::SERIALIZE && m_access == AccessType::NO_ACCESS)
+		throw AccessError(AccessType::READ, m_access);
+
+	if (ar.getMode() == IArchive::Mode::DESERIALIZE && m_access != AccessType::READ_WRITE)
+		throw AccessError(AccessType::READ_WRITE, m_access);
+
+	m_row.serialize(ar);
+}
+
 
 
 gg::Database::Table::Table(Database& database) :
-	m_database(database),
+	m_database(&database),
 	m_last_row_key(0),
 	m_writer_views(0),
 	m_reader_views(0),
@@ -528,7 +509,7 @@ gg::Database::Table::Table(Database& database) :
 }
 
 gg::Database::Table::Table(Database& database, const std::string& name, const std::vector<std::string>& columns) :
-	m_database(database),
+	m_database(&database),
 	m_name(name),
 	m_last_row_key(0),
 	m_writer_views(0),
@@ -632,57 +613,29 @@ std::shared_ptr<gg::IDatabase::ITable> gg::Database::Table::createView(bool writ
 		return std::shared_ptr<gg::IDatabase::ITable>(new TableView(*this, write_access));
 }
 
-size_t gg::Database::Table::getSize() const
+void gg::Database::Table::serialize(IArchive& ar)
 {
-	size_t size = sizeOfString(m_name);
+	ar & m_name & m_columns;
 
-	size += sizeof(uint16_t); // column_count
-	for (const std::string& column : m_columns)
-		size += sizeOfString(column);
-
-	size += sizeof(uint16_t); // row_count
-	for (auto& row : m_rows)
-		size += row.second.getSize();
-
-	return size;
-}
-
-void gg::Database::Table::save(std::fstream& f) const
-{
-	saveString(m_name, f);
-
-	uint16_t column_count = static_cast<uint16_t>(m_columns.size());
-	f.write(reinterpret_cast<const char*>(&column_count), sizeof(uint16_t));
-	for (const std::string& column : m_columns)
-		saveString(column, f);
-
-	uint16_t row_count = static_cast<uint16_t>(m_rows.size());
-	f.write(reinterpret_cast<const char*>(&row_count), sizeof(uint16_t));
-	for (auto& row : m_rows)
-		row.second.save(f);
-}
-
-void gg::Database::Table::load(std::fstream& f)
-{
-	loadString(m_name, f);
-
-	uint16_t column_count = 0;
-	f.read(reinterpret_cast<char*>(&column_count), sizeof(uint16_t));
-	for (uint16_t i = 0; i < column_count; ++i)
+	uint16_t row_count;
+	if (ar.getMode() == IArchive::Mode::DESERIALIZE)
 	{
-		std::string column;
-		loadString(column, f);
-		m_columns.emplace_back(std::move(column));
+		ar & row_count;
+		for (uint16_t i = 0; i < row_count; ++i)
+		{
+			Row row(*this, 0);
+			row.serialize(ar);
+			m_rows.emplace(row.getKey(), std::move(row));
+		}
 	}
-
-	uint16_t row_count = 0;
-	f.read(reinterpret_cast<char*>(&row_count), sizeof(uint16_t));
-	for (uint16_t i = 0; i < row_count; ++i)
+	else
 	{
-		Row row(*this, 0);
-		row.load(f);
-		m_last_row_key = row.getKey();
-		m_rows.emplace(row.getKey(), std::move(row));
+		row_count = static_cast<uint16_t>(m_rows.size());
+		ar & row_count;
+		for (auto& it : m_rows)
+		{
+			it.second.serialize(ar);
+		}
 	}
 }
 
@@ -691,7 +644,7 @@ void gg::Database::Table::load(std::fstream& f)
 gg::Database::TableView::TableView(Table& table, bool write_access) :
 	m_table(table),
 	m_access(write_access ? AccessType::READ_WRITE : AccessType::READ),
-	m_database(table.m_database.m_self_ptr.lock())
+	m_database(table.m_database->m_self_ptr.lock())
 {
 	std::lock_guard<decltype(m_table.m_mutex)> guard(m_table.m_mutex);
 
@@ -730,7 +683,7 @@ gg::Database::TableView::~TableView()
 	if (m_table.m_writer_views == 0 && m_table.m_reader_views == 0
 		&& m_table.m_force_remove)
 	{
-		m_table.m_database.removeTable(m_table.m_name);
+		m_table.m_database->removeTable(m_table.m_name);
 	}
 }
 
@@ -795,25 +748,33 @@ void gg::Database::TableView::remove()
 	m_table.remove();
 }
 
+void gg::Database::TableView::serialize(IArchive& ar)
+{
+	if (ar.getMode() == IArchive::Mode::SERIALIZE && m_access == AccessType::NO_ACCESS)
+		throw AccessError(AccessType::READ, m_access);
+
+	if (ar.getMode() == IArchive::Mode::DESERIALIZE && m_access != AccessType::READ_WRITE)
+		throw AccessError(AccessType::READ_WRITE, m_access);
+
+	m_table.serialize(ar);
+}
+
 
 
 gg::Database::Database(const std::string& filename) :
 	m_filename(filename)
 {
-	std::fstream db(filename, std::ios::in | std::ios::binary);
-	if (db.is_open())
+	FileArchive ar(filename, IArchive::Mode::DESERIALIZE);
+	if (ar)
 	{
-		load(db);
-		db.close();
+		serialize(ar);
 	}
 	else
 	{
-		db.open(filename, std::ios::out);
-		if (!db.is_open())
-		{
-			db.close();
-			throw std::runtime_error("Cannot open or create database");
-		}
+		// if trying to read from non-existing file, create one
+		std::fstream file(filename, std::ios::out | std::ios::binary);
+		if (!file.is_open())
+			throw std::runtime_error("Cannot open or create database: " + filename);
 	}
 }
 
@@ -856,7 +817,7 @@ void gg::Database::getTableNames(std::vector<std::string>& tables) const
 		tables.push_back(it.first);
 }
 
-bool gg::Database::sync()
+bool gg::Database::save()
 {
 	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 
@@ -866,24 +827,22 @@ bool gg::Database::sync()
 		return false;
 #endif // _WIN32
 
-	std::fstream db(m_filename, std::ios::out | std::ios::trunc | std::ios::binary);
-	if (!db.is_open())
-		return false;
-
 	try
 	{
-		save(db);
+		FileArchive ar(m_filename, IArchive::Mode::SERIALIZE);
+		if (!ar)
+			return false;
+
+		serialize(ar);
 	}
 	catch (std::exception&)
 	{
-		db.close();
 #ifdef _WIN32
 		MoveFileExA(backup.c_str(), m_filename.c_str(), MOVEFILE_REPLACE_EXISTING);
 #endif
 		return false;
 	}
 
-	db.close();
 #ifdef _WIN32
 	DeleteFileA(backup.c_str());
 #endif
@@ -896,35 +855,34 @@ void gg::Database::removeTable(const std::string& table)
 	m_tables.erase(table);
 }
 
-void gg::Database::save(std::fstream& f) const
+void gg::Database::serialize(IArchive& ar)
 {
-	uint16_t table_count = static_cast<uint16_t>(m_tables.size());
-	f.write(reinterpret_cast<const char*>(&table_count), sizeof(uint16_t));
-
-	for (auto& it : m_tables)
-		it.second.save(f);
-
-	if (!f)
-		throw std::runtime_error("Database save error");
-}
-
-void gg::Database::load(std::fstream& f)
-{
-	try
+	uint16_t table_count;
+	if (ar.getMode() == IArchive::Mode::DESERIALIZE)
 	{
-		uint16_t table_count = 0;
-		f.read(reinterpret_cast<char*>(&table_count), sizeof(uint16_t));
-
-		for (uint16_t i = 0; i < table_count; ++i)
+		try
 		{
-			Table table(*this);
-			table.load(f);
-			m_tables.emplace(table.getName(), std::move(table));
+			ar & table_count;
+			for (uint16_t i = 0; i < table_count; ++i)
+			{
+				Table table(*this);
+				table.serialize(ar);
+				m_tables.emplace(table.getName(), std::move(table));
+			}
+		}
+		catch (ISerializationError&)
+		{
+			m_tables.clear();
 		}
 	}
-	catch (std::exception&)
+	else
 	{
-		m_tables.clear();
+		table_count = static_cast<uint16_t>(m_tables.size());
+		ar & table_count;
+		for (auto& it : m_tables)
+		{
+			it.second.serialize(ar);
+		}
 	}
 }
 
@@ -942,4 +900,42 @@ std::shared_ptr<gg::IDatabase> gg::DatabaseManager::open(const std::string& file
 	{
 		return {};
 	}
+}
+
+
+
+
+gg::FileArchive::FileArchive(const std::string& file, Mode mode) :
+	Archive(mode)
+{
+	std::ios::openmode flags = std::ios::binary;
+
+	if (mode == Mode::SERIALIZE) // write
+		flags |= std::ios::out | std::ios::trunc;
+	else // read
+		flags |= std::ios::in;
+
+	m_file.open(file, flags);
+}
+
+gg::FileArchive::~FileArchive()
+{
+	if (m_file.is_open())
+		m_file.close();
+}
+
+size_t gg::FileArchive::write(const char* ptr, size_t len)
+{
+	m_file.write(ptr, len);
+	return len;
+}
+
+size_t gg::FileArchive::read(char* ptr, size_t len)
+{
+	return static_cast<size_t>(m_file.readsome(ptr, len));
+}
+
+gg::FileArchive::operator bool() const
+{
+	return (m_file.good() && m_file.is_open());
 }

@@ -36,8 +36,6 @@ namespace gg
 		virtual Archive& operator& (ISerializable&);
 
 		// the following functions should be implemented by the end user
-		virtual const char* getData() const = 0;
-		virtual size_t getSize() const = 0;
 		virtual size_t write(const char* ptr, size_t len) = 0;
 		virtual size_t read(char* ptr, size_t len) = 0;
 

@@ -11,18 +11,11 @@
 #include <fstream>
 #include <map>
 #include <mutex>
+#include "archive_impl.hpp"
 #include "gg/database.hpp"
 
 namespace gg
 {
-	class DatabaseManager : public IDatabaseManager
-	{
-	public:
-		DatabaseManager() = default;
-		virtual ~DatabaseManager() = default;
-		virtual std::shared_ptr<IDatabase> open(const std::string& filename) const;
-	};
-
 	class Database : public IDatabase
 	{
 	public:
@@ -57,10 +50,7 @@ namespace gg
 			virtual void set(float);
 			virtual void set(double);
 			virtual void set(const std::string&);
-
-			size_t getSize() const;
-			void save(std::fstream&) const;
-			void load(std::fstream&);
+			virtual void serialize(IArchive&);
 
 		private:
 			union Data
@@ -93,11 +83,9 @@ namespace gg
 			virtual const ICell* cell(unsigned) const;
 			virtual const ICell* cell(const std::string& cell_name) const;
 			virtual void remove();
+			virtual void serialize(IArchive&);
 
 			std::shared_ptr<IRow> createView(bool write);
-			size_t getSize() const;
-			void save(std::fstream&) const;
-			void load(std::fstream&);
 
 		private:
 			friend class Cell;
@@ -125,6 +113,7 @@ namespace gg
 			virtual const ICell* cell(unsigned column) const;
 			virtual const ICell* cell(const std::string& column) const;
 			virtual void remove();
+			virtual void serialize(IArchive&);
 
 		private:
 			Row& m_row;
@@ -147,12 +136,10 @@ namespace gg
 			virtual std::shared_ptr<IRow> getRow(Key, bool write_access = true);
 			virtual std::shared_ptr<IRow> getNextRow(Key, bool write_access = true);
 			virtual void remove();
+			virtual void serialize(IArchive&);
 
 			void removeRow(Key);
 			std::shared_ptr<ITable> createView(bool write_access);
-			size_t getSize() const;
-			void save(std::fstream&) const;
-			void load(std::fstream&);
 
 		private:
 			friend class Row;
@@ -160,7 +147,7 @@ namespace gg
 			friend class TableView;
 
 			mutable std::recursive_mutex m_mutex;
-			Database& m_database;
+			Database* m_database;
 			std::string m_name;
 			std::vector<std::string> m_columns;
 			std::map<Key, Row> m_rows;
@@ -181,6 +168,7 @@ namespace gg
 			virtual std::shared_ptr<IRow> getRow(Key, bool write_access = true);
 			virtual std::shared_ptr<IRow> getNextRow(Key, bool write_access = true);
 			virtual void remove();
+			virtual void serialize(IArchive&);
 
 		private:
 			Table& m_table;
@@ -195,11 +183,10 @@ namespace gg
 		virtual std::shared_ptr<ITable> createAndGetTable(const std::string& table, unsigned columns, bool write_access = true);
 		virtual std::shared_ptr<ITable> getTable(const std::string& table, bool write = true);
 		virtual void getTableNames(std::vector<std::string>& tables) const;
-		virtual bool sync();
+		virtual bool save();
+		virtual void serialize(IArchive&);
 
 		void removeTable(const std::string&);
-		void save(std::fstream&) const;
-		void load(std::fstream&);
 
 	private:
 		friend class DatabaseManager;
@@ -208,5 +195,26 @@ namespace gg
 		std::string m_filename;
 		std::map<std::string, Table> m_tables;
 		std::weak_ptr<IDatabase> m_self_ptr;
+	};
+
+	class DatabaseManager : public IDatabaseManager
+	{
+	public:
+		DatabaseManager() = default;
+		virtual ~DatabaseManager() = default;
+		virtual std::shared_ptr<IDatabase> open(const std::string& filename) const;
+	};
+
+	class FileArchive : public Archive
+	{
+	public:
+		FileArchive(const std::string& file, Mode);
+		virtual ~FileArchive();
+		virtual size_t write(const char* ptr, size_t len);
+		virtual size_t read(char* ptr, size_t len);
+		operator bool() const;
+
+	private:
+		std::fstream m_file;
 	};
 };

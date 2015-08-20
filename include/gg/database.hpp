@@ -19,10 +19,11 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "gg/serializable.hpp"
 
 namespace gg
 {
-	class IDatabase
+	class IDatabase : public ISerializable
 	{
 	public:
 		typedef uint16_t Key;
@@ -43,7 +44,7 @@ namespace gg
 			virtual AccessType getActualAccess() const = 0;
 		};
 
-		class ICell
+		class ICell : public ISerializable
 		{
 		public:
 			enum Type : uint16_t
@@ -70,7 +71,7 @@ namespace gg
 			virtual void set(const std::string&) = 0;
 		};
 
-		class IRow
+		class IRow : public ISerializable
 		{
 		public:
 			virtual ~IRow() = default;
@@ -83,7 +84,7 @@ namespace gg
 			virtual void remove() = 0; // removes row after it's not referenced anywhere
 		};
 
-		class ITable
+		class ITable : public ISerializable
 		{
 		public:
 			virtual ~ITable() = default;
@@ -101,7 +102,7 @@ namespace gg
 		virtual std::shared_ptr<ITable> createAndGetTable(const std::string& table, unsigned columns, bool write_access = true) = 0;
 		virtual std::shared_ptr<ITable> getTable(const std::string& table, bool write = true) = 0;
 		virtual void getTableNames(std::vector<std::string>& tables) const = 0;
-		virtual bool sync() = 0;
+		virtual bool save() = 0;
 	};
 
 	class IDatabaseManager
