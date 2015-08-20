@@ -10,6 +10,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <string>
 #include "gg/event.hpp"
 
 #if defined GGTHREAD_BUILD
@@ -21,10 +22,12 @@
 namespace gg
 {
 	class IThread;
+	class IThreadPool;
 	class ITask;
 	class ITaskOptions;
 
 	typedef std::shared_ptr<IThread> ThreadPtr;
+	typedef std::shared_ptr<IThreadPool> ThreadPoolPtr;
 	typedef std::unique_ptr<ITask> TaskPtr;
 
 	class IThread
@@ -39,6 +42,7 @@ namespace gg
 		};
 
 		virtual ~IThread() = default;
+		virtual const std::string& getName() const = 0;
 		virtual State getState() const = 0;
 		virtual void setState(State) = 0;
 		virtual void sendEvent(EventPtr) = 0;
@@ -55,6 +59,23 @@ namespace gg
 		{
 			TaskPtr task(new Task(std::forward<Params>(params)...));
 			addTask(std::move(task), state);
+		}
+	};
+
+	class IThreadPool
+	{
+	public:
+		virtual ~IThreadPool() = default;
+		virtual ThreadPtr createAndAddThread(const std::string& name) = 0;
+		virtual ThreadPtr getThread(const std::string& name) const = 0;
+		virtual void addThread(ThreadPtr) = 0;
+		virtual bool removeThread(const std::string& name) = 0;
+		virtual void removeThreads() = 0;
+		virtual void sendEvent(EventPtr) = 0;
+
+		ThreadPtr operator[](const std::string& name) const
+		{
+			return getThread(name);
 		}
 	};
 
@@ -98,9 +119,9 @@ namespace gg
 	{
 	public:
 		virtual ~IThreadManager() = default;
-		virtual ThreadPtr createThread(const std::string& name) = 0;
-		virtual ThreadPtr getThread(const std::string& name) const = 0;
-		virtual void sendEvent(EventPtr) = 0;
+		virtual ThreadPtr createThread(const std::string& name) const = 0;
+		virtual ThreadPoolPtr createThreadPool() const = 0;
+		virtual ThreadPoolPtr getDefaultThreadPool() = 0;
 	};
 
 	extern GG_API IThreadManager& threadmgr;

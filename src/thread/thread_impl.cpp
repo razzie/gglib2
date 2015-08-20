@@ -226,6 +226,11 @@ gg::Thread::~Thread()
 	}
 }
 
+const std::string& gg::Thread::getName() const
+{
+	return m_name;
+}
+
 gg::IThread::State gg::Thread::getState() const
 {
 	std::lock_guard<decltype(m_state_mutex)> guard(m_state_mutex);
@@ -493,15 +498,15 @@ void gg::Thread::join()
 }
 
 
-gg::ThreadManager::ThreadManager()
+gg::ThreadPool::ThreadPool()
 {
 }
 
-gg::ThreadManager::~ThreadManager()
+gg::ThreadPool::~ThreadPool()
 {
 }
 
-gg::ThreadPtr gg::ThreadManager::createThread(const std::string& name)
+gg::ThreadPtr gg::ThreadPool::createAndAddThread(const std::string& name)
 {
 	ThreadPtr thread(new Thread(name));
 
@@ -513,44 +518,63 @@ gg::ThreadPtr gg::ThreadManager::createThread(const std::string& name)
 	return thread;
 }
 
-gg::ThreadPtr gg::ThreadManager::getThread(const std::string& name) const
+gg::ThreadPtr gg::ThreadPool::getThread(const std::string& name) const
 {
 	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 
 	auto it = m_threads.find(name);
 	if (it != m_threads.end())
-	{
-		return it->second.lock();
-	}
+		return it->second;
 	else
-	{
 		return {};
-	}
 }
 
-void gg::ThreadManager::sendEvent(EventPtr event)
+void gg::ThreadPool::addThread(ThreadPtr thread)
 {
 	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
+	m_threads[thread->getName()] = thread;
+}
 
+bool gg::ThreadPool::removeThread(const std::string& name)
+{
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
+	return (m_threads.erase(name) == 1);
+}
+
+void gg::ThreadPool::removeThreads()
+{
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
+	m_threads.clear();
+}
+
+void gg::ThreadPool::sendEvent(EventPtr event)
+{
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 	for (auto& it : m_threads)
-	{
-		ThreadPtr thread = it.second.lock();
-		if (thread)
-		{
-			thread->sendEvent(event);
-		}
-	}
+		it.second->sendEvent(event);
 }
 
-void gg::ThreadManager::clean()
-{
-	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 
-	for (auto it = m_threads.begin(); it != m_threads.end(); )
-	{
-		if (it->second.expired())
-			it = m_threads.erase(it);
-		else
-			++it;
-	}
+gg::ThreadManager::ThreadManager() :
+	m_default_thread_pool(new ThreadPool())
+{
+}
+
+gg::ThreadManager::~ThreadManager()
+{
+}
+
+gg::ThreadPtr gg::ThreadManager::createThread(const std::string& name) const
+{
+	return ThreadPtr(new Thread(name));
+}
+
+gg::ThreadPoolPtr gg::ThreadManager::createThreadPool() const
+{
+	return ThreadPoolPtr(new ThreadPool());
+}
+
+gg::ThreadPoolPtr gg::ThreadManager::getDefaultThreadPool()
+{
+	return m_default_thread_pool;
 }

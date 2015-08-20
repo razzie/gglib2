@@ -59,6 +59,7 @@ namespace gg
 	public:
 		Thread(const std::string& name);
 		virtual ~Thread();
+		virtual const std::string& getName() const;
 		virtual State getState() const;
 		virtual void setState(State);
 		virtual void sendEvent(EventPtr);
@@ -109,23 +110,33 @@ namespace gg
 		void thread();
 	};
 
+	class ThreadPool : public IThreadPool
+	{
+	public:
+		ThreadPool();
+		virtual ~ThreadPool();
+		virtual ThreadPtr createAndAddThread(const std::string& name);
+		virtual ThreadPtr getThread(const std::string& name) const;
+		virtual void addThread(ThreadPtr);
+		virtual bool removeThread(const std::string& name);
+		virtual void removeThreads();
+		virtual void sendEvent(EventPtr);
+
+	private:
+		mutable std::mutex m_mutex;
+		std::map<std::string, ThreadPtr> m_threads;
+	};
+
 	class ThreadManager : public IThreadManager
 	{
 	public:
 		ThreadManager();
 		virtual ~ThreadManager();
-		virtual ThreadPtr createThread(const std::string& name);
-		virtual ThreadPtr getThread(const std::string& name) const;
-		virtual void sendEvent(EventPtr);
-		virtual void clean();
-
-		ThreadPtr operator[](const std::string& name) const
-		{
-			return getThread(name);
-		}
+		virtual ThreadPtr createThread(const std::string& name) const;
+		virtual ThreadPoolPtr createThreadPool() const;
+		virtual ThreadPoolPtr getDefaultThreadPool();
 
 	private:
-		mutable std::mutex m_mutex;
-		std::map<std::string, std::weak_ptr<IThread>> m_threads;
+		ThreadPoolPtr m_default_thread_pool;
 	};
 };
