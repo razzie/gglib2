@@ -241,11 +241,19 @@ void gg::Thread::setState(State state)
 {
 	std::lock_guard<decltype(m_state_mutex)> guard(m_state_mutex);
 
-	if (m_state.back() != state)
-		m_state.push_back(state);
+	if (m_running)
+	{
+		if (m_state.back() != state)
+			m_state.push_back(state);
 
-	if (m_zombie)
-		m_awake.notify_all();
+		if (m_zombie)
+			m_awake.notify_all();
+	}
+	else
+	{
+		m_state.clear();
+		m_state.push_back(state);
+	}
 }
 
 void gg::Thread::sendEvent(EventPtr event)
