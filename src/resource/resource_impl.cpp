@@ -45,6 +45,7 @@ static std::string getPathEnd(const std::string& path)
 }*/
 
 
+
 gg::ResourcePtr gg::Resource::create(const std::string& res_path)
 {
 	ResourcePtr res(new Resource(res_path));
@@ -123,19 +124,7 @@ gg::FilePtr gg::Resource::getFile(const std::string& file_name) const
 	auto it = m_files.find(file_name);
 	if (it != m_files.end())
 	{
-		const FileData& fd = it->second;
-		std::lock_guard<decltype(fd.ptr_mutex)> guard(fd.ptr_mutex);
-
-		if (!fd.ptr.expired())
-		{
-			return fd.ptr.lock();
-		}
-		else
-		{
-			FilePtr ptr(new File(m_self_ptr.lock(), m_name + '/' + file_name));
-			fd.ptr = ptr;
-			return ptr;
-		}
+		return FilePtr(new File(m_self_ptr.lock(), m_name + '/' + file_name));
 	}
 
 	return {};
@@ -179,29 +168,39 @@ bool gg::Resource::loadDirectoryData(const std::string& dir_name, std::vector<ID
 	return true;
 }
 
-bool gg::Resource::loadFileData(const std::string& file_name, const char** data, size_t* size)
+bool gg::Resource::loadFileData(const std::string& file_name, FileContentPtr* data)
 {
 	auto it = m_files.find(file_name);
 	if (it != m_files.end())
 	{
 		const FileData& fd = it->second;
+		std::lock_guard<decltype(fd.ptr_mutex)> guard(fd.ptr_mutex);
 
-		char* compressed_data = new char[fd.compressed_size];
-		char* decompressed_data = new char[fd.original_size];
+		if (!fd.ptr.expired())
+		{
+			*data = fd.ptr.lock();
+		}
+		else
+		{
+			std::vector<char> compressed_data;
+			std::vector<char> decompressed_data;
+			compressed_data.resize(fd.compressed_size);
+			decompressed_data.resize(fd.original_size);
 
-		m_file.seekg(fd.start_pos);
-		m_file.read(compressed_data, fd.compressed_size);
-		doboz::Decompressor().decompress(compressed_data, fd.compressed_size, decompressed_data, fd.original_size);
+			m_file.seekg(fd.start_pos);
+			m_file.read(&compressed_data[0], fd.compressed_size);
+			doboz::Decompressor().decompress(&compressed_data[0], fd.compressed_size, &decompressed_data[0], fd.original_size);
 
-		delete[] compressed_data;
-		*data = decompressed_data;
-		*size = fd.original_size;
+			data->reset(new std::vector<char>(std::move(decompressed_data)));
+			fd.ptr = *data;
+		}
 
 		return true;
 	}
 
 	return false;
 }
+
 
 
 gg::ResourcePool::ResourcePool()
@@ -268,6 +267,7 @@ gg::FilePtr gg::ResourcePool::openFile(const std::string& file_name) const
 }
 
 
+
 gg::ResourceCreatorPtr gg::ResourceCreator::create(const std::string& res_path, bool append_mode)
 {
 	std::shared_ptr<ResourceCreator> creator(new ResourceCreator(res_path, append_mode));
@@ -277,28 +277,7 @@ gg::ResourceCreatorPtr gg::ResourceCreator::create(const std::string& res_path, 
 		return {};
 }
 
-gg::ResourceCreatorPtr gg::ResourceCreator::create(const std::wstring& res_path, bool append_mode)
-{
-	std::shared_ptr<ResourceCreator> creator(new ResourceCreator(res_path, append_mode));
-	if (creator->init())
-		return creator;
-	else
-		return {};
-}
-
 gg::ResourceCreator::ResourceCreator(const std::string& res_path, bool append_mode)
-{
-	std::ios::openmode mode = std::ios::out | std::ios::binary;
-
-	if (append_mode)
-		mode |= std::ios::app;
-	else
-		mode |= std::ios::trunc;
-
-	m_file.open(res_path, mode);
-}
-
-gg::ResourceCreator::ResourceCreator(const std::wstring& res_path, bool append_mode)
 {
 	std::ios::openmode mode = std::ios::out | std::ios::binary;
 
@@ -449,8 +428,30 @@ bool gg::ResourceCreator::addDirectory(const std::wstring& dir_path)
 }
 
 
+
+gg::FileSerializer::FileSerializer()
+{
+}
+
+gg::FileSerializer::~FileSerializer()
+{
+}
+
+gg::FilePtr gg::FileSerializer::openFile(const std::string& file_name, OpenMode mode) const
+{
+	return SerializableFile::create(file_name, mode);
+}
+
+gg::FilePtr gg::FileSerializer::openFile(const std::wstring& file_name, OpenMode mode) const
+{
+	return SerializableFile::create(file_name, mode);
+}
+
+
+
 gg::ResourceManager::ResourceManager() :
-	m_default_res_pool(new ResourcePool())
+	m_default_res_pool(new ResourcePool()),
+	m_file_serializer(new FileSerializer())
 {
 }
 
@@ -468,12 +469,231 @@ gg::ResourcePoolPtr gg::ResourceManager::getDefaultResourcePool()
 	return m_default_res_pool;
 }
 
+gg::FileSerializerPtr gg::ResourceManager::getFileSerializer()
+{
+	return m_file_serializer;
+}
+
 gg::ResourceCreatorPtr gg::ResourceManager::createResource(const std::string& res_path, bool append_mode) const
 {
 	return ResourceCreator::create(res_path, append_mode);
 }
 
-gg::ResourceCreatorPtr gg::ResourceManager::createResource(const std::wstring& res_path, bool append_mode) const
+
+
+gg::Directory::Directory(ResourcePtr res, std::string& name) :
+	m_name(name), m_res(res)
 {
-	return ResourceCreator::create(res_path, append_mode);
+	m_res->loadDirectoryData(m_name.substr(m_name.find('/') + 1), &m_files);
+}
+
+const std::string& gg::Directory::getName() const
+{
+	return m_name;
+}
+
+gg::IDirectory::Iterator gg::Directory::begin() const
+{
+	return m_files.begin();
+}
+
+gg::IDirectory::Iterator gg::Directory::end() const
+{
+	return m_files.end();
+}
+
+
+
+gg::File::File(ResourcePtr res, const std::string& name) :
+	Archive(IArchive::Mode::DESERIALIZE),
+	m_name(name),
+	m_res(res)
+{
+}
+
+gg::File::~File()
+{
+}
+
+const std::string& gg::File::getName() const
+{
+	return m_name;
+}
+
+const char* gg::File::getData() const
+{
+	if (!m_data)
+		m_res->loadFileData(m_name.substr(m_name.find('/') + 1), &m_data);
+
+	return m_data->data();
+}
+
+size_t gg::File::getSize() const
+{
+	if (!m_data)
+		m_res->loadFileData(m_name.substr(m_name.find('/') + 1), &m_data);
+
+	return m_data->size();
+}
+
+void gg::File::unload()
+{
+	m_data.reset();
+}
+
+size_t gg::File::write(const char*, size_t)
+{
+	if (getMode() != Mode::SERIALIZE)
+		throw SerializationError();
+
+	return 0;
+}
+
+size_t gg::File::read(char* buf, size_t len)
+{
+	if (getMode() != Mode::DESERIALIZE)
+		throw SerializationError();
+
+	size_t size = getSize();
+	if (m_data_pos + len > size)
+		len = size - m_data_pos;
+
+	m_data_pos += len;
+	std::memcpy(buf, getData(), len);
+	return len;
+}
+
+
+
+gg::FilePtr gg::SerializableFile::create(const std::string& file_name, IFileSerializer::OpenMode mode)
+{
+	std::shared_ptr<SerializableFile> ptr(new SerializableFile(file_name, mode));
+	if (ptr->init())
+		return ptr;
+	else
+		return {};
+}
+
+gg::FilePtr gg::SerializableFile::create(const std::wstring& file_name, IFileSerializer::OpenMode mode)
+{
+	std::shared_ptr<SerializableFile> ptr(new SerializableFile(file_name, mode));
+	if (ptr->init())
+		return ptr;
+	else
+		return{};
+}
+
+gg::SerializableFile::SerializableFile(const std::string& file_name, IFileSerializer::OpenMode mode) :
+	Archive((mode == IFileSerializer::OpenMode::READ) ? IArchive::Mode::DESERIALIZE : IArchive::Mode::SERIALIZE),
+	m_name(file_name),
+	m_size(0)
+{
+	switch (mode)
+	{
+	case IFileSerializer::OpenMode::READ:
+		m_file.open(file_name, std::ios::binary | std::ios::in);
+		break;
+
+	case IFileSerializer::OpenMode::APPEND:
+		m_file.open(file_name, std::ios::binary | std::ios::out | std::ios::app);
+		break;
+
+	case IFileSerializer::OpenMode::REWRITE:
+		m_file.open(file_name, std::ios::binary | std::ios::out | std::ios::trunc);
+		break;
+
+	default:
+		break;
+	}
+}
+
+gg::SerializableFile::SerializableFile(const std::wstring& file_name, IFileSerializer::OpenMode mode) :
+	Archive((mode == IFileSerializer::OpenMode::READ) ? IArchive::Mode::DESERIALIZE : IArchive::Mode::SERIALIZE),
+	m_name(convert.to_bytes(file_name)),
+	m_size(0)
+{
+	switch (mode)
+	{
+	case IFileSerializer::OpenMode::READ:
+		m_file.open(file_name, std::ios::binary | std::ios::in);
+		break;
+
+	case IFileSerializer::OpenMode::APPEND:
+		m_file.open(file_name, std::ios::binary | std::ios::out | std::ios::app);
+		break;
+
+	case IFileSerializer::OpenMode::REWRITE:
+		m_file.open(file_name, std::ios::binary | std::ios::out | std::ios::trunc);
+		break;
+
+	default:
+		break;
+	}
+}
+
+gg::SerializableFile::~SerializableFile()
+{
+	if (m_file.is_open())
+		m_file.close();
+}
+
+bool gg::SerializableFile::init()
+{
+	if (m_file.is_open())
+	{
+		m_size = static_cast<size_t>(m_file.end - m_file.beg);
+		return m_file.good();
+	}
+	else
+	{
+		return false;
+	}
+}
+
+const std::string& gg::SerializableFile::getName() const
+{
+	return m_name;
+}
+
+const char* gg::SerializableFile::getData() const
+{
+	if (m_data.size() < m_size)
+	{
+		std::streampos curr_pos = m_file.tellg();
+		m_file.seekg(m_file.beg);
+		m_data.resize(m_size);
+		m_file.read(&m_data[0], m_size);
+		m_file.seekg(curr_pos);
+	}
+
+	return m_data.data();
+}
+
+size_t gg::SerializableFile::getSize() const
+{
+	return m_size;
+}
+
+void gg::SerializableFile::unload()
+{
+	m_data.clear();
+	m_data.shrink_to_fit();
+}
+
+size_t gg::SerializableFile::write(const char* buf, size_t len)
+{
+	if (getMode() != Mode::SERIALIZE)
+		throw SerializationError();
+
+	m_file.write(buf, len);
+	return len;
+}
+
+size_t gg::SerializableFile::read(char* buf, size_t len)
+{
+	if (getMode() != Mode::DESERIALIZE)
+		throw SerializationError();
+
+	m_file.read(buf, len);
+	return static_cast<size_t>(m_file.gcount());
 }

@@ -29,6 +29,8 @@
  *
  * Important:
  * - Do NOT use backslash '\' characters in a file path. Always use slash '/' instead.
+ * - Memory used by the file content gets released if no instances of the same file exist
+ *   or they all released the file content (by calling 'file->unload()').
  */
 
 #pragma once
@@ -36,6 +38,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "gg/serializable.hpp"
 
 #if defined GGRESOURCE_BUILD
 #	define GG_API __declspec(dllexport)
@@ -47,11 +50,13 @@ namespace gg
 {
 	class IResourcePool;
 	class IResourceCreator;
+	class IFileSerializer;
 	class IDirectory;
 	class IFile;
 
 	typedef std::shared_ptr<IResourcePool> ResourcePoolPtr;
 	typedef std::shared_ptr<IResourceCreator> ResourceCreatorPtr;
+	typedef std::shared_ptr<IFileSerializer> FileSerializerPtr;
 	typedef std::shared_ptr<IDirectory> DirectoryPtr;
 	typedef std::shared_ptr<IFile> FilePtr;
 
@@ -61,6 +66,7 @@ namespace gg
 		virtual ~IResourceManager() = default;
 		virtual ResourcePoolPtr createResourcePool() const = 0;
 		virtual ResourcePoolPtr getDefaultResourcePool() = 0;
+		virtual FileSerializerPtr getFileSerializer() = 0;
 		virtual ResourceCreatorPtr createResource(const std::string& res_path, bool append_mode = false) const = 0;
 	};
 
@@ -84,6 +90,21 @@ namespace gg
 		virtual bool addFile(const std::wstring& file_path, const std::string& res_file_name) = 0;
 		virtual bool addDirectory(const std::string& dir_path) = 0;
 		virtual bool addDirectory(const std::wstring& dir_path) = 0;
+	};
+
+	class IFileSerializer
+	{
+	public:
+		enum OpenMode
+		{
+			READ,
+			APPEND,
+			REWRITE
+		};
+
+		virtual ~IFileSerializer() = default;
+		virtual FilePtr openFile(const std::string& file_name, OpenMode) const = 0;
+		virtual FilePtr openFile(const std::wstring& file_name, OpenMode) const = 0;
 	};
 
 	class IDirectory
@@ -110,15 +131,23 @@ namespace gg
 		virtual Iterator end() const = 0;
 	};
 
-	class IFile
+	class IFile : public virtual IArchive
 	{
 	public:
 		virtual ~IFile() = default;
 		virtual const std::string& getName() const = 0;
 		virtual const char* getData() const = 0;
 		virtual size_t getSize() const = 0;
-		virtual void unload() = 0; // can cause crash if other thread is reading file data!
+		virtual void unload() = 0; // releases memory used by the file content/data
 	};
+
+	template<class T>
+	IFile& operator& (FilePtr f, T& t)
+	{
+		IFile& file = *f;
+		file & t;
+		return file;
+	}
 
 	class FileStream : public std::istream, public std::streambuf
 	{

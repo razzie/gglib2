@@ -926,17 +926,20 @@ gg::FileArchive::~FileArchive()
 
 size_t gg::FileArchive::write(const char* ptr, size_t len)
 {
+	if (getMode() != Mode::SERIALIZE)
+		throw SerializationError();
+
 	m_file.write(ptr, len);
 	return len;
 }
 
 size_t gg::FileArchive::read(char* ptr, size_t len)
 {
-	//return static_cast<size_t>(m_file.readsome(ptr, len));
-	auto start_pos = m_file.tellg();
+	if (getMode() != Mode::DESERIALIZE)
+		throw SerializationError();
+
 	m_file.read(ptr, len);
-	auto end_pos = m_file.tellg();
-	return static_cast<size_t>(end_pos - start_pos);
+	return static_cast<size_t>(m_file.gcount());
 }
 
 gg::FileArchive::operator bool() const

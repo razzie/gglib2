@@ -7,16 +7,21 @@
  */
 
 #pragma once
+#pragma warning (disable : 4250)
 
+#include <cstring>
 #include <fstream>
 #include <map>
 #include <mutex>
+#include "archive_impl.hpp"
 #include "gg/resource.hpp"
 
 namespace gg
 {
 	class Resource;
 	typedef std::shared_ptr<Resource> ResourcePtr;
+
+	typedef std::shared_ptr<std::vector<char>> FileContentPtr;
 
 	class Resource
 	{
@@ -28,7 +33,7 @@ namespace gg
 		virtual DirectoryPtr getDirectory(const std::string& dir_name) const;
 		virtual FilePtr getFile(const std::string& file_name) const;
 		virtual bool loadDirectoryData(const std::string& dir_name, std::vector<IDirectory::FileOrDirectory>*);
-		virtual bool loadFileData(const std::string& file_name, const char**, size_t*);
+		virtual bool loadFileData(const std::string& file_name, FileContentPtr*);
 
 	private:
 		Resource(const std::string& res_path);
@@ -41,7 +46,7 @@ namespace gg
 			size_t original_size = 0;
 			size_t compressed_size = 0;
 			mutable std::mutex ptr_mutex;
-			mutable std::weak_ptr<IFile> ptr;
+			mutable std::weak_ptr<std::vector<char>> ptr;
 		};
 
 		std::weak_ptr<Resource> m_self_ptr;
@@ -69,7 +74,6 @@ namespace gg
 	{
 	public:
 		static ResourceCreatorPtr create(const std::string& res_path, bool append_mode = false);
-		static ResourceCreatorPtr create(const std::wstring& res_path, bool append_mode = false);
 
 		virtual ~ResourceCreator();
 		virtual bool addFile(const std::string& file_path, const std::string& res_file_name);
@@ -79,12 +83,20 @@ namespace gg
 
 	private:
 		ResourceCreator(const std::string& res_path, bool append_mode);
-		ResourceCreator(const std::wstring& res_path, bool append_mode);
 		virtual bool init();
 		bool collectFiles(std::wstring dir_name, std::vector<std::wstring>& files);
 
 		mutable std::mutex m_mutex;
 		std::ofstream m_file;
+	};
+
+	class FileSerializer : public IFileSerializer
+	{
+	public:
+		FileSerializer();
+		virtual ~FileSerializer();
+		virtual FilePtr openFile(const std::string& file_name, OpenMode) const;
+		virtual FilePtr openFile(const std::wstring& file_name, OpenMode) const;
 	};
 
 	class ResourceManager : public IResourceManager
@@ -94,37 +106,22 @@ namespace gg
 		virtual ~ResourceManager();
 		virtual ResourcePoolPtr createResourcePool() const;
 		virtual ResourcePoolPtr getDefaultResourcePool();
+		virtual FileSerializerPtr getFileSerializer();
 		virtual ResourceCreatorPtr createResource(const std::string& res_path, bool append_mode = false) const;
-		virtual ResourceCreatorPtr createResource(const std::wstring& res_path, bool append_mode = false) const;
 
 	private:
 		mutable std::mutex m_mutex;
 		ResourcePoolPtr m_default_res_pool;
+		FileSerializerPtr m_file_serializer;
 	};
 
 	class Directory : public IDirectory
 	{
 	public:
-		Directory(ResourcePtr res, std::string& name) :
-			m_name(name), m_res(res)
-		{
-			m_res->loadDirectoryData(m_name.substr(m_name.find('/') + 1), &m_files);
-		}
-
-		virtual const std::string& getName() const
-		{
-			return m_name;
-		}
-
-		virtual Iterator begin() const
-		{
-			return m_files.begin();
-		}
-
-		virtual Iterator end() const
-		{
-			return m_files.end();
-		}
+		Directory(ResourcePtr res, std::string& name);
+		virtual const std::string& getName() const;
+		virtual Iterator begin() const;
+		virtual Iterator end() const;
 
 	private:
 		std::string m_name;
@@ -132,67 +129,47 @@ namespace gg
 		ResourcePtr m_res;
 	};
 
-	class File : public IFile
+	class File : public IFile, public Archive
 	{
 	public:
-		File(ResourcePtr res, const std::string& name) :
-			m_name(name), m_data(nullptr), m_size(0), m_res(res)
-		{
-		}
-
-		virtual ~File()
-		{
-			unload();
-		}
-
-		virtual const std::string& getName() const
-		{
-			return m_name;
-		}
-
-		virtual const char* getData() const
-		{
-			if (m_data == nullptr)
-			{
-				std::lock_guard<decltype(m_mutex)> guard(m_mutex);
-
-				if (m_data == nullptr)
-					m_res->loadFileData(m_name.substr(m_name.find('/') + 1), &m_data, &m_size);
-			}
-
-			return m_data;
-		}
-
-		virtual size_t getSize() const
-		{
-			if (m_data == nullptr)
-			{
-				std::lock_guard<decltype(m_mutex)> guard(m_mutex);
-
-				if (m_data == nullptr)
-					m_res->loadFileData(m_name.substr(m_name.find('/') + 1), &m_data, &m_size);
-			}
-
-			return m_size;
-		}
-
-		virtual void unload()
-		{
-			std::lock_guard<decltype(m_mutex)> guard(m_mutex);
-
-			if (m_data != nullptr)
-			{
-				delete[] m_data;
-				m_data = nullptr;
-				m_size = 0;
-			}
-		}
+		File(ResourcePtr res, const std::string& name);
+		virtual ~File();
+		virtual const std::string& getName() const;
+		virtual const char* getData() const;
+		virtual size_t getSize() const;
+		virtual void unload();
+		virtual size_t write(const char* buf, size_t len);
+		virtual size_t read(char* buf, size_t len);
 
 	private:
-		mutable std::mutex m_mutex;
 		std::string m_name;
-		mutable const char* m_data;
-		mutable size_t m_size;
 		ResourcePtr m_res;
+		mutable FileContentPtr m_data;
+		size_t m_data_pos;
+	};
+
+	class SerializableFile : public IFile, public Archive
+	{
+	public:
+		static FilePtr create(const std::string& file_name, IFileSerializer::OpenMode);
+		static FilePtr create(const std::wstring& file_name, IFileSerializer::OpenMode);
+
+		virtual ~SerializableFile();
+		virtual const std::string& getName() const;
+		virtual const char* getData() const;
+		virtual size_t getSize() const;
+		virtual void unload();
+		virtual size_t write(const char* buf, size_t len);
+		virtual size_t read(char* buf, size_t len);
+
+	private:
+		SerializableFile(const std::string& file_name, IFileSerializer::OpenMode);
+		SerializableFile(const std::wstring& file_name, IFileSerializer::OpenMode);
+		bool init();
+
+		std::string m_name;
+		mutable std::fstream m_file;
+		size_t m_size;
+		mutable std::vector<char> m_data;
 	};
 };

@@ -153,7 +153,7 @@ int main()
 	{
 		auto table = db->getTable("fruit");
 		auto row = table->getNextRow(0);
-		std::cout << row->cell("apple")->getString() << std::endl;
+		gg::log << row->cell("apple")->getString() << std::endl;
 	}
 
 
@@ -166,6 +166,21 @@ int main()
 		std::ofstream pic("test/results/coffee_is_hot.jpg", std::ios::out | std::ios::binary);
 		pic.write(file->getData(), file->getSize());
 		pic.close();
+	}
+
+	file = gg::res.getFileSerializer()->openFile("test/results/serialized.dat", gg::IFileSerializer::OpenMode::REWRITE);
+	if (file)
+	{
+		int a = 1;
+		file & a;
+
+		file = gg::res.getFileSerializer()->openFile("test/results/serialized.dat", gg::IFileSerializer::OpenMode::READ);
+		if (file)
+		{
+			int b;
+			file & b;
+			gg::log << b << std::endl;
+		}
 	}
 
 
