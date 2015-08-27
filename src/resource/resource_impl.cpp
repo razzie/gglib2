@@ -682,16 +682,17 @@ void gg::SerializableFile::unload()
 
 size_t gg::SerializableFile::write(const char* buf, size_t len)
 {
-	if (getMode() != Mode::SERIALIZE)
+	if (getMode() != Mode::SERIALIZE || !m_file.is_open())
 		throw SerializationError();
 
 	m_file.write(buf, len);
+	m_size += len;
 	return len;
 }
 
 size_t gg::SerializableFile::read(char* buf, size_t len)
 {
-	if (getMode() != Mode::DESERIALIZE)
+	if (getMode() != Mode::DESERIALIZE || !m_file.is_open())
 		throw SerializationError();
 
 	m_file.read(buf, len);

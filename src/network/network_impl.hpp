@@ -16,7 +16,7 @@
 
 namespace gg
 {
-	class Packet : public IPacket, public Archive
+	class Packet : public Archive, public IPacket
 	{
 	public:
 		Packet(Mode mode, Type type);

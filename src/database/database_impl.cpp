@@ -935,7 +935,7 @@ size_t gg::FileArchive::write(const char* ptr, size_t len)
 
 size_t gg::FileArchive::read(char* ptr, size_t len)
 {
-	if (getMode() != Mode::DESERIALIZE)
+	if (getMode() != Mode::DESERIALIZE || !m_file.is_open())
 		throw SerializationError();
 
 	m_file.read(ptr, len);

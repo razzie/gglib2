@@ -129,7 +129,7 @@ namespace gg
 		ResourcePtr m_res;
 	};
 
-	class File : public IFile, public Archive
+	class File : public Archive, public IFile
 	{
 	public:
 		File(ResourcePtr res, const std::string& name);
@@ -148,7 +148,7 @@ namespace gg
 		size_t m_data_pos;
 	};
 
-	class SerializableFile : public IFile, public Archive
+	class SerializableFile : public Archive, public IFile
 	{
 	public:
 		static FilePtr create(const std::string& file_name, IFileSerializer::OpenMode);

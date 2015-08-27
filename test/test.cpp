@@ -171,8 +171,9 @@ int main()
 	file = gg::res.getFileSerializer()->openFile("test/results/serialized.dat", gg::IFileSerializer::OpenMode::REWRITE);
 	if (file)
 	{
-		int a = 1;
-		file & a;
+		int a = 1, b = 2, c = 3;
+		gg::IFile& f = *file;
+		f & a & b & c;
 
 		file = gg::res.getFileSerializer()->openFile("test/results/serialized.dat", gg::IFileSerializer::OpenMode::READ);
 		if (file)
