@@ -27,6 +27,8 @@
 gg::IDGenerator<> gen;
 
 gg::SerializableEventDefinition<1, int, float> foo_event;
+typedef gg::IEvent::Tag<0, int> foo_param1;
+typedef gg::IEvent::Tag<1, float> foo_param2;
 
 class ConnectionTask : public gg::ITask
 {
@@ -47,7 +49,7 @@ public:
 	{
 		if (event->is(foo_event))
 		{
-			gg::log << "foo_event: " << foo_event.get<0>(event) << ", " << foo_event.get<1>(event) << std::endl;
+			gg::log << "foo_event: " << event->get(foo_param1()) << ", " << event->get(foo_param2()) << std::endl;
 		}
 	}
 

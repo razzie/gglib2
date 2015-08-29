@@ -51,6 +51,14 @@ namespace gg
 	class IEvent : public ISerializable
 	{
 	public:
+		template<unsigned N, class T>
+		class Tag
+		{
+		public:
+			static const unsigned Param = N;
+			typedef T Type;
+		};
+
 		typedef uint16_t Type;
 
 		virtual ~IEvent() = default;
@@ -64,6 +72,12 @@ namespace gg
 		const T& get(unsigned n) const
 		{
 			return getParams().get<T>(n);
+		}
+
+		template<class Tag>
+		const typename Tag::Type& get(Tag tag = {})
+		{
+			return getParams().get<typename Tag::Type>(Tag::Param);
 		}
 	};
 
@@ -92,6 +106,12 @@ namespace gg
 		static const R& get(EventPtr event)
 		{
 			return event->get<R>(N);
+		}
+
+		template<class Tag>
+		static const typename Tag::Type& get(EventPtr event)
+		{
+			return event->get(Tag {});
 		}
 
 	private:
