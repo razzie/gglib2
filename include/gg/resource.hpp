@@ -152,7 +152,7 @@ namespace gg
 	class FileStream : public std::iostream, public std::streambuf
 	{
 	public:
-		// read only or write only, depends on file->getMode()
+		// reading is always supported, writing depends on file->getMode()
 		FileStream(FilePtr file) :
 			std::iostream(this), m_file(file), m_pos(0)
 		{
