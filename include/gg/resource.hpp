@@ -149,16 +149,18 @@ namespace gg
 		return file;
 	}
 
-	class FileStream : public std::istream, public std::streambuf
+	class FileStream : public std::iostream, public std::streambuf
 	{
 	public:
+		// read only or write only, depends on file->getMode()
 		FileStream(FilePtr file) :
-			std::istream(this), m_file(file), m_pos(0)
+			std::iostream(this), m_file(file), m_pos(0)
 		{
 		}
 
-		FileStream(const std::string& file_name) :
-			FileStream(res.getDefaultResourcePool()->openFile(file_name))
+		// read only
+		FileStream(const std::string& file_name, ResourcePoolPtr res_pool = res.getDefaultResourcePool()) :
+			FileStream(res_pool->openFile(file_name))
 		{
 		}
 
@@ -178,7 +180,7 @@ namespace gg
 		}
 
 	protected:
-		// underflow & uflow are inherited from std::streambuf
+		// the following are inherited from std::streambuf
 
 		virtual int underflow() // get character without advancing position
 		{
@@ -192,6 +194,13 @@ namespace gg
 		{
 			int c = underflow();
 			++m_pos;
+			return c;
+		}
+
+		virtual int overflow(int c = std::char_traits<char>::eof()) // append character
+		{
+			char _c = c;
+			m_file->write(&_c, 1);
 			return c;
 		}
 
