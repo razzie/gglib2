@@ -17,55 +17,7 @@ static gg::DatabaseManager s_db;
 gg::IDatabaseManager& gg::db = s_db;
 
 
-template<class T>
-void serialize(gg::IArchive& ar, std::vector<T>& v)
-{
-	uint16_t items;
-
-	if (ar.getMode() == gg::IArchive::Mode::SERIALIZE)
-	{
-		items = static_cast<uint16_t>(v.size());
-		ar & items;
-		for (auto& i : v)
-			ar & i;
-	}
-	else
-	{
-		ar & items;
-		for (uint16_t i = 0; i < items; ++i)
-		{
-			v.emplace_back();
-			ar & v.back();
-		}
-	}
-}
-
-/*template<class Key, class Value>
-void serialize(gg::IArchive& ar, std::map<Key, Value>& m)
-{
-	uint16_t items;
-
-	if (ar.getMode() == gg::IArchive::Mode::SERIALIZE)
-	{
-		items = static_cast<uint16_t>(m.size());
-		ar & items;
-		for (auto& i : m)
-			ar & i.first & i.second;
-	}
-	else
-	{
-		ar & items;
-		for (uint16_t i = 0; i < items; ++i)
-		{
-			Key key;
-			Value value;
-			ar & key & value;
-			m.emplace(key, value);
-		}
-	}
-}*/
-
-void serialize(gg::IArchive& ar, gg::IDatabase::ICell::Type& type)
+static void serialize(gg::IArchive& ar, gg::IDatabase::ICell::Type& type)
 {
 	uint16_t& v = reinterpret_cast<uint16_t&>(type);
 	ar & v;

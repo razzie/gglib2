@@ -180,14 +180,14 @@ namespace gg
 
 	namespace __HasInsertOp
 	{
-		typedef char yes[2];
-		typedef char no;
+		typedef char                      yes;
+		typedef struct { char array[2]; } no;
 
 		template<class T>
 		no operator<<(const std::ostream& s, const T&);
 
-		yes& test(std::ostream&);
-		no test(no);
+		yes test(std::ostream&);
+		no  test(no);
 
 		template<class T>
 		struct Check
@@ -244,14 +244,14 @@ namespace gg
 
 	namespace __HasExtractOp
 	{
-		typedef char no;
-		typedef char yes[2];
+		typedef char                      yes;
+		typedef struct { char array[2]; } no;
 
 		template<class T>
 		no operator>>(const std::istream&, T&);
 
-		yes& test(std::istream&);
-		no test(no);
+		yes test(std::istream&);
+		no  test(no);
 
 		template<class T>
 		struct Check
