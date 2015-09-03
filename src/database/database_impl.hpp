@@ -73,6 +73,7 @@ namespace gg
 		class Row : public IRow
 		{
 		public:
+			Row();
 			Row(Table&, Key);
 			Row(Row&&);
 			virtual ~Row() = default;
@@ -85,6 +86,7 @@ namespace gg
 			virtual void remove();
 			virtual void serialize(IArchive&);
 
+			void setTable(Table&);
 			RowPtr createView(bool write);
 
 		private:
@@ -126,7 +128,7 @@ namespace gg
 		class Table : public ITable
 		{
 		public:
-			Table(Database&);
+			Table();
 			Table(Database&, const std::string& name, const std::vector<std::string>& columns);
 			Table(Table&&);
 			virtual ~Table() = default;
@@ -145,6 +147,7 @@ namespace gg
 			friend class Row;
 			friend class RowView;
 			friend class TableView;
+			friend class Database;
 
 			mutable std::recursive_mutex m_mutex;
 			Database* m_database;

@@ -77,6 +77,14 @@ namespace gg
 			}
 			return *this;
 		}
+
+		template<class T>
+		std::enable_if_t<IsStdPair<T>::value, IArchive&>
+			operator& (T& pair)
+		{
+			using first_type = std::remove_const_t<typename T::first_type>;
+			return (*this) & const_cast<first_type&>(pair.first) & pair.second;
+		}
 	};
 
 	class ISerializationError : public std::exception
@@ -92,11 +100,4 @@ namespace gg
 		virtual ~ISerializable() = default;
 		virtual void serialize(IArchive&) = 0;
 	};
-
-	template<class T>
-	std::enable_if_t<IsStdPair<T>::value>
-		serialize(IArchive& ar, T& pair)
-	{
-		ar & pair.first & pair.second;
-	}
 };

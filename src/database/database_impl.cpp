@@ -246,14 +246,23 @@ void gg::Database::Cell::serialize(IArchive& ar)
 
 
 
+gg::Database::Row::Row() :
+	m_table(nullptr),
+	m_key(0),
+	m_writer_views(0),
+	m_reader_views(0),
+	m_force_remove(false)
+{
+}
+
 gg::Database::Row::Row(Table& table, Key key) :
-	m_table(&table),
+	m_table(nullptr),
 	m_key(key),
 	m_writer_views(0),
 	m_reader_views(0),
 	m_force_remove(false)
 {
-	m_cells.resize(m_table->m_columns.size());
+	setTable(table);
 }
 
 gg::Database::Row::Row(Row&& row) :
@@ -325,6 +334,12 @@ void gg::Database::Row::serialize(IArchive& ar)
 	ar & m_key;
 	for (Cell& cell : m_cells)
 		cell.serialize(ar);
+}
+
+void gg::Database::Row::setTable(Table& table)
+{
+	m_table = &table;
+	m_cells.resize(m_table->m_columns.size());
 }
 
 std::shared_ptr<gg::IDatabase::IRow> gg::Database::Row::createView(bool write_access)
@@ -451,8 +466,8 @@ void gg::Database::RowView::serialize(IArchive& ar)
 
 
 
-gg::Database::Table::Table(Database& database) :
-	m_database(&database),
+gg::Database::Table::Table() :
+	m_database(nullptr),
 	m_last_row_key(0),
 	m_writer_views(0),
 	m_reader_views(0),
@@ -567,26 +582,13 @@ std::shared_ptr<gg::IDatabase::ITable> gg::Database::Table::createView(bool writ
 
 void gg::Database::Table::serialize(IArchive& ar)
 {
-	ar & m_name & m_columns;
+	ar & m_name & m_columns & m_rows;
 
-	uint16_t row_count;
 	if (ar.getMode() == IArchive::Mode::DESERIALIZE)
 	{
-		ar & row_count;
-		for (uint16_t i = 0; i < row_count; ++i)
-		{
-			Row row(*this, 0);
-			row.serialize(ar);
-			m_rows.emplace(row.getKey(), std::move(row));
-		}
-	}
-	else
-	{
-		row_count = static_cast<uint16_t>(m_rows.size());
-		ar & row_count;
 		for (auto& it : m_rows)
 		{
-			it.second.serialize(ar);
+			it.second.setTable(*this);
 		}
 	}
 }
@@ -809,31 +811,13 @@ void gg::Database::removeTable(const std::string& table)
 
 void gg::Database::serialize(IArchive& ar)
 {
-	uint16_t table_count;
+	ar & m_tables;
+
 	if (ar.getMode() == IArchive::Mode::DESERIALIZE)
 	{
-		try
-		{
-			ar & table_count;
-			for (uint16_t i = 0; i < table_count; ++i)
-			{
-				Table table(*this);
-				table.serialize(ar);
-				m_tables.emplace(table.getName(), std::move(table));
-			}
-		}
-		catch (ISerializationError&)
-		{
-			m_tables.clear();
-		}
-	}
-	else
-	{
-		table_count = static_cast<uint16_t>(m_tables.size());
-		ar & table_count;
 		for (auto& it : m_tables)
 		{
-			it.second.serialize(ar);
+			it.second.m_database = this;
 		}
 	}
 }
