@@ -112,6 +112,7 @@
     <ClInclude Include="include\gg\streamutil.hpp" />
     <ClInclude Include="include\gg\thread.hpp" />
     <ClInclude Include="include\gg\timer.hpp" />
+    <ClInclude Include="include\gg\typetraits.hpp" />
     <ClInclude Include="src\archive_impl.hpp" />
     <ClInclude Include="src\database\database_impl.hpp" />
     <ClInclude Include="src\ieee754.hpp" />

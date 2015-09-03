@@ -105,6 +105,7 @@
     <ClInclude Include="include\gg\idgenerator.hpp" />
     <ClInclude Include="include\gg\thread.hpp" />
     <ClInclude Include="include\gg\storage.hpp" />
+    <ClInclude Include="include\gg\typetraits.hpp" />
     <ClInclude Include="src\thread\thread_impl.hpp" />
   </ItemGroup>
   <ItemGroup>

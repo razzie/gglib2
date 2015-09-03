@@ -12,6 +12,7 @@
 #include <locale>
 #include <stdexcept>
 #include <string>
+#include "gg/typetraits.hpp"
 
 namespace gg
 {
@@ -316,4 +317,121 @@ namespace gg
 	{
 		return __HasExtractOp::ExtractHelper<T>(t);
 	}
+
+	//template<class T>
+	//class StreamInsert
+	//{
+	//	typedef std::remove_reference_t<T>& TReference;
+
+	//	template<class U, bool>
+	//	struct Insert
+	//	{
+	//		static std::ostream& apply(std::ostream& s, U value)
+	//		{
+	//			s << value;
+	//			return s;
+	//		}
+	//	};
+
+	//	template<class U>
+	//	struct Insert<U, false>
+	//	{
+	//		static std::ostream& apply(std::ostream& s, U value)
+	//		{
+	//			s << typeid(T).name();
+	//			return s;
+	//		}
+	//	};
+
+	//public:
+	//	static std::ostream& apply(std::ostream& s, T value)
+	//	{
+	//		return Insert<T, HasStreamInserter<T>::value>::apply(s, value);
+	//	}
+
+	//	class Wrapper
+	//	{
+	//	public:
+	//		Wrapper(TReference value) : m_value(value)
+	//		{
+	//		}
+
+	//		friend std::ostream& operator<< (std::ostream& s, const Wrapper& w)
+	//		{
+	//			return apply(s, w.m_value);
+	//		}
+
+	//	private:
+	//		TReference m_value;
+	//	};
+	//};
+
+	//template<class T>
+	//typename StreamInsert<T>::Wrapper insert(const T& value)
+	//{
+	//	return typename StreamInsert<T>::Wrapper(value);
+	//}
+
+
+	//template<class T>
+	//class StreamExtract
+	//{
+	//	template<class U, bool>
+	//	struct Extract
+	//	{
+	//		static std::istream& apply(std::istream& s, U& value)
+	//		{
+	//			s >> value;
+	//			return s;
+	//		}
+	//	};
+
+	//	// special case for std::string
+	//	template<>
+	//	struct Extract<std::string, true>
+	//	{
+	//		static std::istream& apply(std::istream& s, std::string& value)
+	//		{
+	//			std::getline(s, value);
+	//			return s;
+	//		}
+	//	};
+
+	//	template<class U>
+	//	struct Extract<U, false>
+	//	{
+	//		static std::istream& apply(std::istream& s, U& value)
+	//		{
+	//			return s;
+	//		}
+	//	};
+
+	//public:
+	//	static std::istream& apply(std::istream& s, T& value)
+	//	{
+	//		return Insert<T, HasStreamExtractor<T>::value>::apply(s, value);
+	//	}
+
+	//	class Wrapper
+	//	{
+	//	public:
+	//		Wrapper(T& value) : m_value(value)
+	//		{
+	//		}
+
+	//		friend std::istream& operator>> (std::istream& s, Wrapper& w)
+	//		{
+	//			return apply(s, w.m_value);
+	//		}
+
+	//	private:
+	//		T& m_value;
+	//	};
+	//};
+
+	//template<class T>
+	//typename StreamExtract<T>::Wrapper extract(T& value)
+	//{
+	//	return typename StreamExtract<T>::Wrapper(value);
+	//}
 };

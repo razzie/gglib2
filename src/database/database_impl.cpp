@@ -17,7 +17,7 @@ static gg::DatabaseManager s_db;
 gg::IDatabaseManager& gg::db = s_db;
 
 
-static void serialize(gg::IArchive& ar, gg::IDatabase::ICell::Type& type)
+void serialize(gg::IArchive& ar, gg::IDatabase::ICell::Type& type)
 {
 	uint16_t& v = reinterpret_cast<uint16_t&>(type);
 	ar & v;
