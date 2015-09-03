@@ -11,49 +11,11 @@
 #include <functional>
 #include <type_traits>
 #include <stdexcept>
+#include "gg/typetraits.hpp"
 #include "gg/any.hpp"
 
 namespace gg
 {
-	template<class F>
-	class LambdaSignature
-	{
-		template<class T>
-		struct removeClass { };
-
-		template<class C, class R, class... Params>
-		struct removeClass<R(C::*)(Params...)>
-		{
-			using type = typename std::remove_pointer<R(*)(Params...)>::type;
-		};
-
-		template<class C, class R, class... Params>
-		struct removeClass<R(C::*)(Params...) const>
-		{
-			using type = typename std::remove_pointer<R(*)(Params...)>::type;
-		};
-
-		template<class T>
-		struct getSignatureImpl
-		{
-			using type = typename removeClass<
-				decltype(&std::remove_reference<T>::type::operator())>::type;
-		};
-
-		template<class R, class... Params>
-		struct getSignatureImpl<R(*)(Params...)>
-		{
-			using type = typename std::remove_pointer<R(*)(Params...)>::type;
-		};
-
-	public:
-		using type = typename getSignatureImpl<F>::type;
-	};
-
-	template<class F>
-	using getLambdaSignature = typename LambdaSignature<F>::type;
-
-
 	class Function
 	{
 	public:
@@ -122,22 +84,10 @@ namespace gg
 			return func();
 		}
 
-		template<class R, class Param>
-		static R call(std::function<R(Param)> func, const gg::Any::Array& ar, unsigned skipParams = 0)
-		{
-			if (ar.size() > skipParams + 1)
-				throw std::runtime_error("too many parameters");
-
-			Param param;
-			ar[skipParams].cast<Param>(param);
-
-			return func(param);
-		}
-
 		template<class R, class Param0, class... Params>
 		static R call(std::function<R(Param0, Params...)> func, const gg::Any::Array& ar, unsigned skipParams = 0)
 		{
-			if (ar.size() <= skipParams + 1)
+			if (ar.size() <= skipParams)
 				throw std::runtime_error("not enough parameters");
 
 			Param0 param0;
@@ -166,7 +116,7 @@ namespace gg
 		template<class F>
 		static std::function<Any(Any::Array)> convert(F func)
 		{
-			return convert(std::function<getLambdaSignature<F>>(func));
+			return convert(std::function<GetLambdaSignature<F>>(func));
 		}
 
 

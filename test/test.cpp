@@ -20,6 +20,7 @@
 #include "gg/streamutil.hpp"
 #include "gg/thread.hpp"
 #include "gg/timer.hpp"
+#include "gg/typetraits.hpp"
 #include "gg/optional.hpp"
 #include "gg/version.hpp"
 #include <fstream>
@@ -133,6 +134,16 @@ private:
 
 int main()
 {
+	gg::console.addFunction("print", [](gg::Any::Array ar) { gg::log << ar << std::endl; });
+	gg::console.addFunction("add", [](int a, int b)->int { return a + b; });
+
+	gg::console.exec("print((\"asd\", 1, 2.34))");
+
+	gg::Any result;
+	gg::console.exec("add(1, add(2, 3))", &result);
+	gg::log << result << std::endl;
+
+
 	if (auto db = gg::db.open("test/database.db"))
 	{
 		auto table = db->getTable("fruit");

@@ -37,7 +37,7 @@ namespace gg
 		bool addFunction(const std::string& fname, F func)
 		{
 			Any::Array va;
-			SignatureParams<getLambdaSignature<F>>::setDefaults(va);
+			SignatureParams<GetLambdaSignature<F>>::setDefaults(va);
 			return addFunction(fname, func, std::move(va));
 		}
 

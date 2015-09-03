@@ -179,259 +179,118 @@ namespace gg
 	}
 
 
-	namespace __HasInsertOp
+	template<class T>
+	class StreamInsert
 	{
-		typedef char                      yes;
-		typedef struct { char array[2]; } no;
-
-		template<class T>
-		no operator<<(const std::ostream& s, const T&);
-
-		yes test(std::ostream&);
-		no  test(no);
-
-		template<class T>
-		struct Check
+		template<class U, bool>
+		struct Insert
 		{
-			static std::ostream &s;
-			static const T& t;
-			static bool const value = (sizeof(test(s << t)) == sizeof(yes));
+			static std::ostream& apply(std::ostream& s, const U& value)
+			{
+				s << value;
+				return s;
+			}
 		};
 
-		template<class T>
-		class InsertHelper
+		template<class U>
+		struct Insert<U, false>
+		{
+			static std::ostream& apply(std::ostream& s, const U& value)
+			{
+				s << typeid(T).name();
+				return s;
+			}
+		};
+
+	public:
+		static std::ostream& apply(std::ostream& s, const T& value)
+		{
+			return Insert<T, HasStreamInserter<T>::value>::apply(s, value);
+		}
+
+		class Wrapper
 		{
 		public:
-			InsertHelper(const T& value) :
-				m_value(value)
+			Wrapper(const T& value) : m_value(value)
 			{
 			}
 
-			friend std::ostream& operator<<(std::ostream& o, const InsertHelper& h)
+			friend std::ostream& operator<< (std::ostream& s, const Wrapper& w)
 			{
-				return Insert<T, __HasInsertOp::Check<T>::value>::apply(o, h.m_value);
+				return apply(s, w.m_value);
 			}
 
 		private:
 			const T& m_value;
-
-			template<class U, bool>
-			struct Insert
-			{
-				static std::ostream& apply(std::ostream& o, const U& value)
-				{
-					o << value;
-					return o;
-				}
-			};
-
-			template<class U>
-			struct Insert<U, false>
-			{
-				static std::ostream& apply(std::ostream& o, const U& value)
-				{
-					o << typeid(T).name();
-					return o;
-				}
-			};
 		};
-	}
+	};
 
 	template<class T>
-	__HasInsertOp::InsertHelper<T> insert(const T& t)
+	typename StreamInsert<T>::Wrapper insert(const T& value)
 	{
-		return __HasInsertOp::InsertHelper<T>(t);
+		return typename StreamInsert<T>::Wrapper(value);
 	}
 
-	namespace __HasExtractOp
+
+	template<class T>
+	class StreamExtract
 	{
-		typedef char                      yes;
-		typedef struct { char array[2]; } no;
-
-		template<class T>
-		no operator>>(const std::istream&, T&);
-
-		yes test(std::istream&);
-		no  test(no);
-
-		template<class T>
-		struct Check
+		template<class U, bool>
+		struct Extract
 		{
-			static std::istream &s;
-			static T& t;
-			static bool const value = (sizeof(test(s >> t)) == sizeof(yes));
+			static std::istream& apply(std::istream& s, U& value)
+			{
+				s >> value;
+				return s;
+			}
 		};
 
-		template<class T>
-		class ExtractHelper
+		// special case for std::string
+		template<>
+		struct Extract<std::string, true>
+		{
+			static std::istream& apply(std::istream& s, std::string& value)
+			{
+				std::getline(s, value);
+				return s;
+			}
+		};
+
+		template<class U>
+		struct Extract<U, false>
+		{
+			static std::istream& apply(std::istream& s, U& value)
+			{
+				return s;
+			}
+		};
+
+	public:
+		static std::istream& apply(std::istream& s, T& value)
+		{
+			return Extract<T, HasStreamExtractor<T>::value>::apply(s, value);
+		}
+
+		class Wrapper
 		{
 		public:
-			ExtractHelper(T& value) :
-				m_value(value)
+			Wrapper(T& value) : m_value(value)
 			{
 			}
 
-			friend std::istream& operator>>(std::istream& o, ExtractHelper& h)
+			friend std::istream& operator>> (std::istream& s, Wrapper& w)
 			{
-				return Extract<T, __HasExtractOp::Check<T>::value>::apply(o, h.m_value);
+				return apply(s, w.m_value);
 			}
 
 		private:
 			T& m_value;
-
-			template<class U, bool>
-			struct Extract
-			{
-				static std::istream& apply(std::istream& i, U& value)
-				{
-					i >> value;
-					return i;
-				}
-			};
-
-			// special case for std::string
-			template<>
-			struct Extract<std::string, true>
-			{
-				static std::istream& apply(std::istream& i, std::string& str)
-				{
-					std::getline(i, str);
-					return i;
-				}
-			};
-
-			template<class U>
-			struct Extract<U, false>
-			{
-				static std::istream& apply(std::istream& i, U& value)
-				{
-					i.setstate(std::ios::failbit);
-					return i;
-				}
-			};
 		};
-	}
+	};
 
 	template<class T>
-	__HasExtractOp::ExtractHelper<T> extract(T& t)
+	typename StreamExtract<T>::Wrapper extract(T& value)
 	{
-		return __HasExtractOp::ExtractHelper<T>(t);
+		return typename StreamExtract<T>::Wrapper(value);
 	}
-
-	//template<class T>
-	//class StreamInsert
-	//{
-	//	typedef std::remove_reference_t<T>& TReference;
-
-	//	template<class U, bool>
-	//	struct Insert
-	//	{
-	//		static std::ostream& apply(std::ostream& s, U value)
-	//		{
-	//			s << value;
-	//			return s;
-	//		}
-	//	};
-
-	//	template<class U>
-	//	struct Insert<U, false>
-	//	{
-	//		static std::ostream& apply(std::ostream& s, U value)
-	//		{
-	//			s << typeid(T).name();
-	//			return s;
-	//		}
-	//	};
-
-	//public:
-	//	static std::ostream& apply(std::ostream& s, T value)
-	//	{
-	//		return Insert<T, HasStreamInserter<T>::value>::apply(s, value);
-	//	}
-
-	//	class Wrapper
-	//	{
-	//	public:
-	//		Wrapper(TReference value) : m_value(value)
-	//		{
-	//		}
-
-	//		friend std::ostream& operator<< (std::ostream& s, const Wrapper& w)
-	//		{
-	//			return apply(s, w.m_value);
-	//		}
-
-	//	private:
-	//		TReference m_value;
-	//	};
-	//};
-
-	//template<class T>
-	//typename StreamInsert<T>::Wrapper insert(const T& value)
-	//{
-	//	return typename StreamInsert<T>::Wrapper(value);
-	//}
-
-
-	//template<class T>
-	//class StreamExtract
-	//{
-	//	template<class U, bool>
-	//	struct Extract
-	//	{
-	//		static std::istream& apply(std::istream& s, U& value)
-	//		{
-	//			s >> value;
-	//			return s;
-	//		}
-	//	};
-
-	//	// special case for std::string
-	//	template<>
-	//	struct Extract<std::string, true>
-	//	{
-	//		static std::istream& apply(std::istream& s, std::string& value)
-	//		{
-	//			std::getline(s, value);
-	//			return s;
-	//		}
-	//	};
-
-	//	template<class U>
-	//	struct Extract<U, false>
-	//	{
-	//		static std::istream& apply(std::istream& s, U& value)
-	//		{
-	//			return s;
-	//		}
-	//	};
-
-	//public:
-	//	static std::istream& apply(std::istream& s, T& value)
-	//	{
-	//		return Insert<T, HasStreamExtractor<T>::value>::apply(s, value);
-	//	}
-
-	//	class Wrapper
-	//	{
-	//	public:
-	//		Wrapper(T& value) : m_value(value)
-	//		{
-	//		}
-
-	//		friend std::istream& operator>> (std::istream& s, Wrapper& w)
-	//		{
-	//			return apply(s, w.m_value);
-	//		}
-
-	//	private:
-	//		T& m_value;
-	//	};
-	//};
-
-	//template<class T>
-	//typename StreamExtract<T>::Wrapper extract(T& value)
-	//{
-	//	return typename StreamExtract<T>::Wrapper(value);
-	//}
 };
