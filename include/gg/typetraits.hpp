@@ -55,22 +55,19 @@ namespace gg
 
 	namespace __fallback
 	{
-		typedef char                      Yes;
-		typedef struct { char array[2]; } No;
-
 		template<class T, class = std::enable_if_t<std::is_same<T, Any>::value>>
-		No operator<< (std::ostream&, const T&);
+		std::false_type operator<< (std::ostream&, const T&);
 
 		template<class T>
-		No operator>> (std::istream&, T&);
+		std::true_type operator>> (std::istream&, T&);
 	}
 
 
 	template<class T>
 	class HasStreamInserter
 	{
-		static constexpr __fallback::Yes test(std::ostream&);
-		static constexpr __fallback::No  test(...);
+		static std::true_type  test(std::ostream&);
+		static std::false_type test(...);
 
 		static std::ostream &s;
 		static std::remove_reference_t<T>& t;
@@ -78,7 +75,7 @@ namespace gg
 		static constexpr bool check()
 		{
 			using namespace __fallback;
-			return (sizeof(test(s << t)) == sizeof(__fallback::Yes));
+			return decltype(test(s << t))::value;
 		}
 
 	public:
@@ -88,8 +85,8 @@ namespace gg
 	template<class T>
 	class HasStreamExtractor
 	{
-		static constexpr __fallback::Yes test(std::istream&);
-		static constexpr __fallback::No  test(...);
+		static std::true_type  test(std::istream&);
+		static std::false_type test(...);
 
 		static std::istream &s;
 		static std::remove_reference_t<T>& t;
@@ -97,7 +94,7 @@ namespace gg
 		static constexpr bool check()
 		{
 			using namespace __fallback;
-			return (sizeof(test(s >> t)) == sizeof(__fallback::Yes));
+			return decltype(test(s >> t))::value;
 		}
 
 	public:
@@ -108,14 +105,17 @@ namespace gg
 	template<class T>
 	class IsContainer
 	{
+		typedef char                      Yes;
+		typedef struct { char array[2]; } No;
+
 		// test C::iterator
 		template<class C>
-		static constexpr __fallback::Yes test_iter(typename C::iterator*);
+		static constexpr Yes test_iter(typename C::iterator*);
 
 		template<class C>
-		static constexpr __fallback::No  test_iter(...);
+		static constexpr No  test_iter(...);
 
-		static const bool has_iterator = (sizeof(test_iter<T>(0)) == sizeof(__fallback::Yes));
+		static const bool has_iterator = (sizeof(test_iter<T>(0)) == sizeof(Yes));
 
 		// test C::begin()
 		template<class C>
@@ -123,12 +123,12 @@ namespace gg
 			std::is_same<decltype(&C::begin), typename C::iterator(C::*)()>;
 
 		template<class C>
-		static constexpr __fallback::Yes(&test_begin(std::enable_if_t<begin_signatire_test<C>::value>*));
+		static constexpr Yes(&test_begin(std::enable_if_t<begin_signatire_test<C>::value>*));
 
 		template<class C>
-		static constexpr __fallback::No(&test_begin(...));
+		static constexpr No(&test_begin(...));
 
-		static const bool has_begin = (sizeof(test_begin<T>(0)) == sizeof(__fallback::Yes));
+		static constexpr bool has_begin = (sizeof(test_begin<T>(0)) == sizeof(Yes));
 
 		// test C::end()
 		template<class C>
@@ -136,15 +136,15 @@ namespace gg
 			std::is_same<decltype(&C::begin), typename C::iterator(C::*)()>;
 
 		template<class C>
-		static constexpr __fallback::Yes(&test_end(std::enable_if_t<end_signatire_test<C>::value>*));
+		static constexpr Yes(&test_end(std::enable_if_t<end_signatire_test<C>::value>*));
 
 		template<class C>
-		static constexpr __fallback::No(&test_end(...));
+		static constexpr No(&test_end(...));
 
-		static const bool has_end = (sizeof(test_end<T>(0)) == sizeof(__fallback::Yes));
+		static constexpr bool has_end = (sizeof(test_end<T>(0)) == sizeof(Yes));
 
 	public:
-		static const bool value = has_iterator && has_begin && has_end;
+		static constexpr bool value = has_iterator && has_begin && has_end;
 	};
 
 
@@ -164,18 +164,17 @@ namespace gg
 	template<class T>
 	class HasSerializer
 	{
-		template<class U>
-		using signature_test =
-			std::is_same<decltype(&serialize), typename void(*)(IArchive&, U&)>;
+		static IArchive& ar;
+		static T& t;
 
-		template<class U>
-		static constexpr __fallback::Yes(&test(std::enable_if_t<signature_test<U>::value>*));
+		template<class U, class R = decltype(::serialize(ar, t))>
+		static std::true_type test(void*);
 
-		template<class U>
-		static constexpr __fallback::No(&test(...));
+		template<class>
+		static std::false_type test(...);
 
 	public:
-		static const bool value = (sizeof(test<T>(0)) == sizeof(__fallback::Yes));
+		static constexpr bool value = decltype(test<T>(nullptr))::value;
 	};
 
 

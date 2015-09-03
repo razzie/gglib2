@@ -47,12 +47,12 @@ namespace gg
 		std::enable_if_t<HasSerializer<T>::value, IArchive&>
 			operator& (T& t)
 		{
-			serialize(*this, t);
+			::serialize(*this, t);
 			return *this;
 		}
 
 		template<class Container>
-		std::enable_if_t<IsContainer<Container>::value, IArchive&>
+		std::enable_if_t<!HasSerializer<Container>::value && IsContainer<Container>::value, IArchive&>
 			operator& (Container& cont)
 		{
 			if (getMode() == Mode::SERIALIZE)
@@ -93,10 +93,10 @@ namespace gg
 		virtual void serialize(IArchive&) = 0;
 	};
 
-	/*template<class T>
+	template<class T>
 	std::enable_if_t<IsStdPair<T>::value>
 		serialize(IArchive& ar, T& pair)
 	{
 		ar & pair.first & pair.second;
-	}*/
+	}
 };
