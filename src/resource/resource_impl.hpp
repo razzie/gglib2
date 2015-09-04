@@ -78,8 +78,10 @@ namespace gg
 		virtual ~ResourceCreator();
 		virtual bool addFile(const std::string& file_path, const std::string& res_file_name);
 		virtual bool addFile(const std::wstring& file_path, const std::string& res_file_name);
+		virtual FilePtr addFile(const std::string& res_file_name);
 		virtual bool addDirectory(const std::string& dir_path);
 		virtual bool addDirectory(const std::wstring& dir_path);
+		bool addFileData(const std::string& res_file_name, const std::vector<char>& data);
 
 	private:
 		ResourceCreator(const std::string& res_path, bool append_mode);
@@ -87,6 +89,7 @@ namespace gg
 		bool collectFiles(std::wstring dir_name, std::vector<std::wstring>& files);
 
 		mutable std::mutex m_mutex;
+		std::weak_ptr<ResourceCreator> m_self_ptr;
 		std::ofstream m_file;
 	};
 
@@ -142,8 +145,8 @@ namespace gg
 		virtual size_t read(char* buf, size_t len);
 
 	private:
-		std::string m_name;
 		ResourcePtr m_res;
+		std::string m_name;
 		mutable FileContentPtr m_data;
 		size_t m_data_pos;
 	};
@@ -171,5 +174,23 @@ namespace gg
 		mutable std::fstream m_file;
 		size_t m_size;
 		mutable std::vector<char> m_data;
+	};
+
+	class MemoryFile : public Archive, public IFile
+	{
+	public:
+		MemoryFile(std::shared_ptr<ResourceCreator> res, const std::string& res_file_name);
+		virtual ~MemoryFile();
+		virtual const std::string& getName() const;
+		virtual const char* getData() const;
+		virtual size_t getSize() const;
+		virtual void unload();
+		virtual size_t write(const char* buf, size_t len);
+		virtual size_t read(char* buf, size_t len);
+
+	private:
+		std::shared_ptr<ResourceCreator> m_res;
+		std::string m_name;
+		std::vector<char> m_data;
 	};
 };

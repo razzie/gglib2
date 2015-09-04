@@ -88,6 +88,7 @@ namespace gg
 		virtual ~IResourceCreator() = default;
 		virtual bool addFile(const std::string& file_path, const std::string& res_file_name) = 0;
 		virtual bool addFile(const std::wstring& file_path, const std::string& res_file_name) = 0;
+		virtual FilePtr addFile(const std::string& res_file_name) = 0; // writeable, saved when file is destructed
 		virtual bool addDirectory(const std::string& dir_path) = 0;
 		virtual bool addDirectory(const std::wstring& dir_path) = 0;
 	};

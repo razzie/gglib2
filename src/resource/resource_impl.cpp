@@ -272,9 +272,14 @@ gg::ResourceCreatorPtr gg::ResourceCreator::create(const std::string& res_path, 
 {
 	std::shared_ptr<ResourceCreator> creator(new ResourceCreator(res_path, append_mode));
 	if (creator->init())
+	{
+		creator->m_self_ptr = creator;
 		return creator;
+	}
 	else
+	{
 		return {};
+	}
 }
 
 gg::ResourceCreator::ResourceCreator(const std::string& res_path, bool append_mode)
@@ -360,45 +365,23 @@ bool gg::ResourceCreator::addFile(const std::wstring& file_path, const std::stri
 
 	// get file size
 	file.seekg(0, std::ios::end);
-	const uint32_t size = static_cast<uint32_t>(file.tellg());
+	const size_t size = static_cast<size_t>(file.tellg());
 	file.seekg(0, std::ios::beg);
 
-	// allocate memory for original and compressed data
-	buffer.resize(size + static_cast<uint32_t>(doboz::Compressor::getMaxCompressedSize(size)));
+	// allocate memory for file data
+	buffer.resize(size);
 
 	// read file data
 	if (!file.read(buffer.data(), size))
 		return false;
 	file.close();
 
-	// compress data
-	uint32_t compressed_size;
-	doboz::Compressor().compress(&buffer[0], size, &buffer[size], buffer.size() - size, compressed_size);
+	return addFileData(res_file_name, buffer);
+}
 
-	// encrypt file name
-	std::vector<unsigned char> name;
-	name.resize(res_file_name.size());
-	const uint16_t name_size = static_cast<uint16_t>(name.size());
-	for (uint16_t i = 0; i < name_size; ++i)
-	{
-		char c = res_file_name[i];
-		if (c == '\\')
-			c = '/';
-
-		name[i] = encode(static_cast<unsigned char>(c));
-	}
-
-	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
-
-	// write data to archive
-	m_file.write(reinterpret_cast<const char*>(&name_size), sizeof(uint16_t)); // 16bit length of file name
-	m_file.write(reinterpret_cast<const char*>(name.data()), name.size()); // file name (not zero terminated)
-	m_file.write(reinterpret_cast<const char*>(&size), sizeof(uint32_t)); // 32bit original size
-	m_file.write(reinterpret_cast<const char*>(&compressed_size), sizeof(uint32_t)); // 32bit compressed size
-	m_file.write(&buffer[size], compressed_size); // actual compressed data
-	m_file.flush();
-
-	return static_cast<bool>(m_file);
+gg::FilePtr gg::ResourceCreator::addFile(const std::string& res_file_name)
+{
+	return FilePtr(new MemoryFile(m_self_ptr.lock(), res_file_name));
 }
 
 bool gg::ResourceCreator::addDirectory(const std::string& dir_path)
@@ -425,6 +408,44 @@ bool gg::ResourceCreator::addDirectory(const std::wstring& dir_path)
 	}
 
 	return true;
+}
+
+bool gg::ResourceCreator::addFileData(const std::string& res_file_name, const std::vector<char>& data)
+{
+	uint32_t orig_size = static_cast<uint32_t>(data.size());
+	uint32_t compressed_size = static_cast<uint32_t>(doboz::Compressor::getMaxCompressedSize(data.size()));
+
+	// buffer for compressed file data
+	std::vector<char> buffer;
+	buffer.resize(compressed_size);
+
+	// compress data
+	doboz::Compressor().compress(&data[0], orig_size, &buffer[0], buffer.size(), compressed_size);
+
+	// encrypt file name
+	std::vector<unsigned char> name;
+	name.resize(res_file_name.size());
+	const uint16_t name_size = static_cast<uint16_t>(name.size());
+	for (uint16_t i = 0; i < name_size; ++i)
+	{
+		char c = res_file_name[i];
+		if (c == '\\')
+			c = '/';
+
+		name[i] = encode(static_cast<unsigned char>(c));
+	}
+
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
+
+	// write data to archive
+	m_file.write(reinterpret_cast<const char*>(&name_size), sizeof(uint16_t)); // 16bit length of file name
+	m_file.write(reinterpret_cast<const char*>(name.data()), name.size()); // file name (not zero terminated)
+	m_file.write(reinterpret_cast<const char*>(&orig_size), sizeof(uint32_t)); // 32bit original size
+	m_file.write(reinterpret_cast<const char*>(&compressed_size), sizeof(uint32_t)); // 32bit compressed size
+	m_file.write(buffer.data(), compressed_size); // actual compressed data
+	m_file.flush();
+
+	return static_cast<bool>(m_file);
 }
 
 
@@ -697,4 +718,49 @@ size_t gg::SerializableFile::read(char* buf, size_t len)
 
 	m_file.read(buf, len);
 	return static_cast<size_t>(m_file.gcount());
+}
+
+
+
+gg::MemoryFile::MemoryFile(std::shared_ptr<ResourceCreator> res, const std::string& res_file_name) :
+	Archive(IArchive::Mode::SERIALIZE),
+	m_res(res),
+	m_name(res_file_name)
+{
+}
+
+gg::MemoryFile::~MemoryFile()
+{
+	m_res->addFileData(m_name, m_data);
+}
+
+const std::string& gg::MemoryFile::getName() const
+{
+	return m_name;
+}
+
+const char* gg::MemoryFile::getData() const
+{
+	return m_data.data();
+}
+
+size_t gg::MemoryFile::getSize() const
+{
+	return m_data.size();
+}
+
+void gg::MemoryFile::unload()
+{
+	m_data.clear();
+}
+
+size_t gg::MemoryFile::write(const char* buf, size_t len)
+{
+	m_data.insert(m_data.end(), buf, buf + len);
+	return len;
+}
+
+size_t gg::MemoryFile::read(char*, size_t)
+{
+	throw SerializationError();
 }
