@@ -106,7 +106,7 @@ bool gg::ConnectionBackend::connect(void*)
 		}
 		else
 		{
-			if (bind(m_socket, ptr->ai_addr, (int)ptr->ai_addrlen) == SOCKET_ERROR)
+			if (::bind(m_socket, ptr->ai_addr, (int)ptr->ai_addrlen) == SOCKET_ERROR)
 			{
 				closesocket(m_socket);
 				m_socket = INVALID_SOCKET;
@@ -552,14 +552,14 @@ bool gg::ServerBackend::start(void*)
 		setsockopt(m_socket, IPPROTO_IPV6, IPV6_V6ONLY, (const char*)&no, sizeof(no));
 		setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, (const char*)ptr->ai_addr, (int)ptr->ai_addrlen);
 
-		if (bind(m_socket, ptr->ai_addr, (int)ptr->ai_addrlen) == SOCKET_ERROR)
+		if (::bind(m_socket, ptr->ai_addr, (int)ptr->ai_addrlen) == SOCKET_ERROR)
 		{
 			closesocket(m_socket);
 			m_socket = INVALID_SOCKET;
 			continue;
 		}
 
-		if (listen(m_socket, SOMAXCONN) == SOCKET_ERROR)
+		if (::listen(m_socket, SOMAXCONN) == SOCKET_ERROR)
 		{
 			closesocket(m_socket);
 			m_socket = INVALID_SOCKET;

@@ -8,8 +8,6 @@
 
 #pragma once
 
-#include <functional>
-#include <type_traits>
 #include <stdexcept>
 #include "gg/typetraits.hpp"
 #include "gg/any.hpp"

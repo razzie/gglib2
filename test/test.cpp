@@ -107,7 +107,8 @@ public:
 	{
 		try
 		{
-			if (m_server->isAlive())
+			auto alive = gg::bind(&gg::IServer::isAlive, m_server.get());
+			if (alive())
 			{
 				auto connection = m_server->getNextConnection(10);
 				if (connection)
