@@ -26,9 +26,10 @@
  *
  * main.cpp
  * --------
- * auto event = foo_event(1, 'a');
+ * auto event = foo_event(1, 'a', 2.34f);
  * auto first = foo_event.get<0>(event); // return type is determined
  * auto second = event->get<char>(1); // must specify return type
+ * auto third = event->get(third_tag); // where third_tag's type is gg::IEvent::Tag<2, float>
  * // ..do stuff..
  * thread->sendEvent(event);
  *
