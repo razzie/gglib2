@@ -20,7 +20,6 @@
 #include "gg/streamutil.hpp"
 #include "gg/thread.hpp"
 #include "gg/timer.hpp"
-#include "gg/typetraits.hpp"
 #include "gg/optional.hpp"
 #include "gg/version.hpp"
 #include <fstream>

@@ -11,7 +11,7 @@
 #include <cstdint>
 #include <iterator>
 #include <string>
-#include "gg/typetraits.hpp"
+#include <type_traits>
 
 namespace gg
 {
@@ -19,6 +19,77 @@ namespace gg
 
 	class IArchive
 	{
+		template<class T>
+		class HasSerializer
+		{
+			static IArchive& ar;
+			static T& t;
+
+			template<class U, class R = decltype(::serialize(ar, t))>
+			static std::true_type test(void*);
+
+			template<class>
+			static std::false_type test(...);
+
+		public:
+			static constexpr bool value = decltype(test<T>(nullptr))::value;
+		};
+
+		template<class T>
+		class IsContainer
+		{
+			typedef char                      Yes;
+			typedef struct { char array[2]; } No;
+
+			// test C::iterator
+			template<class C>
+			static constexpr Yes test_iterator(typename C::iterator*);
+
+			template<class C>
+			static constexpr No  test_iterator(...);
+
+			static const bool has_iterator = (sizeof(test_iterator<T>(0)) == sizeof(Yes));
+
+			// test C::begin()
+			template<class C>
+			using begin_signatire_test =
+				std::is_same<decltype(&C::begin), typename C::iterator(C::*)()>;
+
+			template<class C>
+			static constexpr Yes(&test_begin(std::enable_if_t<begin_signatire_test<C>::value>*));
+
+			template<class C>
+			static constexpr No(&test_begin(...));
+
+			static constexpr bool has_begin = (sizeof(test_begin<T>(0)) == sizeof(Yes));
+
+			// test C::end()
+			template<class C>
+			using end_signatire_test =
+				std::is_same<decltype(&C::begin), typename C::iterator(C::*)()>;
+
+			template<class C>
+			static constexpr Yes(&test_end(std::enable_if_t<end_signatire_test<C>::value>*));
+
+			template<class C>
+			static constexpr No(&test_end(...));
+
+			static constexpr bool has_end = (sizeof(test_end<T>(0)) == sizeof(Yes));
+
+		public:
+			static constexpr bool value = has_iterator && has_begin && has_end;
+		};
+
+		template<class>
+		struct IsStdPair : public std::false_type
+		{
+		};
+
+		template<class T1, class T2>
+		struct IsStdPair<std::pair<T1, T2>> : public std::true_type
+		{
+		};
+
 	public:
 		enum Mode
 		{

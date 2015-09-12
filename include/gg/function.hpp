@@ -8,12 +8,102 @@
 
 #pragma once
 
+#include <functional>
 #include <stdexcept>
-#include "gg/typetraits.hpp"
+#include <type_traits>
 #include "gg/any.hpp"
 
 namespace gg
 {
+	template<class F>
+	class LambdaSignature
+	{
+		template<class T>
+		struct RemoveClass { };
+
+		template<class C, class R, class... Params>
+		struct RemoveClass<R(C::*)(Params...)>
+		{
+			using Type = std::remove_pointer_t<R(*)(Params...)>;
+		};
+
+		template<class C, class R, class... Params>
+		struct RemoveClass<R(C::*)(Params...) const>
+		{
+			using Type = std::remove_pointer_t<R(*)(Params...)>;
+		};
+
+		template<class T>
+		struct GetSignatureImpl
+		{
+			using Type = typename RemoveClass<
+				decltype(&std::remove_reference_t<T>::operator())>::Type;
+		};
+
+		template<class R, class... Params>
+		struct GetSignatureImpl<R(*)(Params...)>
+		{
+			using Type = std::remove_pointer_t<R(*)(Params...)>;
+		};
+
+	public:
+		using Type = typename GetSignatureImpl<F>::Type;
+	};
+
+	template<class F>
+	using GetLambdaSignature = typename LambdaSignature<F>::Type;
+
+
+	class FunctionArgBinder
+	{
+	public:
+		template<int I>
+		struct placeholder {};
+
+	private:
+		template<std::size_t... Is, class F, class... Args>
+		static auto _bind(std::index_sequence<Is...>, F const& f, Args&&... args)
+			-> decltype(std::bind(f, std::forward<Args>(args)..., placeholder<Is + 1>{}...))
+		{
+			return std::bind(f, std::forward<Args>(args)..., placeholder<Is + 1>{}...);
+		}
+
+		template<class R, class... FArgs, class... Args>
+		static auto _bind(std::function<R(FArgs...)> const& f, Args&&... args)
+			-> decltype(_bind(std::make_index_sequence<sizeof...(FArgs)-sizeof...(Args)>{}, f, std::forward<Args>(args)...))
+		{
+			return _bind(std::make_index_sequence<sizeof...(FArgs)-sizeof...(Args)>{}, f, std::forward<Args>(args)...);
+		}
+
+		template<class R, class C, class... Args>
+		static std::function<R(C*, Args...)> convert(R(C::*func)(Args...))
+		{
+			return{ std::mem_fn(func) };
+		}
+
+		template<class R, class C, class... Args>
+		static std::function<R(const C*, Args...)> convert(R(C::*func)(Args...) const)
+		{
+			return{ std::mem_fn(func) };
+		}
+
+	public:
+		template<class F, class... Args>
+		auto operator()(F const& f, Args&&... args)
+			-> decltype(_bind(convert(f), std::forward<Args>(args)...))
+		{
+			return _bind(convert(f), std::forward<Args>(args)...);
+		}
+	};
+
+	template<class F, class... Args>
+	auto bind(F const& f, Args&&... args)
+		-> decltype(FunctionArgBinder()(f, std::forward<Args>(args)...))
+	{
+		return FunctionArgBinder()(f, std::forward<Args>(args)...);
+	}
+
+
 	class Function
 	{
 	public:
@@ -120,4 +210,10 @@ namespace gg
 
 		std::function<Any(Any::Array)> m_func;
 	};
+};
+
+namespace std
+{
+	template<int I>
+	struct is_placeholder<gg::FunctionArgBinder::placeholder<I>> : std::integral_constant<int, I> {};
 };

@@ -12,7 +12,7 @@
 #include <locale>
 #include <stdexcept>
 #include <string>
-#include "gg/typetraits.hpp"
+#include <type_traits>
 
 namespace gg
 {
@@ -177,6 +177,56 @@ namespace gg
 		if (d) ss << delimiter(*d);
 		return parse<Params...>(ss);
 	}
+
+
+	class Any;
+
+	namespace __fallback
+	{
+		template<class T, class = std::enable_if_t<std::is_same<T, Any>::value>>
+		std::false_type operator<< (std::ostream&, const T&);
+
+		template<class T>
+		std::true_type operator>> (std::istream&, T&);
+	}
+
+	template<class T>
+	class HasStreamInserter
+	{
+		static std::true_type  test(std::ostream&);
+		static std::false_type test(...);
+
+		static std::ostream &s;
+		static std::remove_reference_t<T>& t;
+
+		static constexpr bool check()
+		{
+			using namespace __fallback;
+			return decltype(test(s << t))::value;
+		}
+
+	public:
+		static bool const value = check();
+	};
+
+	template<class T>
+	class HasStreamExtractor
+	{
+		static std::true_type  test(std::istream&);
+		static std::false_type test(...);
+
+		static std::istream &s;
+		static std::remove_reference_t<T>& t;
+
+		static constexpr bool check()
+		{
+			using namespace __fallback;
+			return decltype(test(s >> t))::value;
+		}
+
+	public:
+		static const bool value = check();
+	};
 
 
 	template<class T>
