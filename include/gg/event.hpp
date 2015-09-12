@@ -80,6 +80,12 @@ namespace gg
 		{
 			return getParams().get<typename Tag::Type>(Tag::Param);
 		}
+
+		template<class Tag>
+		void get(const Tag** tag)
+		{
+			*tag = &getParams().get<typename Tag::Type>(Tag::Param);
+		}
 	};
 
 	typedef std::shared_ptr<IEvent> EventPtr;
