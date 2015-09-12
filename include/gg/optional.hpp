@@ -23,11 +23,16 @@ namespace gg
 		{
 		}
 
-		Optional(Optional&& o)
+		Optional(Optional&& o) :
+			m_engaged(o.m_engaged)
 		{
-			std::swap(m_engaged, o.m_engaged);
 			if (m_engaged)
-				std::memcpy(m_object, o.m_object, sizeof(T));
+			{
+				new (m_object) T(std::move(*o));
+
+				reinterpret_cast<T*>(m_object)->~T();
+				o.m_engaged = false;
+			}
 		}
 
 		Optional(const Optional& o) :
@@ -68,9 +73,13 @@ namespace gg
 				reinterpret_cast<T*>(m_object)->~T();
 
 			m_engaged = o.m_engaged;
-			o.m_engaged = false;
 			if (m_engaged)
+			{
 				new (m_object) T(std::move(*o));
+
+				reinterpret_cast<T*>(m_object)->~T();
+				o.m_engaged = false;
+			}
 
 			return *this;
 		}
