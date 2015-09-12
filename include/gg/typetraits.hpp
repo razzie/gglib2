@@ -153,6 +153,25 @@ namespace gg
 	};
 
 
+	class IArchive;
+
+	template<class T>
+	class HasSerializer
+	{
+		static IArchive& ar;
+		static T& t;
+
+		template<class U, class R = decltype(::serialize(ar, t))>
+		static std::true_type test(void*);
+
+		template<class>
+		static std::false_type test(...);
+
+	public:
+		static constexpr bool value = decltype(test<T>(nullptr))::value;
+	};
+
+
 	template<class T>
 	class IsContainer
 	{
@@ -161,12 +180,12 @@ namespace gg
 
 		// test C::iterator
 		template<class C>
-		static constexpr Yes test_iter(typename C::iterator*);
+		static constexpr Yes test_iterator(typename C::iterator*);
 
 		template<class C>
-		static constexpr No  test_iter(...);
+		static constexpr No  test_iterator(...);
 
-		static const bool has_iterator = (sizeof(test_iter<T>(0)) == sizeof(Yes));
+		static const bool has_iterator = (sizeof(test_iterator<T>(0)) == sizeof(Yes));
 
 		// test C::begin()
 		template<class C>
@@ -207,25 +226,6 @@ namespace gg
 	template<class T1, class T2>
 	struct IsStdPair<std::pair<T1, T2>> : public std::true_type
 	{
-	};
-
-
-	class IArchive;
-
-	template<class T>
-	class HasSerializer
-	{
-		static IArchive& ar;
-		static T& t;
-
-		template<class U, class R = decltype(::serialize(ar, t))>
-		static std::true_type test(void*);
-
-		template<class>
-		static std::false_type test(...);
-
-	public:
-		static constexpr bool value = decltype(test<T>(nullptr))::value;
 	};
 
 
