@@ -70,7 +70,7 @@ namespace gg
 			m_engaged = o.m_engaged;
 			o.m_engaged = false;
 			if (m_engaged)
-				std::memcpy(m_object, o.m_object, sizeof(T));
+				new (m_object) T(std::move(*o));
 
 			return *this;
 		}
@@ -123,7 +123,16 @@ namespace gg
 		}
 
 		template<class U>
-		T valueOr(U default_value)
+		T& valueOr(U& default_value)
+		{
+			if (m_engaged)
+				return *this;
+			else
+				return default_value;
+		}
+
+		template<class U>
+		const T& valueOr(const U& default_value) const
 		{
 			if (m_engaged)
 				return *this;
