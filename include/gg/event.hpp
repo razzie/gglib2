@@ -82,9 +82,9 @@ namespace gg
 		}
 
 		template<class Tag>
-		void get(const Tag** tag)
+		void get(const Tag*& tag)
 		{
-			*tag = &getParams().get<typename Tag::Type>(Tag::Param);
+			tag = &getParams().get<typename Tag::Type>(Tag::Param);
 		}
 	};
 
