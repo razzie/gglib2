@@ -104,13 +104,13 @@
     <ClInclude Include="include\gg\database.hpp" />
     <ClInclude Include="include\gg\serializable.hpp" />
     <ClInclude Include="include\gg\typetraits.hpp" />
-    <ClInclude Include="src\archive_impl.hpp" />
     <ClInclude Include="src\database\database_impl.hpp" />
     <ClInclude Include="src\ieee754.hpp" />
+    <ClInclude Include="src\stream_impl.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\archive_impl.cpp" />
     <ClCompile Include="src\database\database_impl.cpp" />
+    <ClCompile Include="src\stream_impl.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -87,7 +87,7 @@ namespace gg
 		SOCKET m_socket;
 		SOCKADDR_STORAGE m_sockaddr;
 		std::string m_address; // host + port
-		char m_data[Archive::BUF_SIZE];
+		char m_data[Stream::BUF_SIZE];
 		size_t m_data_len;
 		size_t m_data_pos;
 	};

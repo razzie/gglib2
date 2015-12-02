@@ -7,7 +7,7 @@
  */
 
 #include "ieee754.hpp"
-#include "archive_impl.hpp"
+#include "stream_impl.hpp"
 
 
 /*static bool isBigEndian()
@@ -22,21 +22,21 @@
 }*/
 
 
-gg::Archive::Archive(IArchive::Mode mode) :
+gg::Stream::Stream(IStream::Mode mode) :
 	m_mode(mode)
 {
 }
 
-gg::Archive::~Archive()
+gg::Stream::~Stream()
 {
 }
 
-gg::IArchive::Mode gg::Archive::getMode() const
+gg::IStream::Mode gg::Stream::getMode() const
 {
 	return m_mode;
 }
 
-gg::Archive& gg::Archive::operator&(int8_t& i)
+gg::Stream& gg::Stream::operator&(int8_t& i)
 {
 	if (m_mode == Mode::SERIALIZE)
 	{
@@ -54,7 +54,7 @@ gg::Archive& gg::Archive::operator&(int8_t& i)
 	return *this;
 }
 
-gg::Archive& gg::Archive::operator&(int16_t& i)
+gg::Stream& gg::Stream::operator&(int16_t& i)
 {
 	if (m_mode == Mode::SERIALIZE)
 	{
@@ -72,7 +72,7 @@ gg::Archive& gg::Archive::operator&(int16_t& i)
 	return *this;
 }
 
-gg::Archive& gg::Archive::operator&(int32_t& i)
+gg::Stream& gg::Stream::operator&(int32_t& i)
 {
 	if (m_mode == Mode::SERIALIZE)
 	{
@@ -90,7 +90,7 @@ gg::Archive& gg::Archive::operator&(int32_t& i)
 	return *this;
 }
 
-gg::Archive& gg::Archive::operator&(int64_t& i)
+gg::Stream& gg::Stream::operator&(int64_t& i)
 {
 	if (m_mode == Mode::SERIALIZE)
 	{
@@ -108,7 +108,7 @@ gg::Archive& gg::Archive::operator&(int64_t& i)
 	return *this;
 }
 
-gg::Archive& gg::Archive::operator&(uint8_t& u)
+gg::Stream& gg::Stream::operator&(uint8_t& u)
 {
 	if (m_mode == Mode::SERIALIZE)
 	{
@@ -126,7 +126,7 @@ gg::Archive& gg::Archive::operator&(uint8_t& u)
 	return *this;
 }
 
-gg::Archive& gg::Archive::operator&(uint16_t& u)
+gg::Stream& gg::Stream::operator&(uint16_t& u)
 {
 	if (m_mode == Mode::SERIALIZE)
 	{
@@ -144,7 +144,7 @@ gg::Archive& gg::Archive::operator&(uint16_t& u)
 	return *this;
 }
 
-gg::Archive& gg::Archive::operator&(uint32_t& u)
+gg::Stream& gg::Stream::operator&(uint32_t& u)
 {
 	if (m_mode == Mode::SERIALIZE)
 	{
@@ -162,7 +162,7 @@ gg::Archive& gg::Archive::operator&(uint32_t& u)
 	return *this;
 }
 
-gg::Archive& gg::Archive::operator&(uint64_t& u)
+gg::Stream& gg::Stream::operator&(uint64_t& u)
 {
 	if (m_mode == Mode::SERIALIZE)
 	{
@@ -180,7 +180,7 @@ gg::Archive& gg::Archive::operator&(uint64_t& u)
 	return *this;
 }
 
-gg::Archive& gg::Archive::operator&(float& f)
+gg::Stream& gg::Stream::operator&(float& f)
 {
 	if (m_mode == Mode::SERIALIZE)
 	{
@@ -197,7 +197,7 @@ gg::Archive& gg::Archive::operator&(float& f)
 	return *this;
 }
 
-gg::Archive& gg::Archive::operator&(double& f)
+gg::Stream& gg::Stream::operator&(double& f)
 {
 	if (m_mode == Mode::SERIALIZE)
 	{
@@ -214,7 +214,7 @@ gg::Archive& gg::Archive::operator&(double& f)
 	return *this;
 }
 
-gg::Archive& gg::Archive::operator&(std::string& str)
+gg::Stream& gg::Stream::operator&(std::string& str)
 {
 	if (m_mode == Mode::SERIALIZE)
 	{
@@ -235,7 +235,7 @@ gg::Archive& gg::Archive::operator&(std::string& str)
 	return *this;
 }
 
-gg::Archive& gg::Archive::operator&(ISerializable& serializable)
+gg::Stream& gg::Stream::operator&(ISerializable& serializable)
 {
 	serializable.serialize(*this);
 	return *this;

@@ -11,12 +11,12 @@
 
 #include <mutex>
 #include <vector>
-#include "archive_impl.hpp"
+#include "stream_impl.hpp"
 #include "gg/network.hpp"
 
 namespace gg
 {
-	class Packet : public Archive, public IPacket
+	class Packet : public Stream, public IPacket
 	{
 	public:
 		Packet(Mode mode, Type type);
@@ -55,13 +55,13 @@ namespace gg
 		virtual bool send(PacketPtr);
 
 	private:
-		struct ArchiveHeader
+		struct StreamHeader
 		{
 			uint16_t packet_size;
 			IPacket::Type packet_type;
 		};
 
-		struct ArchiveTail
+		struct StreamTail
 		{
 			uint32_t n = 0;
 			bool ok() { return n == 0; }

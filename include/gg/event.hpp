@@ -65,7 +65,7 @@ namespace gg
 		virtual ~IEvent() = default;
 		virtual Type getType() const = 0;
 		virtual const IStorage& getParams() const = 0;
-		virtual void serialize(IArchive&) = 0;
+		virtual void serialize(IStream&) = 0;
 
 		bool is(const IEventDefinitionBase&) const;
 
@@ -96,7 +96,7 @@ namespace gg
 		virtual ~IEventDefinitionBase() = default;
 		virtual IEvent::Type getType() const = 0;
 		virtual EventPtr operator()() const = 0;
-		virtual EventPtr operator()(IArchive&) const = 0;
+		virtual EventPtr operator()(IStream&) const = 0;
 	};
 
 	template<class... Params>
@@ -106,7 +106,7 @@ namespace gg
 		virtual ~IEventDefinition() = default;
 		virtual IEvent::Type getType() const = 0;
 		virtual EventPtr operator()() const = 0;
-		virtual EventPtr operator()(IArchive&) const = 0;
+		virtual EventPtr operator()(IStream&) const = 0;
 		virtual EventPtr operator()(Params... params) const = 0;
 
 		template<unsigned N, class R = Param<N, Params...>::Type>
@@ -151,16 +151,16 @@ namespace gg
 		SerializableStorage() = default;
 		SerializableStorage(Types... values) : Storage(std::forward<Types>(values)...) {}
 		virtual ~SerializableStorage() = default;
-		virtual void serialize(IArchive& packet) { serialize<0, Types...>(packet, *this); }
+		virtual void serialize(IStream& packet) { serialize<0, Types...>(packet, *this); }
 
 	private:
 		template<size_t N>
-		static void serialize(IArchive& packet, IStorage& storage)
+		static void serialize(IStream& packet, IStorage& storage)
 		{
 		}
 
 		template<size_t N, class Type0, class... Types>
-		static void serialize(IArchive& packet, IStorage& storage)
+		static void serialize(IStream& packet, IStorage& storage)
 		{
 			packet & storage.get<Type0>(N);
 			serialize<N + 1, Types...>(packet, storage);
@@ -181,7 +181,7 @@ namespace gg
 		virtual ~SerializableEvent() = default;
 		virtual Type getType() const { return EventType; }
 		virtual const IStorage& getParams() const { return m_params; }
-		virtual void serialize(IArchive& packet) { m_params.serialize(packet); }
+		virtual void serialize(IStream& packet) { m_params.serialize(packet); }
 
 	private:
 		SerializableStorage<Params...> m_params;
@@ -203,7 +203,7 @@ namespace gg
 			return EventPtr(new Event());
 		}
 
-		virtual EventPtr operator()(IArchive& ar) const
+		virtual EventPtr operator()(IStream& ar) const
 		{
 			try
 			{
@@ -238,7 +238,7 @@ namespace gg
 		virtual ~LocalEvent() = default;
 		virtual IEvent::Type getType() const { return EventType; }
 		virtual const IStorage& getParams() const { return m_params; }
-		virtual void serialize(IArchive&) {}
+		virtual void serialize(IStream&) {}
 
 	private:
 		Storage<Params...> m_params;
@@ -260,7 +260,7 @@ namespace gg
 			return EventPtr(new Event());
 		}
 
-		virtual EventPtr operator()(IArchive& ar) const
+		virtual EventPtr operator()(IStream& ar) const
 		{
 			return {};
 		}

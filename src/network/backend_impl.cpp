@@ -494,8 +494,8 @@ size_t gg::ClientBackendUDP::read(char* ptr, size_t len)
 
 size_t gg::ClientBackendUDP::write(const char* ptr, size_t len)
 {
-	if (len > Archive::BUF_SIZE - m_data_len)
-		len = Archive::BUF_SIZE - m_data_len;
+	if (len > Stream::BUF_SIZE - m_data_len)
+		len = Stream::BUF_SIZE - m_data_len;
 
 	std::memcpy(&m_data[m_data_len], ptr, len);
 	m_data_len += len;

@@ -17,12 +17,12 @@ namespace gg
 {
 	class ISerializable;
 
-	class IArchive
+	class IStream
 	{
 		template<class T>
 		class HasSerializer
 		{
-			static IArchive& ar;
+			static IStream& ar;
 			static T& t;
 
 			template<class U, class R = decltype(::serialize(ar, t))>
@@ -97,25 +97,25 @@ namespace gg
 			DESERIALIZE
 		};
 
-		virtual ~IArchive() = default;
+		virtual ~IStream() = default;
 		virtual Mode getMode() const = 0;
-		virtual IArchive& operator& (int8_t&) = 0;
-		virtual IArchive& operator& (int16_t&) = 0;
-		virtual IArchive& operator& (int32_t&) = 0;
-		virtual IArchive& operator& (int64_t&) = 0;
-		virtual IArchive& operator& (uint8_t&) = 0;
-		virtual IArchive& operator& (uint16_t&) = 0;
-		virtual IArchive& operator& (uint32_t&) = 0;
-		virtual IArchive& operator& (uint64_t&) = 0;
-		virtual IArchive& operator& (float&) = 0;
-		virtual IArchive& operator& (double&) = 0;
-		virtual IArchive& operator& (std::string&) = 0;
-		virtual IArchive& operator& (ISerializable&) = 0;
+		virtual IStream& operator& (int8_t&) = 0;
+		virtual IStream& operator& (int16_t&) = 0;
+		virtual IStream& operator& (int32_t&) = 0;
+		virtual IStream& operator& (int64_t&) = 0;
+		virtual IStream& operator& (uint8_t&) = 0;
+		virtual IStream& operator& (uint16_t&) = 0;
+		virtual IStream& operator& (uint32_t&) = 0;
+		virtual IStream& operator& (uint64_t&) = 0;
+		virtual IStream& operator& (float&) = 0;
+		virtual IStream& operator& (double&) = 0;
+		virtual IStream& operator& (std::string&) = 0;
+		virtual IStream& operator& (ISerializable&) = 0;
 		virtual size_t write(const char* ptr, size_t len) = 0;
 		virtual size_t read(char* ptr, size_t len) = 0;
 
 		template<class T>
-		std::enable_if_t<HasSerializer<T>::value, IArchive&>
+		std::enable_if_t<HasSerializer<T>::value, IStream&>
 			operator& (T& t)
 		{
 			::serialize(*this, t);
@@ -123,7 +123,7 @@ namespace gg
 		}
 
 		template<class Container>
-		std::enable_if_t<!HasSerializer<Container>::value && IsContainer<Container>::value, IArchive&>
+		std::enable_if_t<!HasSerializer<Container>::value && IsContainer<Container>::value, IStream&>
 			operator& (Container& cont)
 		{
 			if (getMode() == Mode::SERIALIZE)
@@ -150,7 +150,7 @@ namespace gg
 		}
 
 		template<class T>
-		std::enable_if_t<IsStdPair<T>::value, IArchive&>
+		std::enable_if_t<IsStdPair<T>::value, IStream&>
 			operator& (T& pair)
 		{
 			using first_type = std::remove_const_t<typename T::first_type>;
@@ -169,6 +169,6 @@ namespace gg
 	{
 	public:
 		virtual ~ISerializable() = default;
-		virtual void serialize(IArchive&) = 0;
+		virtual void serialize(IStream&) = 0;
 	};
 };

@@ -13,7 +13,7 @@
 #include <fstream>
 #include <map>
 #include <mutex>
-#include "archive_impl.hpp"
+#include "stream_impl.hpp"
 #include "gg/resource.hpp"
 
 namespace gg
@@ -132,7 +132,7 @@ namespace gg
 		ResourcePtr m_res;
 	};
 
-	class File : public Archive, public IFile
+	class File : public Stream, public IFile
 	{
 	public:
 		File(ResourcePtr res, const std::string& name);
@@ -151,7 +151,7 @@ namespace gg
 		size_t m_data_pos;
 	};
 
-	class SerializableFile : public Archive, public IFile
+	class SerializableFile : public Stream, public IFile
 	{
 	public:
 		static FilePtr create(const std::string& file_name, IFileSerializer::OpenMode);
@@ -176,7 +176,7 @@ namespace gg
 		mutable std::vector<char> m_data;
 	};
 
-	class MemoryFile : public Archive, public IFile
+	class MemoryFile : public Stream, public IFile
 	{
 	public:
 		MemoryFile(std::shared_ptr<ResourceCreator> res, const std::string& res_file_name);

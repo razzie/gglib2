@@ -14,26 +14,26 @@
 
 namespace gg
 {
-	class Archive : public virtual IArchive
+	class Stream : public virtual IStream
 	{
 	public:
 		static const size_t BUF_SIZE = 8192;
 
-		Archive(Mode);
-		virtual ~Archive();
+		Stream(Mode);
+		virtual ~Stream();
 		virtual Mode getMode() const;
-		virtual Archive& operator& (int8_t&);
-		virtual Archive& operator& (int16_t&);
-		virtual Archive& operator& (int32_t&);
-		virtual Archive& operator& (int64_t&);
-		virtual Archive& operator& (uint8_t&);
-		virtual Archive& operator& (uint16_t&);
-		virtual Archive& operator& (uint32_t&);
-		virtual Archive& operator& (uint64_t&);
-		virtual Archive& operator& (float&);
-		virtual Archive& operator& (double&);
-		virtual Archive& operator& (std::string&);
-		virtual Archive& operator& (ISerializable&);
+		virtual Stream& operator& (int8_t&);
+		virtual Stream& operator& (int16_t&);
+		virtual Stream& operator& (int32_t&);
+		virtual Stream& operator& (int64_t&);
+		virtual Stream& operator& (uint8_t&);
+		virtual Stream& operator& (uint16_t&);
+		virtual Stream& operator& (uint32_t&);
+		virtual Stream& operator& (uint64_t&);
+		virtual Stream& operator& (float&);
+		virtual Stream& operator& (double&);
+		virtual Stream& operator& (std::string&);
+		virtual Stream& operator& (ISerializable&);
 
 		// the following functions should be implemented by the end user
 		virtual size_t write(const char* ptr, size_t len) = 0;

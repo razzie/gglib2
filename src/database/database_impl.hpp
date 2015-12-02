@@ -11,7 +11,7 @@
 #include <fstream>
 #include <map>
 #include <mutex>
-#include "archive_impl.hpp"
+#include "stream_impl.hpp"
 #include "gg/database.hpp"
 
 namespace gg
@@ -50,7 +50,7 @@ namespace gg
 			virtual void set(float);
 			virtual void set(double);
 			virtual void set(const std::string&);
-			virtual void serialize(IArchive&);
+			virtual void serialize(IStream&);
 
 		private:
 			union Data
@@ -84,7 +84,7 @@ namespace gg
 			virtual const ICell* cell(unsigned) const;
 			virtual const ICell* cell(const std::string& cell_name) const;
 			virtual void remove();
-			virtual void serialize(IArchive&);
+			virtual void serialize(IStream&);
 
 			void setTable(Table&);
 			RowPtr createView(bool write);
@@ -115,7 +115,7 @@ namespace gg
 			virtual const ICell* cell(unsigned column) const;
 			virtual const ICell* cell(const std::string& column) const;
 			virtual void remove();
-			virtual void serialize(IArchive&);
+			virtual void serialize(IStream&);
 
 		private:
 			Row& m_row;
@@ -138,7 +138,7 @@ namespace gg
 			virtual RowPtr getRow(Key, bool write_access = true);
 			virtual RowPtr getNextRow(Key, bool write_access = true);
 			virtual void remove();
-			virtual void serialize(IArchive&);
+			virtual void serialize(IStream&);
 
 			void removeRow(Key);
 			TablePtr createView(bool write_access);
@@ -171,7 +171,7 @@ namespace gg
 			virtual RowPtr getRow(Key, bool write_access = true);
 			virtual RowPtr getNextRow(Key, bool write_access = true);
 			virtual void remove();
-			virtual void serialize(IArchive&);
+			virtual void serialize(IStream&);
 
 		private:
 			Table& m_table;
@@ -187,7 +187,7 @@ namespace gg
 		virtual TablePtr getTable(const std::string& table, bool write = true);
 		virtual void getTableNames(std::vector<std::string>& tables) const;
 		virtual bool save();
-		virtual void serialize(IArchive&);
+		virtual void serialize(IStream&);
 
 		void removeTable(const std::string&);
 
@@ -208,11 +208,11 @@ namespace gg
 		virtual DatabasePtr open(const std::string& filename) const;
 	};
 
-	class FileArchive : public Archive
+	class FileStream : public Stream
 	{
 	public:
-		FileArchive(const std::string& file, Mode);
-		virtual ~FileArchive();
+		FileStream(const std::string& file, Mode);
+		virtual ~FileStream();
 		virtual size_t write(const char* ptr, size_t len);
 		virtual size_t read(char* ptr, size_t len);
 		operator bool() const;

@@ -43,7 +43,7 @@ namespace gg
 	typedef std::shared_ptr<IServer> ServerPtr;
 	typedef std::unique_ptr< IServerBackend > ServerBackendPtr;
 
-	class IPacket : public virtual IArchive
+	class IPacket : public virtual IStream
 	{
 	public:
 		typedef IEvent::Type Type;
@@ -53,7 +53,7 @@ namespace gg
 		virtual const char* getData() const = 0;
 		virtual size_t getSize() const = 0;
 
-		/* inherits all IArchive functions */
+		/* inherits all IStream functions */
 	};
 
 	template<class T>

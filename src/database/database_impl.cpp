@@ -17,7 +17,7 @@ static gg::DatabaseManager s_db;
 gg::IDatabaseManager& gg::db = s_db;
 
 
-void serialize(gg::IArchive& ar, gg::IDatabase::ICell::Type& type)
+void serialize(gg::IStream& ar, gg::IDatabase::ICell::Type& type)
 {
 	uint16_t& v = reinterpret_cast<uint16_t&>(type);
 	ar & v;
@@ -215,7 +215,7 @@ void gg::Database::Cell::set(const std::string& s)
 	m_str_data = s;
 }
 
-void gg::Database::Cell::serialize(IArchive& ar)
+void gg::Database::Cell::serialize(IStream& ar)
 {
 	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 
@@ -329,7 +329,7 @@ void gg::Database::Row::remove()
 	m_force_remove = true;
 }
 
-void gg::Database::Row::serialize(IArchive& ar)
+void gg::Database::Row::serialize(IStream& ar)
 {
 	ar & m_key;
 	for (Cell& cell : m_cells)
@@ -453,12 +453,12 @@ void gg::Database::RowView::remove()
 	m_row.remove();
 }
 
-void gg::Database::RowView::serialize(IArchive& ar)
+void gg::Database::RowView::serialize(IStream& ar)
 {
-	if (ar.getMode() == IArchive::Mode::SERIALIZE && m_access == AccessType::NO_ACCESS)
+	if (ar.getMode() == IStream::Mode::SERIALIZE && m_access == AccessType::NO_ACCESS)
 		throw AccessError(AccessType::READ, m_access);
 
-	if (ar.getMode() == IArchive::Mode::DESERIALIZE && m_access != AccessType::READ_WRITE)
+	if (ar.getMode() == IStream::Mode::DESERIALIZE && m_access != AccessType::READ_WRITE)
 		throw AccessError(AccessType::READ_WRITE, m_access);
 
 	m_row.serialize(ar);
@@ -580,11 +580,11 @@ std::shared_ptr<gg::IDatabase::ITable> gg::Database::Table::createView(bool writ
 		return std::shared_ptr<gg::IDatabase::ITable>(new TableView(*this, write_access));
 }
 
-void gg::Database::Table::serialize(IArchive& ar)
+void gg::Database::Table::serialize(IStream& ar)
 {
 	ar & m_name & m_columns & m_rows;
 
-	if (ar.getMode() == IArchive::Mode::DESERIALIZE)
+	if (ar.getMode() == IStream::Mode::DESERIALIZE)
 	{
 		for (auto& it : m_rows)
 		{
@@ -702,12 +702,12 @@ void gg::Database::TableView::remove()
 	m_table.remove();
 }
 
-void gg::Database::TableView::serialize(IArchive& ar)
+void gg::Database::TableView::serialize(IStream& ar)
 {
-	if (ar.getMode() == IArchive::Mode::SERIALIZE && m_access == AccessType::NO_ACCESS)
+	if (ar.getMode() == IStream::Mode::SERIALIZE && m_access == AccessType::NO_ACCESS)
 		throw AccessError(AccessType::READ, m_access);
 
-	if (ar.getMode() == IArchive::Mode::DESERIALIZE && m_access != AccessType::READ_WRITE)
+	if (ar.getMode() == IStream::Mode::DESERIALIZE && m_access != AccessType::READ_WRITE)
 		throw AccessError(AccessType::READ_WRITE, m_access);
 
 	m_table.serialize(ar);
@@ -718,7 +718,7 @@ void gg::Database::TableView::serialize(IArchive& ar)
 gg::Database::Database(const std::string& filename) :
 	m_filename(filename)
 {
-	FileArchive ar(filename, IArchive::Mode::DESERIALIZE);
+	FileStream ar(filename, IStream::Mode::DESERIALIZE);
 	if (ar)
 	{
 		serialize(ar);
@@ -783,7 +783,7 @@ bool gg::Database::save()
 
 	try
 	{
-		FileArchive ar(m_filename, IArchive::Mode::SERIALIZE);
+		FileStream ar(m_filename, IStream::Mode::SERIALIZE);
 		if (!ar)
 			return false;
 
@@ -809,11 +809,11 @@ void gg::Database::removeTable(const std::string& table)
 	m_tables.erase(table);
 }
 
-void gg::Database::serialize(IArchive& ar)
+void gg::Database::serialize(IStream& ar)
 {
 	ar & m_tables;
 
-	if (ar.getMode() == IArchive::Mode::DESERIALIZE)
+	if (ar.getMode() == IStream::Mode::DESERIALIZE)
 	{
 		for (auto& it : m_tables)
 		{
@@ -841,8 +841,8 @@ gg::DatabasePtr gg::DatabaseManager::open(const std::string& filename) const
 
 
 
-gg::FileArchive::FileArchive(const std::string& file, Mode mode) :
-	Archive(mode)
+gg::FileStream::FileStream(const std::string& file, Mode mode) :
+	Stream(mode)
 {
 	std::ios::openmode flags = std::ios::binary;
 
@@ -854,13 +854,13 @@ gg::FileArchive::FileArchive(const std::string& file, Mode mode) :
 	m_file.open(file, flags);
 }
 
-gg::FileArchive::~FileArchive()
+gg::FileStream::~FileStream()
 {
 	if (m_file.is_open())
 		m_file.close();
 }
 
-size_t gg::FileArchive::write(const char* ptr, size_t len)
+size_t gg::FileStream::write(const char* ptr, size_t len)
 {
 	if (getMode() != Mode::SERIALIZE)
 		throw SerializationError();
@@ -869,7 +869,7 @@ size_t gg::FileArchive::write(const char* ptr, size_t len)
 	return len;
 }
 
-size_t gg::FileArchive::read(char* ptr, size_t len)
+size_t gg::FileStream::read(char* ptr, size_t len)
 {
 	if (getMode() != Mode::DESERIALIZE || !m_file.is_open())
 		throw SerializationError();
@@ -878,7 +878,7 @@ size_t gg::FileArchive::read(char* ptr, size_t len)
 	return static_cast<size_t>(m_file.gcount());
 }
 
-gg::FileArchive::operator bool() const
+gg::FileStream::operator bool() const
 {
 	return (m_file.good() && m_file.is_open());
 }

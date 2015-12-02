@@ -14,7 +14,7 @@
 
 namespace gg
 {
-	class IArchive;
+	class IStream;
 
 	class Version : public ISerializable
 	{
@@ -84,7 +84,7 @@ namespace gg
 				return m_revision < ver.m_revision;
 		}
 
-		virtual void serialize(IArchive& ar, Version& ver)
+		virtual void serialize(IStream& ar, Version& ver)
 		{
 			ar & ver.m_major & ver.m_minor & ver.m_revision;
 		}

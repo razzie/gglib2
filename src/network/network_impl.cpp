@@ -16,7 +16,7 @@ gg::INetworkManager& gg::net = s_netmgr;
 
 
 gg::Packet::Packet(Mode mode, Type type) :
-	Archive(mode),
+	Stream(mode),
 	m_type(type),
 	m_data_len(0),
 	m_data_pos(0)
@@ -117,26 +117,26 @@ gg::PacketPtr gg::Connection::getNextPacket(uint32_t timeoutMs)
 {
 	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 
-	ArchiveHeader head;
-	if (m_backend->peek(reinterpret_cast<char*>(&head), sizeof(ArchiveHeader)) < sizeof(ArchiveHeader))
+	StreamHeader head;
+	if (m_backend->peek(reinterpret_cast<char*>(&head), sizeof(StreamHeader)) < sizeof(StreamHeader))
 		return {};
 
-	if (head.packet_size > Archive::BUF_SIZE)
+	if (head.packet_size > Stream::BUF_SIZE)
 		throw NetworkException("Too large packet");
 
-	size_t expected_size = sizeof(ArchiveHeader) + head.packet_size + sizeof(ArchiveTail);
+	size_t expected_size = sizeof(StreamHeader) + head.packet_size + sizeof(StreamTail);
 	if (m_backend->waitForData(expected_size, timeoutMs) < expected_size)
 		return {};
 
 	// now that we have the full packet, let's skip the first heading bytes we already know
-	m_backend->read(reinterpret_cast<char*>(&head), sizeof(ArchiveHeader));
+	m_backend->read(reinterpret_cast<char*>(&head), sizeof(StreamHeader));
 
-	std::shared_ptr<Packet> packet(new Packet(IArchive::Mode::DESERIALIZE, head.packet_type));
+	std::shared_ptr<Packet> packet(new Packet(IStream::Mode::DESERIALIZE, head.packet_type));
 	m_backend->read(packet->getDataPtr(), head.packet_size);
 	packet->setSize(head.packet_size);
 
-	ArchiveTail tail;
-	m_backend->read(reinterpret_cast<char*>(&tail), sizeof(ArchiveTail));
+	StreamTail tail;
+	m_backend->read(reinterpret_cast<char*>(&tail), sizeof(StreamTail));
 	if (!tail.ok())
 		throw NetworkException("Corrupted packet");
 
@@ -145,12 +145,12 @@ gg::PacketPtr gg::Connection::getNextPacket(uint32_t timeoutMs)
 
 gg::PacketPtr gg::Connection::createPacket(IPacket::Type type) const
 {
-	return PacketPtr( new Packet(IArchive::Mode::SERIALIZE, type) );
+	return PacketPtr( new Packet(IStream::Mode::SERIALIZE, type) );
 }
 
 gg::PacketPtr gg::Connection::createPacket(EventPtr event) const
 {
-	PacketPtr packet( new Packet(IArchive::Mode::SERIALIZE, event->getType()) );
+	PacketPtr packet( new Packet(IStream::Mode::SERIALIZE, event->getType()) );
 	event->serialize(*packet);
 	return packet;
 }
@@ -159,18 +159,18 @@ bool gg::Connection::send(PacketPtr packet)
 {
 	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
 
-	ArchiveHeader head;
+	StreamHeader head;
 	head.packet_size = static_cast<uint16_t>(packet->getSize());
 	head.packet_type = packet->getType();
 
-	ArchiveTail tail;
+	StreamTail tail;
 
 	size_t bytes_written = 0;
-	bytes_written += m_backend->write(reinterpret_cast<const char*>(&head), sizeof(ArchiveHeader));
+	bytes_written += m_backend->write(reinterpret_cast<const char*>(&head), sizeof(StreamHeader));
 	bytes_written += m_backend->write(packet->getData(), head.packet_size);
-	bytes_written += m_backend->write(reinterpret_cast<const char*>(&tail), sizeof(ArchiveTail));
+	bytes_written += m_backend->write(reinterpret_cast<const char*>(&tail), sizeof(StreamTail));
 
-	return (bytes_written == head.packet_size + sizeof(ArchiveHeader) + sizeof(ArchiveTail));
+	return (bytes_written == head.packet_size + sizeof(StreamHeader) + sizeof(StreamTail));
 }
 
 
@@ -315,12 +315,12 @@ gg::ServerPtr gg::NetworkManager::createServer(ServerBackendPtr&& backend) const
 
 std::shared_ptr<gg::IPacket> gg::NetworkManager::createPacket(IPacket::Type type) const
 {
-	return PacketPtr( new Packet(IArchive::Mode::SERIALIZE, type) );
+	return PacketPtr( new Packet(IStream::Mode::SERIALIZE, type) );
 }
 
 std::shared_ptr<gg::IPacket> gg::NetworkManager::createPacket(EventPtr event) const
 {
-	PacketPtr packet( new Packet(IArchive::Mode::SERIALIZE, event->getType()) );
+	PacketPtr packet( new Packet(IStream::Mode::SERIALIZE, event->getType()) );
 	event->serialize(*packet);
 	return packet;
 }

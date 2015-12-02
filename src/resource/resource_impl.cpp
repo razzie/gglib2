@@ -526,7 +526,7 @@ gg::IDirectory::Iterator gg::Directory::end() const
 
 
 gg::File::File(ResourcePtr res, const std::string& name) :
-	Archive(IArchive::Mode::DESERIALIZE),
+	Stream(IStream::Mode::DESERIALIZE),
 	m_name(name),
 	m_res(res)
 {
@@ -605,7 +605,7 @@ gg::FilePtr gg::SerializableFile::create(const std::wstring& file_name, IFileSer
 }
 
 gg::SerializableFile::SerializableFile(const std::string& file_name, IFileSerializer::OpenMode mode) :
-	Archive((mode == IFileSerializer::OpenMode::READ) ? IArchive::Mode::DESERIALIZE : IArchive::Mode::SERIALIZE),
+	Stream((mode == IFileSerializer::OpenMode::READ) ? IStream::Mode::DESERIALIZE : IStream::Mode::SERIALIZE),
 	m_name(file_name),
 	m_size(0)
 {
@@ -629,7 +629,7 @@ gg::SerializableFile::SerializableFile(const std::string& file_name, IFileSerial
 }
 
 gg::SerializableFile::SerializableFile(const std::wstring& file_name, IFileSerializer::OpenMode mode) :
-	Archive((mode == IFileSerializer::OpenMode::READ) ? IArchive::Mode::DESERIALIZE : IArchive::Mode::SERIALIZE),
+	Stream((mode == IFileSerializer::OpenMode::READ) ? IStream::Mode::DESERIALIZE : IStream::Mode::SERIALIZE),
 	m_name(convert.to_bytes(file_name)),
 	m_size(0)
 {
@@ -723,7 +723,7 @@ size_t gg::SerializableFile::read(char* buf, size_t len)
 
 
 gg::MemoryFile::MemoryFile(std::shared_ptr<ResourceCreator> res, const std::string& res_file_name) :
-	Archive(IArchive::Mode::SERIALIZE),
+	Stream(IStream::Mode::SERIALIZE),
 	m_res(res),
 	m_name(res_file_name)
 {

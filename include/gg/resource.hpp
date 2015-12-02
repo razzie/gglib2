@@ -132,7 +132,7 @@ namespace gg
 		virtual Iterator end() const = 0;
 	};
 
-	class IFile : public virtual IArchive
+	class IFile : public virtual IStream
 	{
 	public:
 		virtual ~IFile() = default;
