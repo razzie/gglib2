@@ -9,6 +9,7 @@
 #include "gg/any.hpp"
 #include "gg/console.hpp"
 #include "gg/database.hpp"
+#include "gg/event.hpp"
 #include "gg/function.hpp"
 #include "gg/idgenerator.hpp"
 #include "gg/logger.hpp"
@@ -24,9 +25,11 @@
 #include "gg/version.hpp"
 #include <fstream>
 
+using namespace gg::literals;
+
 gg::IDGenerator<> gen;
 
-gg::SerializableEventDefinition<1, int, float> foo_event;
+gg::SerializableEventDefinition<"foo"_event, int, float> foo_event;
 typedef gg::IEvent::Tag<0, int> foo_param1;
 typedef gg::IEvent::Tag<1, float> foo_param2;
 

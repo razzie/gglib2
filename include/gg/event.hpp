@@ -21,7 +21,7 @@
  *
  * myevents.cpp
  * ------------
- * static gg::SerializableEventDefinition<TYPE, int, char> _foo_event;
+ * static gg::SerializableEventDefinition<"foo"_event, int, char> _foo_event;
  * gg::IEventDefinition<int, char>& foo_event = _foo_event;
  *
  * main.cpp
@@ -86,6 +86,11 @@ namespace gg
 		{
 			tag = &getParams().get<typename Tag::Type>(Tag::Param);
 		}
+
+		static constexpr Type hash(const char* evt, const uint64_t h = 5381)
+		{
+			return (evt[0] == 0) ? (Type)h : hash(&evt[1], h * 33 + evt[0]);
+		}
 	};
 
 	typedef std::shared_ptr<IEvent> EventPtr;
@@ -141,6 +146,14 @@ namespace gg
 	inline bool IEvent::is(const IEventDefinitionBase& def) const
 	{
 		return (getType() == def.getType());
+	}
+
+	inline namespace literals
+	{
+		constexpr IEvent::Type operator"" _event(const char* evt, size_t)
+		{
+			return IEvent::hash(evt);
+		}
 	}
 
 
