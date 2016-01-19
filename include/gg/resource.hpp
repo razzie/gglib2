@@ -80,6 +80,22 @@ namespace gg
 		virtual void releaseResources() = 0;
 		virtual DirectoryPtr openDirectory(const std::string& dir_name) const = 0;
 		virtual FilePtr openFile(const std::string& file_name) const = 0;
+		virtual bool add(std::shared_ptr<void> object, const std::string& object_name) = 0;
+		virtual void release(const std::string& object_name) = 0;
+		virtual std::shared_ptr<void> get(const std::string& object_name) const = 0;
+
+		template<class T, class... Args>
+		bool add(const std::string& object_name, Args... args)
+		{
+			auto object = std::make_shared<T>(std::forward<Args>(args)...);
+			return add(object, object_name);
+		}
+
+		template<class T>
+		std::shared_ptr<T> get(const std::string& object_name) const
+		{
+			return std::static_pointer_cast<T, void>(get(object_name));
+		}
 	};
 
 	class IResourceCreator

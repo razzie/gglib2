@@ -245,7 +245,7 @@ gg::DirectoryPtr gg::ResourcePool::openDirectory(const std::string& dir_name) co
 	}
 	else
 	{
-		return{};
+		return {};
 	}
 }
 
@@ -262,7 +262,36 @@ gg::FilePtr gg::ResourcePool::openFile(const std::string& file_name) const
 	}
 	else
 	{
-		return{};
+		return {};
+	}
+}
+
+bool gg::ResourcePool::add(std::shared_ptr<void> object, const std::string& object_name)
+{
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
+
+	auto it = m_objects.emplace(object_name, object);
+	return it.second;
+}
+
+void gg::ResourcePool::release(const std::string& object_name)
+{
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
+	m_objects.erase(object_name);
+}
+
+std::shared_ptr<void> gg::ResourcePool::get(const std::string& object_name) const
+{
+	std::lock_guard<decltype(m_mutex)> guard(m_mutex);
+
+	auto it = m_objects.find(object_name);
+	if (it != m_objects.end())
+	{
+		return it->second;
+	}
+	else
+	{
+		return {};
 	}
 }
 
@@ -601,7 +630,7 @@ gg::FilePtr gg::SerializableFile::create(const std::wstring& file_name, IFileSer
 	if (ptr->init())
 		return ptr;
 	else
-		return{};
+		return {};
 }
 
 gg::SerializableFile::SerializableFile(const std::string& file_name, IFileSerializer::OpenMode mode) :

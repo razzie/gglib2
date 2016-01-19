@@ -64,10 +64,14 @@ namespace gg
 		virtual void releaseResources();
 		virtual DirectoryPtr openDirectory(const std::string& dir_name) const;
 		virtual FilePtr openFile(const std::string& file_name) const;
+		virtual bool add(std::shared_ptr<void> object, const std::string& object_name);
+		virtual void release(const std::string& object_name);
+		virtual std::shared_ptr<void> get(const std::string& object_name) const;
 
 	private:
 		mutable std::mutex m_mutex;
 		std::map<std::string, std::shared_ptr<Resource>> m_resources;
+		std::map<std::string, std::shared_ptr<void>> m_objects;
 	};
 
 	class ResourceCreator : public IResourceCreator

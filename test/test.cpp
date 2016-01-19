@@ -27,8 +27,6 @@
 
 using namespace gg::literals;
 
-gg::IDGenerator<> gen;
-
 gg::SerializableEventDefinition<"foo"_event, int, float> foo_event;
 typedef gg::IEvent::Tag<0, int> foo_param1;
 typedef gg::IEvent::Tag<1, float> foo_param2;
@@ -200,10 +198,16 @@ int main()
 		}
 	}
 
+	pool->add<int>("int_object", 123);
+	auto int_object = pool->get<int>("int_object");
+	gg::log << *int_object << std::endl;
 
+
+	gg::IDGenerator<> gen;
 	for (int i = 0; i < 8; ++i)
 		gg::log << gen.next() << ", ";
 	gg::log << std::endl;
+
 
 	auto server = gg::threadmgr.createThread("server thread");
 	server->addTask<ServerTask>();
