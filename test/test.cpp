@@ -58,18 +58,15 @@ public:
 	{
 		try
 		{
-			if (m_connection->isAlive())
+			auto packet = m_connection->getNextPacket(10);
+			if (packet)
 			{
-				auto packet = m_connection->getNextPacket(10);
-				if (packet)
-				{
-					gg::log << "packet: length=" << packet->getSize() << ", type=" << packet->getType() << std::endl;
+				gg::log << "packet: length=" << packet->getSize() << ", type=" << packet->getType() << std::endl;
 
-					auto event = foo_event(*packet);
-					options.getThread().sendEvent(event); // accepts empty pointer too
-				}
+				auto event = foo_event(*packet);
+				options.getThread().sendEvent(event); // accepts empty pointer too
 			}
-			else
+			else if (!m_connection->isAlive())
 			{
 				options.finish();
 			}
@@ -213,7 +210,7 @@ int main()
 	server->addTask<ServerTask>();
 	server->run();
 
-	auto connection = gg::net.createConnection("localhost", 12345);
+	auto connection = gg::net.createConnection("127.0.0.1", 12345);
 	if (!connection->connect())
 	{
 		gg::log << "Can't connect :(" << std::endl;
@@ -226,7 +223,11 @@ int main()
 	{
 		auto event = foo_event(1, 2.34f);
 		auto packet = gg::net.createPacket(event);
-		connection->send(packet);
+		if (!connection->send(packet))
+		{
+			gg::log << "Failed to send packet" << std::endl;
+			break;
+		}
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}

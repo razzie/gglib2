@@ -48,12 +48,13 @@ static std::string getHostFromSockaddr(SOCKADDR_STORAGE* sockaddr)
 }
 
 
-gg::ConnectionBackend::ConnectionBackend(const std::string& host, uint16_t port, bool tcp) :
+gg::ConnectionBackend::ConnectionBackend(const std::string& host, uint16_t port, bool tcp, bool ipv6) :
 	m_socket(INVALID_SOCKET),
 	m_host(host),
 	m_port(port),
 	m_address(host + ":" + std::to_string(port)),
 	m_tcp(tcp),
+	m_ipv6(ipv6),
 	m_connected(false)
 {
 }
@@ -73,7 +74,7 @@ bool gg::ConnectionBackend::connect(void*)
 	std::memset(&m_sockaddr, 0, sizeof(SOCKADDR_STORAGE));
 
 	std::memset(&hints, 0, sizeof(struct addrinfo));
-	hints.ai_family = AF_UNSPEC;
+	hints.ai_family = m_ipv6 ? AF_INET6 : AF_INET;
 	hints.ai_socktype = m_tcp ? SOCK_STREAM : SOCK_DGRAM;
 	hints.ai_protocol = m_tcp ? IPPROTO_TCP : IPPROTO_UDP;
 	hints.ai_flags = AI_PASSIVE;
@@ -106,12 +107,7 @@ bool gg::ConnectionBackend::connect(void*)
 		}
 		else
 		{
-			if (::bind(m_socket, ptr->ai_addr, (int)ptr->ai_addrlen) == SOCKET_ERROR)
-			{
-				closesocket(m_socket);
-				m_socket = INVALID_SOCKET;
-				continue;
-			}
+			std::memcpy(&m_sockaddr, ptr->ai_addr, ptr->ai_addrlen);
 		}
 
 		// everything is OK if we get here
@@ -151,7 +147,9 @@ const std::string& gg::ConnectionBackend::getAddress() const
 
 size_t gg::ConnectionBackend::availableData()
 {
-	return size_t();
+	u_long bytes_available = 0;
+	ioctlsocket(m_socket, FIONREAD, &bytes_available);
+	return static_cast<size_t>(bytes_available);
 }
 
 size_t gg::ConnectionBackend::waitForData(size_t len, uint32_t timeoutMs)
@@ -503,10 +501,11 @@ size_t gg::ClientBackendUDP::write(const char* ptr, size_t len)
 }
 
 
-gg::ServerBackend::ServerBackend(uint16_t port, bool tcp) :
+gg::ServerBackend::ServerBackend(uint16_t port, bool tcp, bool ipv6) :
 	m_socket(INVALID_SOCKET),
 	m_port(port),
 	m_tcp(tcp),
+	m_ipv6(ipv6),
 	m_started(false)
 {
 }
@@ -526,7 +525,7 @@ bool gg::ServerBackend::start(void*)
 	std::memset(&m_sockaddr, 0, sizeof(SOCKADDR_STORAGE));
 
 	std::memset(&hints, 0, sizeof(struct addrinfo));
-	hints.ai_family = AF_UNSPEC;
+	hints.ai_family = m_ipv6 ? AF_INET6 : AF_INET;
 	hints.ai_socktype = m_tcp ? SOCK_STREAM : SOCK_DGRAM;
 	hints.ai_protocol = m_tcp ? IPPROTO_TCP : IPPROTO_UDP;
 	hints.ai_flags = AI_PASSIVE;
@@ -559,7 +558,7 @@ bool gg::ServerBackend::start(void*)
 			continue;
 		}
 
-		if (::listen(m_socket, SOMAXCONN) == SOCKET_ERROR)
+		if (m_tcp && ::listen(m_socket, SOMAXCONN) == SOCKET_ERROR)
 		{
 			closesocket(m_socket);
 			m_socket = INVALID_SOCKET;

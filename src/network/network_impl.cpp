@@ -165,12 +165,20 @@ bool gg::Connection::send(PacketPtr packet)
 
 	StreamTail tail;
 
-	size_t bytes_written = 0;
-	bytes_written += m_backend->write(reinterpret_cast<const char*>(&head), sizeof(StreamHeader));
-	bytes_written += m_backend->write(packet->getData(), head.packet_size);
-	bytes_written += m_backend->write(reinterpret_cast<const char*>(&tail), sizeof(StreamTail));
+	char buffer[Stream::BUF_SIZE + sizeof(StreamHeader) + sizeof(StreamTail)];
+	size_t buffer_size = 0;
+	std::memcpy(&buffer[buffer_size], &head, sizeof(StreamHeader));			buffer_size += sizeof(StreamHeader);
+	std::memcpy(&buffer[buffer_size], packet->getData(), head.packet_size); buffer_size += head.packet_size;
+	std::memcpy(&buffer[buffer_size], &tail, sizeof(StreamTail));			buffer_size += sizeof(StreamTail);
 
-	return (bytes_written == head.packet_size + sizeof(StreamHeader) + sizeof(StreamTail));
+	//size_t bytes_written = 0;
+	//bytes_written += m_backend->write(reinterpret_cast<const char*>(&head), sizeof(StreamHeader));
+	//bytes_written += m_backend->write(packet->getData(), head.packet_size);
+	//bytes_written += m_backend->write(reinterpret_cast<const char*>(&tail), sizeof(StreamTail));
+
+	//return (bytes_written == head.packet_size + sizeof(StreamHeader) + sizeof(StreamTail));
+
+	return (m_backend->write(buffer, buffer_size) == buffer_size);
 }
 
 
@@ -291,9 +299,9 @@ gg::NetworkManager::~NetworkManager()
 #endif
 }
 
-gg::ConnectionPtr gg::NetworkManager::createConnection(const std::string& host, uint16_t port) const
+gg::ConnectionPtr gg::NetworkManager::createConnection(const std::string& host, uint16_t port, bool tcp, bool ipv6) const
 {
-	ConnectionBackendPtr backend(new ConnectionBackend(host, port));
+	ConnectionBackendPtr backend(new ConnectionBackend(host, port, tcp, ipv6));
 	return ConnectionPtr( new Connection(std::move(backend)) );
 }
 
@@ -302,9 +310,9 @@ gg::ConnectionPtr gg::NetworkManager::createConnection(ConnectionBackendPtr&& ba
 	return ConnectionPtr( new Connection(std::move(backend)) );
 }
 
-gg::ServerPtr gg::NetworkManager::createServer(uint16_t port) const
+gg::ServerPtr gg::NetworkManager::createServer(uint16_t port, bool tcp, bool ipv6) const
 {
-	ServerBackendPtr backend(new ServerBackend(port));
+	ServerBackendPtr backend(new ServerBackend(port, tcp, ipv6));
 	return ServerPtr( new Server(std::move(backend)) );
 }
 

@@ -24,7 +24,7 @@ namespace gg
 	class ConnectionBackend : public IConnectionBackend
 	{
 	public:
-		ConnectionBackend(const std::string& host, uint16_t port, bool tcp = true);
+		ConnectionBackend(const std::string& host, uint16_t port, bool tcp = true, bool ipv6 = false);
 		virtual ~ConnectionBackend();
 		virtual bool connect(void* user_data = nullptr);
 		virtual void disconnect();
@@ -43,6 +43,7 @@ namespace gg
 		uint16_t m_port;
 		std::string m_address; // host + port
 		bool m_tcp;
+		bool m_ipv6;
 		bool m_connected;
 	};
 
@@ -95,7 +96,7 @@ namespace gg
 	class ServerBackend : public IServerBackend
 	{
 	public:
-		ServerBackend(uint16_t port, bool tcp = true);
+		ServerBackend(uint16_t port, bool tcp = true, bool ipv6 = false);
 		virtual ~ServerBackend();
 		virtual bool start(void* user_data = nullptr);
 		virtual void stop();
@@ -107,6 +108,7 @@ namespace gg
 		SOCKADDR_STORAGE m_sockaddr;
 		uint16_t m_port;
 		bool m_tcp;
+		bool m_ipv6;
 		bool m_started;
 	};
 };

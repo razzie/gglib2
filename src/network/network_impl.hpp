@@ -104,9 +104,9 @@ namespace gg
 	public:
 		NetworkManager();
 		virtual ~NetworkManager();
-		virtual ConnectionPtr createConnection(const std::string& host, uint16_t port) const;
+		virtual ConnectionPtr createConnection(const std::string& host, uint16_t port, bool tcp = true, bool ipv6 = false) const;
 		virtual ConnectionPtr createConnection(ConnectionBackendPtr&&) const;
-		virtual ServerPtr createServer(uint16_t port) const;
+		virtual ServerPtr createServer(uint16_t port, bool tcp = true, bool ipv6 = false) const;
 		virtual ServerPtr createServer(ServerBackendPtr&&) const;
 		virtual PacketPtr createPacket(IPacket::Type) const;
 		virtual PacketPtr createPacket(EventPtr) const;
