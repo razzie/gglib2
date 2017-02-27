@@ -32,10 +32,6 @@
  * auto third = event->get(third_tag); // where third_tag's type is gg::IEvent::Tag<2, float>
  * // ..do stuff..
  * thread->sendEvent(event);
- *
- * NOTE:
- * For implemented events and event definitions include one of the following
- * headers: gg/network.hpp or gg/thread.hpp
  */
 
 #pragma once

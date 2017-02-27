@@ -9,7 +9,6 @@
 #include <cstdint>
 #include <locale>
 #include <set>
-#include "Doboz/Compressor.h"
 #include "Doboz/Decompressor.h"
 #include "encoder.hpp"
 #include "resource_impl.hpp"
@@ -449,7 +448,7 @@ bool gg::ResourceCreator::addFileData(const std::string& res_file_name, const st
 	buffer.resize(compressed_size);
 
 	// compress data
-	doboz::Compressor().compress(&data[0], orig_size, &buffer[0], buffer.size(), compressed_size);
+	m_compressor.compress(&data[0], orig_size, &buffer[0], buffer.size(), compressed_size);
 
 	// encrypt file name
 	std::vector<unsigned char> name;

@@ -13,6 +13,7 @@
 #include <fstream>
 #include <map>
 #include <mutex>
+#include "Doboz/Compressor.h"
 #include "stream_impl.hpp"
 #include "gg/resource.hpp"
 
@@ -95,6 +96,7 @@ namespace gg
 		mutable std::mutex m_mutex;
 		std::weak_ptr<ResourceCreator> m_self_ptr;
 		std::ofstream m_file;
+		doboz::Compressor m_compressor;
 	};
 
 	class FileSerializer : public IFileSerializer
